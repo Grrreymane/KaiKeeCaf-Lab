@@ -188,11 +188,11 @@ const EXTRA_SHELF = { T7: 800 };   // extra display spot bought in 装修: in fr
 // decor shop: better shelves (more per layer + nicer), wallpapers, booth styles. Beauty brings more customers.
 const SHELF_TIERS = [{ name: '云石双层架', cap: 6, beauty: 0 }, { name: '柚木铜边架', cost: 350, cap: 8, beauty: 2 }, { name: '玻璃展示柜', cost: 800, cap: 10, beauty: 4 }];
 const WALLS = {
-  mint: { name: '薄荷绿', cost: 0, wall: '#7fcfae', wallD: '#6ebf9f', beauty: 0 },
-  cream: { name: '奶油条纹', cost: 300, wall: '#f2e2bc', wallD: '#e4cf9f', beauty: 2, stripe: true },
-  rose: { name: '粉红碎花', cost: 450, wall: '#f2c4c0', wallD: '#e6aaa6', beauty: 3, floral: true },
-  jade: { name: '墨绿金线', cost: 600, wall: '#3f6b5a', wallD: '#36604f', beauty: 4, rail: true },
-  teak: { name: '柚木墙板', cost: 700, wall: '#b57a48', wallD: '#a26a3c', beauty: 5, wood: true },
+  mint: { name: '薄荷绿', cost: 0, wall: '#8fd6b8', wallD: '#7fc8a9', low: '#3f8a6e', beauty: 0 },
+  cream: { name: '奶油条纹', cost: 300, wall: '#f2e2bc', wallD: '#e4cf9f', low: '#8a5a3a', lowWood: true, beauty: 2, stripe: true },
+  rose: { name: '粉红碎花', cost: 450, wall: '#f4cdc8', wallD: '#e8b4ae', low: '#a84e5a', beauty: 3, floral: true },
+  jade: { name: '墨绿金线', cost: 600, wall: '#e9dcba', wallD: '#ddcfa8', low: '#36604f', beauty: 4, rail: true },
+  teak: { name: '柚木墙板', cost: 700, wall: '#f0dfb8', wallD: '#e3cfa2', low: '#a26a3c', lowWood: true, beauty: 5 },
 };
 const BOOTH_STYLES = {
   green: { name: '绿皮卡座', cost: 0, leather: ['#4f9a7c', '#3f8a6e', '#2f6e56'], beauty: 0 },

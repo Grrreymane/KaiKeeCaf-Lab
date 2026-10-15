@@ -1976,11 +1976,11 @@ const EXTRA_SHELF = { T7: 800 };   // extra display spot bought in 装修: in fr
 // decor shop: better shelves (more per layer + nicer), wallpapers, booth styles. Beauty brings more customers.
 const SHELF_TIERS = [{ name: '云石双层架', cap: 6, beauty: 0 }, { name: '柚木铜边架', cost: 350, cap: 8, beauty: 2 }, { name: '玻璃展示柜', cost: 800, cap: 10, beauty: 4 }];
 const WALLS = {
-  mint: { name: '薄荷绿', cost: 0, wall: '#7fcfae', wallD: '#6ebf9f', beauty: 0 },
-  cream: { name: '奶油条纹', cost: 300, wall: '#f2e2bc', wallD: '#e4cf9f', beauty: 2, stripe: true },
-  rose: { name: '粉红碎花', cost: 450, wall: '#f2c4c0', wallD: '#e6aaa6', beauty: 3, floral: true },
-  jade: { name: '墨绿金线', cost: 600, wall: '#3f6b5a', wallD: '#36604f', beauty: 4, rail: true },
-  teak: { name: '柚木墙板', cost: 700, wall: '#b57a48', wallD: '#a26a3c', beauty: 5, wood: true },
+  mint: { name: '薄荷绿', cost: 0, wall: '#8fd6b8', wallD: '#7fc8a9', low: '#3f8a6e', beauty: 0 },
+  cream: { name: '奶油条纹', cost: 300, wall: '#f2e2bc', wallD: '#e4cf9f', low: '#8a5a3a', lowWood: true, beauty: 2, stripe: true },
+  rose: { name: '粉红碎花', cost: 450, wall: '#f4cdc8', wallD: '#e8b4ae', low: '#a84e5a', beauty: 3, floral: true },
+  jade: { name: '墨绿金线', cost: 600, wall: '#e9dcba', wallD: '#ddcfa8', low: '#36604f', beauty: 4, rail: true },
+  teak: { name: '柚木墙板', cost: 700, wall: '#f0dfb8', wallD: '#e3cfa2', low: '#a26a3c', lowWood: true, beauty: 5 },
 };
 const BOOTH_STYLES = {
   green: { name: '绿皮卡座', cost: 0, leather: ['#4f9a7c', '#3f8a6e', '#2f6e56'], beauty: 0 },
@@ -2265,9 +2265,10 @@ function matPass(g, ox, oy) {   // texture every pixel whose colour is a known m
 function bgMatPass(g) {   // the room: terrazzo floor, glazed wall tiles, and the walls themselves — paper (fibres, faint seams) or wood boards
   const d = g.d, w = g.w, F = new Set([C.floorA, C.floorB]), TL = new Set([C.tile, shade(C.tile, -12)]);
   const WS = WALLS[(W && W.decor && W.decor.wall) || 'mint'] || WALLS.mint, WL = new Map([[C.wall, 0], [C.wallD, 0], [shade(C.wall, -18), 1], [shade(C.wallD, -18), 1]]);
-  matInit(); const VB = { kind: 'wood', sp: 'vert' }, VBs = { kind: 'wood', sp: 'vert', side: true };
+  matInit(); const VB = { kind: 'wood', sp: 'vert' }, VBs = { kind: 'wood', sp: 'vert', side: true }, LO = WS.low || shade(WS.wall, -40), LOW = new Map([[LO, 0], [shade(LO, -18), 1]]);
   for (let i = 0; i < d.length; i++) {
     const c = d[i]; if (!c) continue; const X = i % w, Y = (i / w) | 0;
+    if (LOW.has(c)) { if (WS.lowWood) { const t = matTex(LOW.get(c) ? VBs : VB, c, X, Y); d[i] = typeof t === 'string' ? t : shadeC(c, t); } else { const r = mhash(X, Y); d[i] = r < .05 ? shadeC(c, -6) : r > .96 ? shadeC(c, 6) : c; } continue; }   // the dado panel
     if (WL.has(c)) {   // wall
       if (WS.wood) { const t = matTex(WL.get(c) ? VBs : VB, c, X, Y); d[i] = typeof t === 'string' ? t : shadeC(c, t); continue; }
       const r = mhash(X, Y), seam = ((X % 64) + 64) % 64 === 0;
@@ -2279,7 +2280,7 @@ function bgMatPass(g) {   // the room: terrazzo floor, glazed wall tiles, and th
 // ==== end source:src/art/materials.js ====
 // ==== source:src/art/shop.js ====
 // ==== art: shop (isometric 2:1, world canvas x2; from 草图/店铺等距.html)
-const ROOM = 320, WALL_H = 200, OX = 180, OY = 140, PLAT = 14;   // PLAT：柜台后面平台的高度
+const ROOM = 320, DADO = 96, WALL_H = 200, OX = 180, OY = 140, PLAT = 14;   // PLAT：柜台后面平台的高度
 const K = 2, FOOT2 = FOOT * 2, LM = 240, WW = 1120 + LM, CAM_MAX = WW - 720;   // LM: world margin on the left so the view can pan left too   // world canvas is 2x; WW wider than the screen so the player can pan right (bake room, next door)
 // mint palette, whites pushed warm, floor warm terracotta (settled 2026-10-14)
 Object.assign(C, { marble: '#efe2c8', marbleS: '#d5c09c', marbleD: '#b9a17c', vein: '#e3d0ae', tile: '#eadcc0', tileL: '#d2c09e', floorA: '#e7bd96', floorB: '#dcac86', dot: '#4f9a7c',
@@ -2501,11 +2502,15 @@ function drawBackground(c) {
   let XF = null;   // while a wall piece is drawn: its art moved into the slot the player chose
   const wL = (ya, yb, z0, z1, col) => { if (XF) { [ya, z0] = XF(ya, z0); [yb, z1] = XF(yb, z1); } g.quad(P(0, ya, z0), P(0, yb, z0), P(0, yb, z1), P(0, ya, z1), col); };
   const WS = WALLS[(W && W.decor && W.decor.wall) || 'mint'] || WALLS.mint; C.wall = WS.wall; C.wallD = WS.wallD;   // wallpaper from the decor shop
+  const LOW = WS.low || shade(WS.wall, -40), dado = (ya, yb, left) => {   // two-tone wall: a dark panel from the tiles up to the rail, boards every 16, then a trim rail
+    wR(ya, yb, 40, DADO, LOW); for (let t = ya + 16; t < yb; t += 16) g.seg(P(t, 0, 40), P(t, 0, DADO), shade(LOW, -16)); wR(ya, yb, DADO, DADO + 3, C.trim); wR(ya, yb, DADO + 2, DADO + 3, C.trimL);
+    if (left) { wL(ya, yb, 40, DADO, shade(LOW, -18)); for (let t = ya + 16; t < yb; t += 16) g.seg(P(0, t, 40), P(0, t, DADO), shade(LOW, -32)); wL(ya, yb, DADO, DADO + 3, shade(C.trim, -10)); } };
   wR(0, ROOM, 0, WALL_H, C.wall); wL(0, ROOM, 0, WALL_H, shade(C.wall, -18));
-  for (let t = 4; t < ROOM; t += 8) { g.seg(P(t, 0, 40), P(t, 0, WALL_H - 6), C.wallD); g.seg(P(0, t, 40), P(0, t, WALL_H - 6), shade(C.wallD, -18)); }
-  if (WS.stripe) for (let t = 0; t < ROOM; t += 16) for (let k = 0; k < 6; k++) { g.seg(P(t + k, 0, 40), P(t + k, 0, WALL_H - 6), C.wallD); g.seg(P(0, t + k, 40), P(0, t + k, WALL_H - 6), shade(C.wallD, -18)); }
-  if (WS.floral) for (let t = 8; t < ROOM; t += 16) for (let z = 52; z < WALL_H - 10; z += 18) { const zz = z + ((t / 16) & 1) * 9; for (const [pt, col] of [[P(t, 0, zz), '#ffffff'], [P(0, t, zz), '#f6e6e6']]) { const [a, b] = pt; g.set(R(a), R(b) - 1, col); g.set(R(a) - 1, R(b), col); g.set(R(a) + 1, R(b), col); g.set(R(a), R(b) + 1, col); g.set(R(a), R(b), '#e07a8a'); g.set(R(a) + 2, R(b) + 2, '#7ab07a'); } }
-  if (WS.rail) for (const z of [42, 44, WALL_H - 10]) { g.seg(P(0, 0, z), P(ROOM, 0, z), C.brass); g.seg(P(0, 0, z), P(0, ROOM, z), C.brassD); }
+  for (let t = 4; t < ROOM; t += 8) { g.seg(P(t, 0, DADO + 3), P(t, 0, WALL_H - 6), C.wallD); g.seg(P(0, t, DADO + 3), P(0, t, WALL_H - 6), shade(C.wallD, -18)); }
+  if (WS.stripe) for (let t = 0; t < ROOM; t += 16) for (let k = 0; k < 6; k++) { g.seg(P(t + k, 0, DADO + 3), P(t + k, 0, WALL_H - 6), C.wallD); g.seg(P(0, t + k, DADO + 3), P(0, t + k, WALL_H - 6), shade(C.wallD, -18)); }
+  dado(0, ROOM, true);   // the dark lower panel + rail
+  if (WS.floral) for (let t = 8; t < ROOM; t += 16) for (let z = DADO + 10; z < WALL_H - 10; z += 18) { const zz = z + ((t / 16) & 1) * 9; for (const [pt, col] of [[P(t, 0, zz), '#ffffff'], [P(0, t, zz), '#f6e6e6']]) { const [a, b] = pt; g.set(R(a), R(b) - 1, col); g.set(R(a) - 1, R(b), col); g.set(R(a) + 1, R(b), col); g.set(R(a), R(b) + 1, col); g.set(R(a), R(b), '#e07a8a'); g.set(R(a) + 2, R(b) + 2, '#7ab07a'); } }
+  if (WS.rail) for (const z of [DADO + 4, DADO + 6, WALL_H - 10]) { g.seg(P(0, 0, z), P(ROOM, 0, z), C.brass); g.seg(P(0, 0, z), P(0, ROOM, z), C.brassD); }
   wR(0, ROOM, 0, 36, C.tile); wL(0, ROOM, 0, 36, shade(C.tile, -12));
   for (let z = 6; z < 36; z += 6) { g.seg(P(0, 0, z), P(ROOM, 0, z), C.tileL); g.seg(P(0, 0, z), P(0, ROOM, z), shade(C.tileL, -12)); }
   for (let t = 6; t < ROOM; t += 6) { g.seg(P(t, 0, 0), P(t, 0, 36), C.tileL); g.seg(P(0, t, 0), P(0, t, 36), shade(C.tileL, -12)); }
@@ -2583,8 +2588,9 @@ function drawBackground(c) {
   if (hasItem('neon')) { wR(186, 232, 146, 172, '#1f1a24'); for (const z of [148, 170]) wR(188, 230, z, z + 1, '#ff5a9a'); for (const x of [188, 229]) wR(x, x + 1, 148, 171, '#ff5a9a'); wR(196, 222, 158, 160, '#7ff0ff'); wR(205, 207, 151, 167, '#7ff0ff'); }
   if (expandLv()) {   // next door opened up: same floor and wallpaper as the shop, a brass rail and two hanging lamps' worth of trim
     tiles(320, 0, 640, 320, 16, C.floorA, C.floorB);
-    wR(320, 640, 0, WALL_H, C.wall); for (let t = 324; t < 640; t += 8) g.seg(P(t, 0, 40), P(t, 0, WALL_H - 6), C.wallD);
-    if (WS.stripe) for (let t = 320; t < 640; t += 16) for (let k = 0; k < 6; k++) g.seg(P(t + k, 0, 40), P(t + k, 0, WALL_H - 6), C.wallD);
+    wR(320, 640, 0, WALL_H, C.wall); for (let t = 324; t < 640; t += 8) g.seg(P(t, 0, DADO + 3), P(t, 0, WALL_H - 6), C.wallD);
+    if (WS.stripe) for (let t = 320; t < 640; t += 16) for (let k = 0; k < 6; k++) g.seg(P(t + k, 0, DADO + 3), P(t + k, 0, WALL_H - 6), C.wallD);
+    dado(320, 640, false);
     wR(320, 640, 0, 36, C.tile); for (let z = 6; z < 36; z += 6) g.seg(P(320, 0, z), P(640, 0, z), C.tileL); for (let t = 326; t < 640; t += 6) g.seg(P(t, 0, 0), P(t, 0, 36), C.tileL);
     wR(320, 640, 36, 40, C.trim); wR(320, 640, 36, 37, C.trimL); wR(320, 640, WALL_H - 6, WALL_H, C.trim);
     for (const xa of [360, 470, 580]) { wR(xa - 1, xa + 41, 69, 111, OUT); wR(xa, xa + 40, 70, 110, '#f4ead6'); wR(xa + 3, xa + 37, 73, 107, ['#e5b23a', '#7fb3a0', '#e5604f'][((xa - 360) / 110) | 0]); }   // framed prints
@@ -4869,7 +4875,8 @@ function decorSwatch(c, tab, S, x, y) {   // a small sample of a wallpaper / boo
   if (tab === 'wall') {
     px(c, x, y, 56, 56, S.wall); if (S.stripe) for (let t = 0; t < 56; t += 8) px(c, x + t, y, 3, 56, S.wallD); else if (!S.floral) for (let t = 2; t < 56; t += 4) px(c, x + t, y, 1, 56, S.wallD);
     if (S.floral) for (let i = 0; i < 9; i++) { const fx = x + 6 + (i % 3) * 18 + (Math.floor(i / 3) % 2) * 9, fy = y + 8 + Math.floor(i / 3) * 18; px(c, fx - 1, fy, 3, 1, '#ffffff'); px(c, fx, fy - 1, 1, 3, '#ffffff'); px(c, fx, fy, 1, 1, '#e07a8a'); }
-    if (S.rail) { px(c, x, y + 40, 56, 2, C.brass); px(c, x, y + 4, 56, 1, C.brass); }
+    if (S.rail) px(c, x, y + 4, 56, 1, C.brass);
+    px(c, x, y + 32, 56, 24, S.low || shade(S.wall, -40)); for (let t = 8; t < 56; t += 8) px(c, x + t, y + 32, 1, 24, shade(S.low || S.wall, -16)); px(c, x, y + 30, 56, 3, S.rail ? C.brass : C.trim);   // the dark lower panel and its rail
     px(c, x, y + 56, 56, 16, '#f7f3e7'); for (let t = 0; t < 56; t += 6) px(c, x + t, y + 56, 1, 16, '#ddd7c8');
   } else {
     const L = S.leather; px(c, x, y, 56, 72, '#e9e3d3');
@@ -5106,21 +5113,34 @@ function drawBookPanel(c) {   // the books: today's numbers in a two-column tabl
     const u = UPGRADES[k], n = upLv(k), L = u.lv[n], early = u.day && W.day < u.day, x = 14 + (i % 2) * 168, yy = y + Math.floor(i / 2) * 46;
     card(c, x, yy, 164, 43, n === 3 ? '#e6f2ea' : '#fffaf0');
     T(c, L ? L[0] : u.lv[2][0], x + 6, yy + 3, INK, 'left', null); T(c, '●'.repeat(n) + '○'.repeat(3 - n), x + 158, yy + 3, '#c99428', 'right', null);
-    T(c, (L ? L[2] : '满级').slice(0, 7), x + 6, yy + 24, SUB, 'left', null);
+    T(c, (L ? L[2] : '满级').slice(0, 8), x + 6, yy + 25, SUB, 'left', null, 12);
     if (L && early) T(c, '第' + u.day + '天', x + 158, yy + 24, SUB, 'right', null);
     else if (L) btn(c, x + 104, yy + 20, 56, 20, money$(L[1]), () => buyUpgrade(k), W.money >= L[1] ? 'gold' : 'off');
   });
   y += Math.ceil(Object.keys(UPGRADES).length / 2) * 46 + 4;
-  const H = W.history.slice(-7);   // last seven days: revenue (gold) and profit (green, red when a loss)
-  T(c, '近 7 日 · 收入 / 净赚', 16, y, SUB, 'left', null); y += 14;
-  card(c, 14, y, 332, 64, '#fffaf0');
-  if (H.length) { const mx = Math.max(1, ...H.map(h => Math.max(h.revenue, Math.abs(h.profit)))), bw = 40;
-    H.forEach((h, i) => { const x = 24 + i * 46, base = y + 46, rh = R(h.revenue / mx * 38), ph = R(Math.abs(h.profit) / mx * 38);
-      px(c, x, base - rh, 16, rh, '#e7c34a'); px(c, x + 18, h.profit >= 0 ? base - ph : base, 14, Math.max(1, ph), h.profit >= 0 ? '#3fbf7a' : '#e0603a');
-      T(c, String(h.day), x + 16, base + 2, SUB, 'center', null); });
-    px(c, 20, y + 46, 320, 1, '#d9c49a'); }
-  else T(c, '收工后会有记录', 180, y + 24, SUB, 'center', null);
-  y += 70;
+  const H = W.history.slice(-7);   // last seven days: revenue (gold) and profit (green, red for a loss), with a scale, values and totals
+  { const ch = Math.max(112, Math.min(150, BAR_Y - 44 - y - 18)), k$ = v => (v < 0 ? '-' : '') + (Math.abs(v) >= 1000 ? (Math.abs(v) / 1000).toFixed(1) + 'k' : '' + Math.abs(R(v)));
+    card(c, 14, y, 332, ch, '#fffaf0'); TS(c, '近 7 日', 22, y + 5, 14, INK);
+    const lg = (x, col, t) => { px(c, x - 1, y + 8, 10, 10, OUT); px(c, x, y + 9, 8, 8, col); T(c, t, x + 11, y + 6, SUB, 'left', null, 12); };
+    lg(206, '#e7c34a', '收入'); lg(250, '#3fbf7a', '净赚'); lg(294, '#e0603a', '亏本');
+    if (!H.length) T(c, '收工后会有记录', 180, y + ch / 2, SUB, 'center', null);
+    else {
+      const sum = H.reduce((a, h) => a + h.revenue, 0), net = H.reduce((a, h) => a + h.profit, 0);
+      T(c, '合计 ' + money$(sum) + ' · 日均 ' + money$(R(sum / H.length)) + ' · 净赚 ' + money$(net), 22, y + 24, net >= 0 ? '#2f6e56' : '#b8342c', 'left', null, 12);
+      const top = y + 50, bot = y + ch - 22, mx = Math.max(10, ...H.map(h => h.revenue), ...H.map(h => h.profit)), mn = Math.max(0, ...H.map(h => -h.profit)), span = mx + mn, zero = R(top + (bot - top) * mx / span), sc = v => v / span * (bot - top);
+      for (const f of [1, .5]) { const gy = R(zero - sc(mx * f)); for (let x = 50; x < 338; x += 4) px(c, x, gy, 2, 1, '#e3d6bc'); T(c, k$(mx * f), 46, gy - 6, '#b0a08c', 'right', null, 12); }
+      px(c, 48, zero, 290, 1, '#b8a48a'); T(c, '0', 46, zero - 6, '#b0a08c', 'right', null, 12);
+      const cw = 288 / 7;
+      H.forEach((h, i) => { const cx = R(50 + cw * (i + .5) + cw * (7 - H.length)), last = i === H.length - 1;
+        const rh = Math.max(1, R(sc(h.revenue))), bx = cx - 12;   // revenue bar: outlined, lit top, shaded side
+        px(c, bx - 1, zero - rh - 1, 16, rh + 1, OUT); px(c, bx, zero - rh, 14, rh, '#e7c34a'); px(c, bx, zero - rh, 14, 2, '#f8e08a'); px(c, bx + 11, zero - rh + 2, 3, rh - 2, '#c99a2a');
+        const ph = Math.max(1, R(sc(Math.abs(h.profit)))), py = h.profit >= 0 ? zero - ph : zero + 1, pc = h.profit >= 0 ? '#3fbf7a' : '#e0603a';   // profit (or loss below the line)
+        px(c, cx + 3, py - 1, 11, ph + 2, OUT); px(c, cx + 4, py, 9, ph, pc); px(c, cx + 4, py, 9, 1, shade(pc, 30));
+        T(c, k$(h.revenue), cx, zero - rh - 15, last ? '#b8483c' : '#8a6a4a', 'center', null, 12);
+        if (last) { px(c, cx - 16, bot + 4, 32, 15, C.gold); }
+        T(c, '第' + h.day + '天', cx, bot + 5, last ? INK : SUB, 'center', null, 12); });
+    }
+    y += ch + 6; }
   const locked = SHELF_IDS.filter(id => W.shelves[id].locked && !W.shelves[id].extra).length;
   T(c, locked ? '开货架 ' + money$(SHELF_COST) + '：点盖布的货架（还有 ' + locked + ' 张）' : '货架全开了', 16, y, SUB, 'left', null);
   btn(c, 14, BAR_Y - 34, 116, 28, '餐单 ' + PIDS.filter(p => !PRODUCTS[p].lab && unlocked(p)).length + '/' + PIDS.filter(p => !PRODUCTS[p].lab).length, () => { PANEL = { kind: 'menu', bar: 4 }; SFX.tap(); }, 'cream');   // the full menu

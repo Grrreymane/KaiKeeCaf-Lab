@@ -146,7 +146,8 @@ function decorSwatch(c, tab, S, x, y) {   // a small sample of a wallpaper / boo
   if (tab === 'wall') {
     px(c, x, y, 56, 56, S.wall); if (S.stripe) for (let t = 0; t < 56; t += 8) px(c, x + t, y, 3, 56, S.wallD); else if (!S.floral) for (let t = 2; t < 56; t += 4) px(c, x + t, y, 1, 56, S.wallD);
     if (S.floral) for (let i = 0; i < 9; i++) { const fx = x + 6 + (i % 3) * 18 + (Math.floor(i / 3) % 2) * 9, fy = y + 8 + Math.floor(i / 3) * 18; px(c, fx - 1, fy, 3, 1, '#ffffff'); px(c, fx, fy - 1, 1, 3, '#ffffff'); px(c, fx, fy, 1, 1, '#e07a8a'); }
-    if (S.rail) { px(c, x, y + 40, 56, 2, C.brass); px(c, x, y + 4, 56, 1, C.brass); }
+    if (S.rail) px(c, x, y + 4, 56, 1, C.brass);
+    px(c, x, y + 32, 56, 24, S.low || shade(S.wall, -40)); for (let t = 8; t < 56; t += 8) px(c, x + t, y + 32, 1, 24, shade(S.low || S.wall, -16)); px(c, x, y + 30, 56, 3, S.rail ? C.brass : C.trim);   // the dark lower panel and its rail
     px(c, x, y + 56, 56, 16, '#f7f3e7'); for (let t = 0; t < 56; t += 6) px(c, x + t, y + 56, 1, 16, '#ddd7c8');
   } else {
     const L = S.leather; px(c, x, y, 56, 72, '#e9e3d3');
@@ -383,21 +384,34 @@ function drawBookPanel(c) {   // the books: today's numbers in a two-column tabl
     const u = UPGRADES[k], n = upLv(k), L = u.lv[n], early = u.day && W.day < u.day, x = 14 + (i % 2) * 168, yy = y + Math.floor(i / 2) * 46;
     card(c, x, yy, 164, 43, n === 3 ? '#e6f2ea' : '#fffaf0');
     T(c, L ? L[0] : u.lv[2][0], x + 6, yy + 3, INK, 'left', null); T(c, '●'.repeat(n) + '○'.repeat(3 - n), x + 158, yy + 3, '#c99428', 'right', null);
-    T(c, (L ? L[2] : '满级').slice(0, 7), x + 6, yy + 24, SUB, 'left', null);
+    T(c, (L ? L[2] : '满级').slice(0, 8), x + 6, yy + 25, SUB, 'left', null, 12);
     if (L && early) T(c, '第' + u.day + '天', x + 158, yy + 24, SUB, 'right', null);
     else if (L) btn(c, x + 104, yy + 20, 56, 20, money$(L[1]), () => buyUpgrade(k), W.money >= L[1] ? 'gold' : 'off');
   });
   y += Math.ceil(Object.keys(UPGRADES).length / 2) * 46 + 4;
-  const H = W.history.slice(-7);   // last seven days: revenue (gold) and profit (green, red when a loss)
-  T(c, '近 7 日 · 收入 / 净赚', 16, y, SUB, 'left', null); y += 14;
-  card(c, 14, y, 332, 64, '#fffaf0');
-  if (H.length) { const mx = Math.max(1, ...H.map(h => Math.max(h.revenue, Math.abs(h.profit)))), bw = 40;
-    H.forEach((h, i) => { const x = 24 + i * 46, base = y + 46, rh = R(h.revenue / mx * 38), ph = R(Math.abs(h.profit) / mx * 38);
-      px(c, x, base - rh, 16, rh, '#e7c34a'); px(c, x + 18, h.profit >= 0 ? base - ph : base, 14, Math.max(1, ph), h.profit >= 0 ? '#3fbf7a' : '#e0603a');
-      T(c, String(h.day), x + 16, base + 2, SUB, 'center', null); });
-    px(c, 20, y + 46, 320, 1, '#d9c49a'); }
-  else T(c, '收工后会有记录', 180, y + 24, SUB, 'center', null);
-  y += 70;
+  const H = W.history.slice(-7);   // last seven days: revenue (gold) and profit (green, red for a loss), with a scale, values and totals
+  { const ch = Math.max(112, Math.min(150, BAR_Y - 44 - y - 18)), k$ = v => (v < 0 ? '-' : '') + (Math.abs(v) >= 1000 ? (Math.abs(v) / 1000).toFixed(1) + 'k' : '' + Math.abs(R(v)));
+    card(c, 14, y, 332, ch, '#fffaf0'); TS(c, '近 7 日', 22, y + 5, 14, INK);
+    const lg = (x, col, t) => { px(c, x - 1, y + 8, 10, 10, OUT); px(c, x, y + 9, 8, 8, col); T(c, t, x + 11, y + 6, SUB, 'left', null, 12); };
+    lg(206, '#e7c34a', '收入'); lg(250, '#3fbf7a', '净赚'); lg(294, '#e0603a', '亏本');
+    if (!H.length) T(c, '收工后会有记录', 180, y + ch / 2, SUB, 'center', null);
+    else {
+      const sum = H.reduce((a, h) => a + h.revenue, 0), net = H.reduce((a, h) => a + h.profit, 0);
+      T(c, '合计 ' + money$(sum) + ' · 日均 ' + money$(R(sum / H.length)) + ' · 净赚 ' + money$(net), 22, y + 24, net >= 0 ? '#2f6e56' : '#b8342c', 'left', null, 12);
+      const top = y + 50, bot = y + ch - 22, mx = Math.max(10, ...H.map(h => h.revenue), ...H.map(h => h.profit)), mn = Math.max(0, ...H.map(h => -h.profit)), span = mx + mn, zero = R(top + (bot - top) * mx / span), sc = v => v / span * (bot - top);
+      for (const f of [1, .5]) { const gy = R(zero - sc(mx * f)); for (let x = 50; x < 338; x += 4) px(c, x, gy, 2, 1, '#e3d6bc'); T(c, k$(mx * f), 46, gy - 6, '#b0a08c', 'right', null, 12); }
+      px(c, 48, zero, 290, 1, '#b8a48a'); T(c, '0', 46, zero - 6, '#b0a08c', 'right', null, 12);
+      const cw = 288 / 7;
+      H.forEach((h, i) => { const cx = R(50 + cw * (i + .5) + cw * (7 - H.length)), last = i === H.length - 1;
+        const rh = Math.max(1, R(sc(h.revenue))), bx = cx - 12;   // revenue bar: outlined, lit top, shaded side
+        px(c, bx - 1, zero - rh - 1, 16, rh + 1, OUT); px(c, bx, zero - rh, 14, rh, '#e7c34a'); px(c, bx, zero - rh, 14, 2, '#f8e08a'); px(c, bx + 11, zero - rh + 2, 3, rh - 2, '#c99a2a');
+        const ph = Math.max(1, R(sc(Math.abs(h.profit)))), py = h.profit >= 0 ? zero - ph : zero + 1, pc = h.profit >= 0 ? '#3fbf7a' : '#e0603a';   // profit (or loss below the line)
+        px(c, cx + 3, py - 1, 11, ph + 2, OUT); px(c, cx + 4, py, 9, ph, pc); px(c, cx + 4, py, 9, 1, shade(pc, 30));
+        T(c, k$(h.revenue), cx, zero - rh - 15, last ? '#b8483c' : '#8a6a4a', 'center', null, 12);
+        if (last) { px(c, cx - 16, bot + 4, 32, 15, C.gold); }
+        T(c, '第' + h.day + '天', cx, bot + 5, last ? INK : SUB, 'center', null, 12); });
+    }
+    y += ch + 6; }
   const locked = SHELF_IDS.filter(id => W.shelves[id].locked && !W.shelves[id].extra).length;
   T(c, locked ? '开货架 ' + money$(SHELF_COST) + '：点盖布的货架（还有 ' + locked + ' 张）' : '货架全开了', 16, y, SUB, 'left', null);
   btn(c, 14, BAR_Y - 34, 116, 28, '餐单 ' + PIDS.filter(p => !PRODUCTS[p].lab && unlocked(p)).length + '/' + PIDS.filter(p => !PRODUCTS[p].lab).length, () => { PANEL = { kind: 'menu', bar: 4 }; SFX.tap(); }, 'cream');   // the full menu

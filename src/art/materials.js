@@ -77,9 +77,10 @@ function matPass(g, ox, oy) {   // texture every pixel whose colour is a known m
 function bgMatPass(g) {   // the room: terrazzo floor, glazed wall tiles, and the walls themselves — paper (fibres, faint seams) or wood boards
   const d = g.d, w = g.w, F = new Set([C.floorA, C.floorB]), TL = new Set([C.tile, shade(C.tile, -12)]);
   const WS = WALLS[(W && W.decor && W.decor.wall) || 'mint'] || WALLS.mint, WL = new Map([[C.wall, 0], [C.wallD, 0], [shade(C.wall, -18), 1], [shade(C.wallD, -18), 1]]);
-  matInit(); const VB = { kind: 'wood', sp: 'vert' }, VBs = { kind: 'wood', sp: 'vert', side: true };
+  matInit(); const VB = { kind: 'wood', sp: 'vert' }, VBs = { kind: 'wood', sp: 'vert', side: true }, LO = WS.low || shade(WS.wall, -40), LOW = new Map([[LO, 0], [shade(LO, -18), 1]]);
   for (let i = 0; i < d.length; i++) {
     const c = d[i]; if (!c) continue; const X = i % w, Y = (i / w) | 0;
+    if (LOW.has(c)) { if (WS.lowWood) { const t = matTex(LOW.get(c) ? VBs : VB, c, X, Y); d[i] = typeof t === 'string' ? t : shadeC(c, t); } else { const r = mhash(X, Y); d[i] = r < .05 ? shadeC(c, -6) : r > .96 ? shadeC(c, 6) : c; } continue; }   // the dado panel
     if (WL.has(c)) {   // wall
       if (WS.wood) { const t = matTex(WL.get(c) ? VBs : VB, c, X, Y); d[i] = typeof t === 'string' ? t : shadeC(c, t); continue; }
       const r = mhash(X, Y), seam = ((X % 64) + 64) % 64 === 0;

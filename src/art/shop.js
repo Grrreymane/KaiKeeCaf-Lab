@@ -1,5 +1,5 @@
 // ==== art: shop (isometric 2:1, world canvas x2; from 草图/店铺等距.html)
-const ROOM = 320, WALL_H = 200, OX = 180, OY = 140, PLAT = 14;   // PLAT：柜台后面平台的高度
+const ROOM = 320, DADO = 96, WALL_H = 200, OX = 180, OY = 140, PLAT = 14;   // PLAT：柜台后面平台的高度
 const K = 2, FOOT2 = FOOT * 2, LM = 240, WW = 1120 + LM, CAM_MAX = WW - 720;   // LM: world margin on the left so the view can pan left too   // world canvas is 2x; WW wider than the screen so the player can pan right (bake room, next door)
 // mint palette, whites pushed warm, floor warm terracotta (settled 2026-10-14)
 Object.assign(C, { marble: '#efe2c8', marbleS: '#d5c09c', marbleD: '#b9a17c', vein: '#e3d0ae', tile: '#eadcc0', tileL: '#d2c09e', floorA: '#e7bd96', floorB: '#dcac86', dot: '#4f9a7c',
@@ -221,11 +221,15 @@ function drawBackground(c) {
   let XF = null;   // while a wall piece is drawn: its art moved into the slot the player chose
   const wL = (ya, yb, z0, z1, col) => { if (XF) { [ya, z0] = XF(ya, z0); [yb, z1] = XF(yb, z1); } g.quad(P(0, ya, z0), P(0, yb, z0), P(0, yb, z1), P(0, ya, z1), col); };
   const WS = WALLS[(W && W.decor && W.decor.wall) || 'mint'] || WALLS.mint; C.wall = WS.wall; C.wallD = WS.wallD;   // wallpaper from the decor shop
+  const LOW = WS.low || shade(WS.wall, -40), dado = (ya, yb, left) => {   // two-tone wall: a dark panel from the tiles up to the rail, boards every 16, then a trim rail
+    wR(ya, yb, 40, DADO, LOW); for (let t = ya + 16; t < yb; t += 16) g.seg(P(t, 0, 40), P(t, 0, DADO), shade(LOW, -16)); wR(ya, yb, DADO, DADO + 3, C.trim); wR(ya, yb, DADO + 2, DADO + 3, C.trimL);
+    if (left) { wL(ya, yb, 40, DADO, shade(LOW, -18)); for (let t = ya + 16; t < yb; t += 16) g.seg(P(0, t, 40), P(0, t, DADO), shade(LOW, -32)); wL(ya, yb, DADO, DADO + 3, shade(C.trim, -10)); } };
   wR(0, ROOM, 0, WALL_H, C.wall); wL(0, ROOM, 0, WALL_H, shade(C.wall, -18));
-  for (let t = 4; t < ROOM; t += 8) { g.seg(P(t, 0, 40), P(t, 0, WALL_H - 6), C.wallD); g.seg(P(0, t, 40), P(0, t, WALL_H - 6), shade(C.wallD, -18)); }
-  if (WS.stripe) for (let t = 0; t < ROOM; t += 16) for (let k = 0; k < 6; k++) { g.seg(P(t + k, 0, 40), P(t + k, 0, WALL_H - 6), C.wallD); g.seg(P(0, t + k, 40), P(0, t + k, WALL_H - 6), shade(C.wallD, -18)); }
-  if (WS.floral) for (let t = 8; t < ROOM; t += 16) for (let z = 52; z < WALL_H - 10; z += 18) { const zz = z + ((t / 16) & 1) * 9; for (const [pt, col] of [[P(t, 0, zz), '#ffffff'], [P(0, t, zz), '#f6e6e6']]) { const [a, b] = pt; g.set(R(a), R(b) - 1, col); g.set(R(a) - 1, R(b), col); g.set(R(a) + 1, R(b), col); g.set(R(a), R(b) + 1, col); g.set(R(a), R(b), '#e07a8a'); g.set(R(a) + 2, R(b) + 2, '#7ab07a'); } }
-  if (WS.rail) for (const z of [42, 44, WALL_H - 10]) { g.seg(P(0, 0, z), P(ROOM, 0, z), C.brass); g.seg(P(0, 0, z), P(0, ROOM, z), C.brassD); }
+  for (let t = 4; t < ROOM; t += 8) { g.seg(P(t, 0, DADO + 3), P(t, 0, WALL_H - 6), C.wallD); g.seg(P(0, t, DADO + 3), P(0, t, WALL_H - 6), shade(C.wallD, -18)); }
+  if (WS.stripe) for (let t = 0; t < ROOM; t += 16) for (let k = 0; k < 6; k++) { g.seg(P(t + k, 0, DADO + 3), P(t + k, 0, WALL_H - 6), C.wallD); g.seg(P(0, t + k, DADO + 3), P(0, t + k, WALL_H - 6), shade(C.wallD, -18)); }
+  dado(0, ROOM, true);   // the dark lower panel + rail
+  if (WS.floral) for (let t = 8; t < ROOM; t += 16) for (let z = DADO + 10; z < WALL_H - 10; z += 18) { const zz = z + ((t / 16) & 1) * 9; for (const [pt, col] of [[P(t, 0, zz), '#ffffff'], [P(0, t, zz), '#f6e6e6']]) { const [a, b] = pt; g.set(R(a), R(b) - 1, col); g.set(R(a) - 1, R(b), col); g.set(R(a) + 1, R(b), col); g.set(R(a), R(b) + 1, col); g.set(R(a), R(b), '#e07a8a'); g.set(R(a) + 2, R(b) + 2, '#7ab07a'); } }
+  if (WS.rail) for (const z of [DADO + 4, DADO + 6, WALL_H - 10]) { g.seg(P(0, 0, z), P(ROOM, 0, z), C.brass); g.seg(P(0, 0, z), P(0, ROOM, z), C.brassD); }
   wR(0, ROOM, 0, 36, C.tile); wL(0, ROOM, 0, 36, shade(C.tile, -12));
   for (let z = 6; z < 36; z += 6) { g.seg(P(0, 0, z), P(ROOM, 0, z), C.tileL); g.seg(P(0, 0, z), P(0, ROOM, z), shade(C.tileL, -12)); }
   for (let t = 6; t < ROOM; t += 6) { g.seg(P(t, 0, 0), P(t, 0, 36), C.tileL); g.seg(P(0, t, 0), P(0, t, 36), shade(C.tileL, -12)); }
@@ -303,8 +307,9 @@ function drawBackground(c) {
   if (hasItem('neon')) { wR(186, 232, 146, 172, '#1f1a24'); for (const z of [148, 170]) wR(188, 230, z, z + 1, '#ff5a9a'); for (const x of [188, 229]) wR(x, x + 1, 148, 171, '#ff5a9a'); wR(196, 222, 158, 160, '#7ff0ff'); wR(205, 207, 151, 167, '#7ff0ff'); }
   if (expandLv()) {   // next door opened up: same floor and wallpaper as the shop, a brass rail and two hanging lamps' worth of trim
     tiles(320, 0, 640, 320, 16, C.floorA, C.floorB);
-    wR(320, 640, 0, WALL_H, C.wall); for (let t = 324; t < 640; t += 8) g.seg(P(t, 0, 40), P(t, 0, WALL_H - 6), C.wallD);
-    if (WS.stripe) for (let t = 320; t < 640; t += 16) for (let k = 0; k < 6; k++) g.seg(P(t + k, 0, 40), P(t + k, 0, WALL_H - 6), C.wallD);
+    wR(320, 640, 0, WALL_H, C.wall); for (let t = 324; t < 640; t += 8) g.seg(P(t, 0, DADO + 3), P(t, 0, WALL_H - 6), C.wallD);
+    if (WS.stripe) for (let t = 320; t < 640; t += 16) for (let k = 0; k < 6; k++) g.seg(P(t + k, 0, DADO + 3), P(t + k, 0, WALL_H - 6), C.wallD);
+    dado(320, 640, false);
     wR(320, 640, 0, 36, C.tile); for (let z = 6; z < 36; z += 6) g.seg(P(320, 0, z), P(640, 0, z), C.tileL); for (let t = 326; t < 640; t += 6) g.seg(P(t, 0, 0), P(t, 0, 36), C.tileL);
     wR(320, 640, 36, 40, C.trim); wR(320, 640, 36, 37, C.trimL); wR(320, 640, WALL_H - 6, WALL_H, C.trim);
     for (const xa of [360, 470, 580]) { wR(xa - 1, xa + 41, 69, 111, OUT); wR(xa, xa + 40, 70, 110, '#f4ead6'); wR(xa + 3, xa + 37, 73, 107, ['#e5b23a', '#7fb3a0', '#e5604f'][((xa - 360) / 110) | 0]); }   // framed prints
