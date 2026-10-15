@@ -63,7 +63,7 @@ function drawInfoStrip(c) {   // one line under the sign: weather, today so far,
   const D = W.today; if (!D) return; const st = D.stars.length ? D.stars.reduce((a, b) => a + b, 0) / D.stars.length : 0;
   c.save(); c.globalAlpha = .78; px(c, 0, 35, 290, 15, '#2a1d20'); c.restore();
   const parts = [[wxOf().name, '#bfe0ff'], ['客 ' + D.served, '#fff4dc'], [money$(D.revenue), C.gold], ['★' + (st ? st.toFixed(1) : '-'), '#ffd75e'], ['舒适 ' + comfort(), '#9fe0b8'], ['清洁 ' + Math.round(100 - dirtOf()) + '%', dirtOf() > 50 ? '#ff9a8a' : '#c8f0d8'], ['名气 ' + W.rep.toFixed(1), '#f6c0a0']];
-  c.font = fp(12); const wOf = L_ => L_.reduce((a, [t]) => a + c.measureText(t).width, 0); while (parts.length > 4 && wOf(parts) + 4 * (parts.length - 1) > 282) parts.pop();   // it must stay left of the 研发 button: tighten the gaps, then drop the last items
+  c.font = fp(FS); const wOf = L_ => L_.reduce((a, [t]) => a + c.measureText(t).width, 0); while (parts.length > 4 && wOf(parts) + 4 * (parts.length - 1) > 282) parts.pop();   // it must stay left of the 研发 button: tighten the gaps, then drop the last items
   const gap = Math.min(10, (282 - wOf(parts)) / (parts.length - 1)); let x = 6; for (const [t, col] of parts) { T(c, t, R(x), 36, col, 'left', null); x += c.measureText(t).width + gap; }
 }
 function drawHUD(c) {
@@ -83,10 +83,10 @@ function drawHUD(c) {
     for (let k = 1; k <= 3; k++) px(c, R(cx + Math.cos(ha) * k), R(cy + Math.sin(ha) * k), 1, 1, '#3a2a2e'); for (let k = 1; k <= 4; k++) px(c, R(cx + Math.cos(ma) * k), R(cy + Math.sin(ma) * k), 1, 1, '#b8342c'); px(c, cx, cy, 1, 1, '#3a2a2e'); }
   T(c, clockText(), 108, 11);
   // tear-off calendar hanging from the board
-  px(c, 159, 1, 42, 32, OUT); px(c, 160, 2, 40, 30, '#fbf3e0'); px(c, 160, 2, 40, 11, '#b8483c'); px(c, 160, 31, 40, 1, '#e3d6bc');   // tear-off calendar, sitting inside the sign board
+  px(c, 155, 1, 48, 32, OUT); px(c, 156, 2, 46, 30, '#fbf3e0'); px(c, 156, 2, 46, 12, '#b8483c'); px(c, 156, 31, 46, 1, '#e3d6bc');   // tear-off calendar, sitting inside the sign board
   const day = W ? (PHASE === 'ledger' && LEDGER ? LEDGER.day : W.day) : 1;
-  T(c, monthOf(day) + '月', 180, 2, '#fff4dc', 'center', null); T(c, seasonOf(day).name, 150, 11, C.cream, 'center');
-  TS(c, String(dayInMonth(day)), 180, 14, 16, '#3a2a2e', 'center');
+  T(c, monthOf(day) + '月 ' + seasonOf(day).name, 179, 1, '#fff4dc', 'center', null, 12);
+  TS(c, String(dayInMonth(day)), 179, 14, 16, '#3a2a2e', 'center');
   // pause / sound
   for (const x of [300, 326]) { px(c, x - 1, 7, 22, 20, OUT); px(c, x, 8, 20, 18, '#f3e2bf'); px(c, x, 24, 20, 2, '#d9c49a'); }
   px(c, 306, 12, 3, 10, '#5a3a28'); px(c, 311, 12, 3, 10, '#5a3a28');
@@ -96,7 +96,7 @@ function drawHUD(c) {
     button(262, 4, 34, 28, () => { if (!W) return; W.speed = (W.speed || 1) % 3 + 1; SFX.tap(); }); }
   button(296, 4, 28, 28, () => openPanel({ kind: 'pause' })); button(324, 4, 28, 28, () => { setMuted(!MUTED); SFX.tap(); });
   if (PHASE === 'title' || !W) return;
-  if (NOTICE) { c.font = fp(12); const w = Math.max(160, R(c.measureText(NOTICE.text).width) + 24); px(c, R(180 - w / 2) - 1, 51, w + 2, 22, C.gold); px(c, R(180 - w / 2), 52, w, 20, '#fffaf0'); T(c, NOTICE.text, 180, 56, '#3a2a2e', 'center', null); }
+  if (NOTICE) { c.font = fp(FS); const w = Math.max(160, R(c.measureText(NOTICE.text).width) + 24); px(c, R(180 - w / 2) - 1, 51, w + 2, 22, C.gold); px(c, R(180 - w / 2), 52, w, 20, '#fffaf0'); T(c, NOTICE.text, 180, 56, '#3a2a2e', 'center', null); }
   // receipt: the one hint
   HINT = computeHint(); const H = HINT;
   px(c, 12, 552, 338, 26, 'rgba(40,24,20,.25)');

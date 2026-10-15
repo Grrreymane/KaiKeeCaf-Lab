@@ -199,7 +199,7 @@ function drawWorldText(c) {
   drawBubbles(c);
 }
 function drawBubbles(c) {
-  c.font = fp(12);
+  c.font = fp(FS);
   for (const b of BUBBLES) {
     const [a, y0] = whereIs(b.who), w = R(c.measureText(b.text).width) + 12, h = 18, x = clamp(R(a - w / 2), 2 + camX / K, 358 + camX / K - w), y = R(y0 - FOOT - h - 6);
     c.save(); c.globalAlpha = Math.min(1, b.t * 5, (2.8 - b.t) * 3);

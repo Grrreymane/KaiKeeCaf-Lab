@@ -3,7 +3,7 @@
 const OUT = '#3a2a2e', R = Math.round;
 // fonts: body = Fusion Pixel (12px grid), titles / signs = Noto Serif SC heavy (font plan F)
 const PFONT = '"Fusion Pixel","PingFang SC","Microsoft YaHei",sans-serif', SFONT = '"Noto Serif SC","Songti SC",serif';
-const fp = n => n + 'px ' + PFONT, sr = n => '900 ' + n + 'px ' + SFONT;
+const fp = n => n + 'px ' + PFONT, sr = n => '900 ' + n + 'px ' + SFONT, FS = 14;   // FS: UI body text size (was 12; one size up for phones)
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 function mk(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
 function shade(hex, a) { const n = parseInt(hex.slice(1), 16), c = v => clamp(v + a, 0, 255); return '#' + ((1 << 24) | (c(n >> 16) << 16) | (c((n >> 8) & 255) << 8) | c(n & 255)).toString(16).slice(1); }
@@ -44,8 +44,8 @@ function spr(rs, pal) { const G = new Grid(rs[0].length + 2, rs.length + 2); rs.
 function flipC(c) { const o = mk(c.width, c.height), x = o.getContext('2d'); x.translate(c.width, 0); x.scale(-1, 1); x.drawImage(c, 0, 0); return o; }
 const px = (c, x, y, w, h, col) => { c.fillStyle = col; c.fillRect(x, y, w, h); };
 const putB = (c, img, p, dy = 0) => c.drawImage(img, R(p[0] - img.width / 2), R(p[1] - img.height + 1 + dy));
-function T(d, s, x, y, col = '#fff4dc', align = 'left', stroke = '#2a1e22') {
-  d.font = fp(12); d.textAlign = align; d.textBaseline = 'top';
+function T(d, s, x, y, col = '#fff4dc', align = 'left', stroke = '#2a1e22', size = FS) {   // size: 12 for the odd small label
+  d.font = fp(size); d.textAlign = align; d.textBaseline = 'top';
   if (stroke) { d.fillStyle = stroke; for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [1, 1], [-1, 1], [1, -1]]) d.fillText(s, x + dx, y + dy); }
   d.fillStyle = col; d.fillText(s, x, y);
 }

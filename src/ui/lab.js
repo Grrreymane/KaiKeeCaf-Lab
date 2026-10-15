@@ -111,7 +111,7 @@ function drawLabPanel(c, P_) {
   P_.r = P_.r || { base: 'tart', flavor: 'tea', fill: 'cream', decor: 'none' };
   const r = P_.r; let y = sheet(c, '港式 Lab · 年轻人至爱', '每日试做一款', 104) - 2;
   const row = (label, set, key) => {   // each line of choices is stretched to the full width (no ragged gaps), a thin rule between groups
-    const ks = Object.keys(set), lines = Math.ceil(ks.length / 5), per = Math.ceil(ks.length / lines);
+    const ks = Object.keys(set), lines = Math.ceil(ks.length / 4), per = Math.ceil(ks.length / lines);
     T(c, label, 14, y + 6, SUB, 'left', null);
     for (let L = 0; L < lines; L++) { const part = ks.slice(L * per, L * per + per), w = (292 - 3 * (part.length - 1)) / part.length;
       part.forEach((k, i) => { const x = R(54 + i * (w + 3)), on = r[key] === k, bad = key === 'fill' && set[k].bad && set[k].bad.includes(r.base), has = labHas(key, k);

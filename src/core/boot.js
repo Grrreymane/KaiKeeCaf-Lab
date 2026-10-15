@@ -19,7 +19,7 @@ function step(dt) {
   if (simPaused()) { stepWalkers(dt); for (const p of POPS) p.t += dt; return; }
   stepDay(dt); simStep(dt);
 }
-const FONTS_READY = Promise.all([document.fonts.load(fp(12)), document.fonts.load(sr(26), '街记冰室')]).catch(() => {});
+const FONTS_READY = Promise.all([document.fonts.load(fp(FS)), document.fonts.load(sr(26), '街记冰室')]).catch(() => {});
 FONTS_READY.then(() => {
   fit(); window.addEventListener('resize', fit);
   W = newState();   // a placeholder shop behind the title screen

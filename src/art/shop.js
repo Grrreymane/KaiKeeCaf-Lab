@@ -601,6 +601,23 @@ function decorObj(id, x, y) {
       g.tri(a - 3, b - 74, a + 3, b - 74, a, b - 80, '#ffd23f'); g.tri(a - 3, b - 77, a + 3, b - 77, a, b - 71, '#ffd23f'); }
   } }]);
 }
+const ITEM_THUMB = {};
+function itemThumb(id) {   // a small picture of a decor piece for the 摆设 cards
+  if (ITEM_THUMB[id]) return ITEM_THUMB[id]; const it = DECOR_ITEMS[id];
+  if (it.cat !== 'wall') {   // the piece's own art, trimmed to its pixels
+    const src = decorObj(id, 60, 60).cv, w = src.width, h = src.height, d = src.getContext('2d').getImageData(0, 0, w, h).data; let x0 = w, y0 = h, x1 = 0, y1 = 0;
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (d[(y * w + x) * 4 + 3] > 20) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    const cv = mk(Math.max(1, x1 - x0 + 1), Math.max(1, y1 - y0 + 1)); cv.getContext('2d').drawImage(src, -x0, -y0); return (ITEM_THUMB[id] = cv); }
+  const cv = mk(40, 48), c = cv.getContext('2d'), r = (x, y, w, h, col) => { c.fillStyle = col; c.fillRect(x, y, w, h); };
+  if (id === 'banner') { r(6, 2, 28, 3, '#6b4a35'); r(8, 5, 24, 38, '#b8342c'); r(10, 5, 20, 34, '#d8402e'); for (let y = 10; y < 36; y += 7) r(16, y, 8, 4, '#ffd23f'); }
+  else if (id === 'card') { r(8, 10, 24, 30, '#8a7a6a'); r(9, 11, 22, 28, '#f4ead6'); r(9, 11, 22, 6, '#e88aa0'); for (const y of [22, 27, 32]) r(12, y, 16, 1, '#8a7a6a'); }
+  else if (id === 'clock') { c.fillStyle = '#6b4a35'; c.beginPath(); c.arc(20, 24, 16, 0, 7); c.fill(); c.fillStyle = '#fbf6ea'; c.beginPath(); c.arc(20, 24, 13, 0, 7); c.fill(); r(19, 13, 2, 12, '#2a2024'); r(20, 23, 8, 2, '#2a2024'); }
+  else if (id === 'calendar') { r(8, 4, 24, 40, '#6b4a35'); r(10, 6, 20, 36, '#f4ead6'); r(10, 6, 20, 7, '#c8342c'); r(13, 16, 14, 14, '#e88aa0'); r(15, 32, 10, 6, '#2a2024'); }
+  else if (id === 'photo') { r(4, 8, 32, 28, '#5a3c2a'); r(6, 10, 28, 24, '#d8c4a0'); for (const x of [10, 18, 26]) { r(x, 18, 4, 10, '#8a6a4a'); r(x, 15, 4, 4, '#6a4a30'); } }
+  else if (id === 'neon') { r(2, 12, 36, 22, '#1f1a24'); r(4, 14, 32, 1, '#ff5a9a'); r(4, 31, 32, 1, '#ff5a9a'); r(4, 14, 1, 18, '#ff5a9a'); r(35, 14, 1, 18, '#ff5a9a'); r(10, 22, 20, 2, '#7ff0ff'); r(19, 17, 2, 12, '#7ff0ff'); }
+  else { r(8, 8, 24, 32, '#6b4a35'); r(10, 10, 20, 28, '#f4ead6'); }
+  return (ITEM_THUMB[id] = cv);
+}
 let KEEP_OBJ = null, KEEP_KEY = '';
 function applyKeepsakes() {   // the regulars' small keepsakes stand in a row on top of the front glass case
   const L = keepList('c'), key = L.join(); if (key === KEEP_KEY) return; KEEP_KEY = key;

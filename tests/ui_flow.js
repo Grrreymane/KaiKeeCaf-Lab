@@ -24,8 +24,8 @@ ok(PHASE === 'ledger' && LEDGER && LEDGER.day === 1, 'day 1 ends with the books'
 console.log('     day1: served ' + LEDGER.served + ' revenue ' + LEDGER.revenue + ' profit ' + LEDGER.profit + ' money ' + W.money);
 render(CTX); const next = BTNS.filter(b => b.w === 200).pop(); tap(next.x + 5, next.y + 5); ok(PHASE === 'prep' && W.day === 2, 'next day button -> day 2 prep');
 // day 2: Wen can be hired from the staff sheet and put on the water bar
-clickBar(3); render(CTX); const hire = BTNS.find(b => b.w === 108); ok(hire, 'staff sheet offers to hire Wen'); tap(hire.x + 5, hire.y + 5); ok(W.staff.wen.hired && W.staff.wen.post === 'bar', 'Wen hired, on the water bar'); ok(STORY_Q.some(q => q.key === 'hire_wen'), 'hiring scene queued (plays once the sheet closes)'); STORY_Q.length = 0; render(CTX);
-render(CTX); const plan = BTNS.find(b => b.w === 86); tap(plan.x + 5, plan.y + 5); ok(PANEL.kind === 'plan', 'bake plan sheet opens');
+clickBar(3); render(CTX); const hire = BTNS.find(b => b.w === 104); ok(hire, 'staff sheet offers to hire Wen'); tap(hire.x + 5, hire.y + 5); ok(W.staff.wen.hired && W.staff.wen.post === 'bar', 'Wen hired, on the water bar'); ok(STORY_Q.some(q => q.key === 'hire_wen'), 'hiring scene queued (plays once the sheet closes)'); STORY_Q.length = 0; render(CTX);
+render(CTX); const plan = BTNS.find(b => b.w === 90 && b.x === 250); tap(plan.x + 5, plan.y + 5); ok(PANEL.kind === 'plan', 'bake plan sheet opens');
 render(CTX); const pri = BTNS.find(b => b.w === 47 && b.x === 192); tap(pri.x + 5, pri.y + 5); ok(W.plan.tart === 'pri', 'tart set as the lead item');
 W.speed = 1; render(CTX); const sp = BTNS.find(b => b.x === 262); tap(sp.x + 5, sp.y + 5); ok(W.speed === 2, 'speed button: x2');
 PANEL = null;

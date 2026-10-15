@@ -83,7 +83,7 @@ function drawStockPanel(c) {
 }
 function drawShopPanel(c) {   // 荣叔's: raw ingredients in a 2-column grid; one tap tops up for today's plan
   let y = sheet(c, W.today && W.today.rongSale ? '荣叔材料店 · 今天八折' : '荣叔材料店', money$(W.money), 96);
-  btn(c, 14, y - 2, 196, 30, '按今日安排补齐（缺的买一袋）', () => restock(3));
+  btn(c, 14, y - 2, 196, 30, '按今日安排补齐', () => restock(3));
   btn(c, 218, y - 2, 128, 30, '供应商 · 店 Lv' + shopLv(), () => { PANEL = { kind: 'sup', bar: 1 }; SFX.tap(); }, Object.keys(SUPPLIERS).some(k => !(W.sup || {})[k] && shopLv() >= SUPPLIERS[k].lv) ? 'gold' : 'cream'); y += 36;
   const list = ingrInUse();
   list.forEach((k, i) => {   // sold by the bag
@@ -110,37 +110,34 @@ function staffStatus(id) {
 function drawStaffPanel(c) {   // each row: who, what they do now, level + affection, upgrade with points
   let y = sheet(c, '员工', '积分 ' + (W.pts || 0) + ' · 工钱 ' + money$(wages() - DAILY.rent) + '/天', 166) - 4;
   const rows = [['kun', '坤伯', '烘焙'], ['lin', '莲姨', '包装']].concat(Object.keys(HIRE).filter(k => W.staff[k].hired || W.day >= HIRE[k].day - 2).map(k => [k, HIRE[k].name, null]));   // people not due for days yet stay hidden
+  const rh = Math.max(52, Math.min(66, Math.floor((BAR_Y - 6 - y) / rows.length)));   // rows grow to use the sheet's height (bigger text needs the room)
   rows.forEach(([id, name, role], i) => {
-    const yy = y + i * 54, img = STAFF_HD[id].SE[0], hired = !HIRE[id] || W.staff[id].hired, lv = lvOf(id);
-    card(c, 14, yy, 332, 51, hired ? '#fffaf0' : '#ece2cf');
-    c.drawImage(img, 0, 0, img.width, 56, 20, yy + 2, img.width / 2, 28);
-    TS(c, name, 56, yy + 3, 14, INK);
+    const yy = y + i * rh, img = STAFF_HD[id].SE[0], hired = !HIRE[id] || W.staff[id].hired, lv = lvOf(id), b3 = yy + rh - 21;   // b3: the bottom line
+    card(c, 14, yy, 332, rh - 3, hired ? '#fffaf0' : '#ece2cf');
+    c.drawImage(img, 0, 0, img.width, 56, 20, yy + 3, img.width / 2, 28);
+    TS(c, name, 56, yy + 3, 15, INK);
     if (!hired) {
-      T(c, HIRE[id].note, 56, yy + 20, SUB, 'left', null);
-      if (HIRE[id].temp && HIRE[id].student) { T(c, '暑期学生 · 签 6 日每日平 $5', 20, yy + 37, '#2f6e56', 'left', null); btn(c, 230, yy + 2, 108, 22, '请今日 ' + money$(HIRE[id].wage), () => hireStaff(id), 'cream'); btn(c, 230, yy + 27, 108, 22, '签 6 日 $40/日', () => signContract()); }
-      else if (HIRE[id].temp) { T(c, '今日打工 · 只做今日 · 每日换一个人', 20, yy + 37, '#2f6e56', 'left', null); btn(c, 230, yy + 8, 108, 30, '请今日 ' + money$(HIRE[id].wage), () => hireStaff(id), 'cream'); }
-      else if (W.day >= HIRE[id].day) btn(c, 230, yy + 8, 108, 30, '请 ' + money$(HIRE[id].wage) + '/天', () => hireStaff(id)); else T(c, '第 ' + HIRE[id].day + ' 天来应征', 336, yy + 22, SUB, 'right', null);
+      T(c, HIRE[id].note, 56, yy + 22, SUB, 'left', null, 12);
+      if (HIRE[id].temp && HIRE[id].student) { T(c, '暑期学生 · 签 6 天每天平 $5', 20, b3 + 2, '#2f6e56', 'left', null, 12); btn(c, 236, yy + 4, 104, 22, '请今天 ' + money$(HIRE[id].wage), () => hireStaff(id), 'cream'); btn(c, 236, b3 - 2, 104, 20, '签 6 天 $40', () => signContract()); }
+      else if (HIRE[id].temp) { T(c, '只做今天 · 每天换一个人', 20, b3 + 2, '#2f6e56', 'left', null, 12); btn(c, 236, yy + (rh - 34) / 2, 104, 28, '请今天 ' + money$(HIRE[id].wage), () => hireStaff(id), 'cream'); }
+      else if (W.day >= HIRE[id].day) btn(c, 236, yy + (rh - 34) / 2, 104, 28, '请 ' + money$(HIRE[id].wage) + '/天', () => hireStaff(id)); else T(c, '第 ' + HIRE[id].day + ' 天来应征', 338, yy + 22, SUB, 'right', null, 12);
       return;
     }
+    const posts = () => Object.keys(POSTS).forEach((post, k) => { const on = W.staff[id].post === post; btn(c, 150 + k * 38, yy + 20, 36, 20, POST_SHORT[post], () => setPost(id, post), on ? 'gold' : 'cream'); });
     if (HIRE[id] && HIRE[id].temp) {   // part-timer: today only, no levels
-      T(c, '打工', 102, yy + 5, '#2f6e56', 'left', null); T(c, staffStatus(id), 56, yy + 20, '#2f6e56', 'left', null);
-      Object.keys(POSTS).forEach((post, k) => { const on = W.staff[id].post === post; btn(c, 150 + k * 38, yy + 14, 36, 19, POST_SHORT[post], () => setPost(id, post), on ? 'gold' : 'cream'); });
-      T(c, HIRE[id].note + ' · 工钱 ' + money$(wageOf(id)) + (W.contract ? ' · 合约剩 ' + W.contract.left + ' 日' : ' · 只做今日'), 20, yy + 36, SUB, 'left', null);
+      T(c, '打工', 106, yy + 5, '#2f6e56', 'left', null, 12); T(c, staffStatus(id), 56, yy + 22, '#2f6e56', 'left', null, 12); posts();
+      T(c, HIRE[id].note + ' · 工钱 ' + money$(wageOf(id)) + (W.contract ? ' · 合约剩 ' + W.contract.left + ' 天' : ' · 只做今天'), 20, b3 + 2, SUB, 'left', null, 12);
       return;
     }
-    T(c, 'Lv' + lv, 102, yy + 5, '#b8483c', 'left', null);
-    T(c, '好感 ' + '●'.repeat(lv - 1) + '○'.repeat(LV_MAX - lv), 128, yy + 5, '#c99428', 'left', null);
+    T(c, 'Lv' + lv, 98, yy + 5, '#b8483c', 'left', null, 12); T(c, '●'.repeat(lv - 1) + '○'.repeat(LV_MAX - lv), 122, yy + 5, '#c99428', 'left', null, 12);
     if (!HIRE[id]) {
-      T(c, role + ' · ' + staffStatus(id), 56, yy + 20, '#2f6e56', 'left', null); T(c, workLine(id), 338, id === 'kun' ? yy + 27 : yy + 4, '#8a6a4a', 'right', null);
-      if (id === 'kun') btn(c, 252, yy + 3, 86, 22, '烘焙安排', () => { W.seen.planDay = W.day; openPanel({ kind: 'plan', bar: 3 }); }, W.seen.planDay !== W.day && W.day >= 2 ? 'gold' : 'cream');
-    } else {
-      T(c, staffStatus(id), 56, yy + 20, '#2f6e56', 'left', null); T(c, workLine(id), 338, yy + 2, '#8a6a4a', 'right', null);
-      Object.keys(POSTS).forEach((post, k) => { const on = W.staff[id].post === post; btn(c, 150 + k * 38, yy + 14, 36, 19, POST_SHORT[post], () => setPost(id, post), on ? 'gold' : 'cream'); });
-    }
+      T(c, role + ' · ' + staffStatus(id), 56, yy + 22, '#2f6e56', 'left', null, 12); T(c, workLine(id), 160, yy + 5, '#8a6a4a', 'left', null, 12);
+      if (id === 'kun') btn(c, 250, yy + 4, 90, 22, '烘焙安排', () => { W.seen.planDay = W.day; openPanel({ kind: 'plan', bar: 3 }); }, W.seen.planDay !== W.day && W.day >= 2 ? 'gold' : 'cream');
+    } else { T(c, staffStatus(id), 56, yy + 22, '#2f6e56', 'left', null, 12); T(c, workLine(id), 340, yy + 4, '#8a6a4a', 'right', null, 12); posts(); }
     const pk = ((W.perks || {})[id] || []).map(q => '★' + perkInfo(q)[1]).join(' ');
-    T(c, pk || (LV_SKILL[id] + '快 ' + (lv - 1) * 8 + '%' + ' · 工钱 ' + money$(wageOf(id))), 20, yy + 36, pk ? '#b8483c' : SUB, 'left', null);
-    if (lv < LV_MAX) { const cost = LV_COST[lv + 1], ok = (W.pts || 0) >= cost; btn(c, 228, yy + 33, 110, 16, '升 Lv' + (lv + 1) + ' · ' + cost + '分', () => upgradeStaff(id), ok ? 'gold' : 'off'); }
-    else T(c, '满级', 336, yy + 44, '#c99428', 'right', null);
+    T(c, pk || (LV_SKILL[id] + '快 ' + (lv - 1) * 8 + '%' + ' · 工钱 ' + money$(wageOf(id))), 20, b3 + 2, pk ? '#b8483c' : SUB, 'left', null, 12);
+    if (lv < LV_MAX) { const cost = LV_COST[lv + 1], ok = (W.pts || 0) >= cost; btn(c, 240, b3 - 2, 100, 20, '升级 ' + cost + '分', () => upgradeStaff(id), ok ? 'gold' : 'off'); }
+    else T(c, '满级', 338, b3 + 2, '#c99428', 'right', null);
   });
 }
 function decorSwatch(c, tab, S, x, y) {   // a small sample of a wallpaper / booth style
@@ -163,7 +160,7 @@ function drawDecorPanel(c, P_) {   // 装修: better shelves, wallpaper, booth s
   const tab = P_.tab || 'shelf';
   [['shelf', '货架'], ['wall', '墙纸'], ['booth', '卡座'], ['expand', '扩建'], ['items', '摆设']].forEach(([k, n], i) => btn(c, 14 + i * 66, y - 4, 62, 24, n, () => { P_.tab = k; SFX.tap(); }, tab === k ? 'gold' : 'cream'));
   { const lv = beautyLv(), nx = BEAUTY_STEPS[lv], b = beauty();   // milestone: what the next level of beauty gives
-    T(c, nx ? '美观 ' + b + '/' + nx.at + ' →「' + nx.name + '」' + nx.perk : '已达「街知巷闻」，满级！', 14, y + 26, nx ? '#b8483c' : '#2f6e56', 'left', null);
+    T(c, nx ? '美观 ' + b + '/' + nx.at + ' → 下一级「' + nx.name + '」' : '已达「街知巷闻」，满级！', 14, y + 26, nx ? '#b8483c' : '#2f6e56', 'left', null);
     T(c, lv ? '已有：' + BEAUTY_STEPS.slice(0, lv).map(s => s.perk).join('；') : '美观越高，客人越多', 14, y + 44, lv ? '#2f6e56' : SUB, 'left', null); }
   y += 66;
   if (tab === 'items') {   // 摆设: plants, wall pieces, festive pieces, the fan → air conditioner
@@ -181,7 +178,7 @@ function drawDecorPanel(c, P_) {   // 装修: better shelves, wallpaper, booth s
     }
     if (cat === 'gift') {   // what regulars have given; how close each kind of customer is to bringing one
       const fans = Object.entries(W.fans || {}).sort((a, b) => b[1] - a[1]).slice(0, 8);
-      ['luckycat', 'bonsai', 'banner', 'card'].forEach((id, i) => { const x = 14 + (i % 2) * 168, yy = y + Math.floor(i / 2) * 40; card(c, x, yy, 162, 36, hasItem(id) ? '#e6f2ea' : '#ece2cf'); T(c, DECOR_ITEMS[id].name, x + 8, yy + 4, INK, 'left', null); T(c, hasItem(id) ? '收到 · 舒适+' + DECOR_ITEMS[id].comfort : '熟客会送', x + 8, yy + 20, hasItem(id) ? '#2f6e56' : SUB, 'left', null); });
+      ['luckycat', 'bonsai', 'banner', 'card'].forEach((id, i) => { const x = 14 + (i % 2) * 168, yy = y + Math.floor(i / 2) * 40; card(c, x, yy, 162, 36, hasItem(id) ? '#e6f2ea' : '#ece2cf'); { const im = itemThumb(id), k = Math.min(1, 26 / im.width, 32 / im.height); if (hasItem(id)) c.drawImage(im, R(x + 16 - im.width * k / 2), R(yy + 34 - im.height * k), R(im.width * k), R(im.height * k)); else T(c, '？', x + 16, yy + 10, '#b0a08c', 'center', null); } T(c, DECOR_ITEMS[id].name, x + 32, yy + 4, INK, 'left', null); T(c, hasItem(id) ? '收到 · 舒适+' + DECOR_ITEMS[id].comfort : '熟客会送', x + 8, yy + 20, hasItem(id) ? '#2f6e56' : SUB, 'left', null); });
       let yy = y + 86; T(c, '熟客好感（满 ' + GIFT_AT + ' 会送礼）', 16, yy, SUB, 'left', null); yy += 16;
       if (!fans.length) T(c, '客人满意离开就会加', 16, yy, SUB, 'left', null);
       fans.forEach(([k, v], i) => { const x = 14 + (i % 2) * 168, y2 = yy + Math.floor(i / 2) * 18; T(c, k, x + 4, y2, INK, 'left', null); px(c, x + 76, y2 + 4, 80, 6, '#e3d6bc'); px(c, x + 76, y2 + 4, R(80 * Math.min(1, v / GIFT_AT)), 6, (W.gifted || {})[k] ? '#c99428' : '#3fbf7a'); });
@@ -189,11 +186,12 @@ function drawDecorPanel(c, P_) {   // 装修: better shelves, wallpaper, booth s
     }
     Object.keys(DECOR_ITEMS).filter(id => DECOR_ITEMS[id].cat === cat && !DECOR_ITEMS[id].gift).forEach((id, i) => {
       const it = DECOR_ITEMS[id], x = 14 + (i % 2) * 168, yy = y + Math.floor(i / 2) * 76, own = hasItem(id);
-      card(c, x, yy, 162, 70, own ? '#e6f2ea' : '#fffaf0'); TS(c, it.name, x + 8, yy + 6, 14, INK);
-      T(c, it.note || ('舒适 +' + it.comfort + ' · 美观 +' + it.beauty), x + 8, yy + 26, SUB, 'left', null);
-      if (it.season !== undefined) T(c, SEASONS[it.season].full + '摆，舒适 ×2' + (inSeason(it) ? ' ✓' : ''), x + 8, yy + 42, inSeason(it) ? '#2f6e56' : '#b0a08c', 'left', null);
-      if (own) T(c, it.cat === 'wall' ? '挂咗' : '摆咗 · 摆放里可移', x + 154, yy + 54, '#2f6e56', 'right', null);
-      else btn(c, x + 88, yy + 44, 68, 22, money$(it.cost), () => buyItem(id), W.money >= it.cost ? 'gold' : 'off');
+      card(c, x, yy, 162, 70, own ? '#e6f2ea' : '#fffaf0'); px(c, x + 4, yy + 4, 48, 60, own ? '#d6eadc' : '#f3ead8'); { const im = itemThumb(id), k = Math.min(1, 44 / im.width, 56 / im.height); c.drawImage(im, R(x + 28 - im.width * k / 2), R(yy + 62 - im.height * k), R(im.width * k), R(im.height * k)); }
+      TS(c, it.name, x + 58, yy + 5, 14, INK);
+      T(c, it.note || ('舒适+' + it.comfort + ' 美观+' + it.beauty), x + 58, yy + 25, SUB, 'left', null, 12);
+      if (it.season !== undefined) T(c, SEASONS[it.season].full + '摆 舒适×2' + (inSeason(it) ? ' ✓' : ''), x + 58, yy + 38, inSeason(it) ? '#2f6e56' : '#b0a08c', 'left', null, 12);
+      if (own) T(c, it.cat === 'wall' ? '挂咗' : '摆咗', x + 154, yy + 52, '#2f6e56', 'right', null);
+      else btn(c, x + 90, yy + 44, 66, 22, money$(it.cost), () => buyItem(id), W.money >= it.cost ? 'gold' : 'off');
     });
     return;
   }
@@ -230,7 +228,7 @@ function drawDecorPanel(c, P_) {   // 装修: better shelves, wallpaper, booth s
   Object.keys(list).forEach((k, i) => {
     const S = list[k], x = 14 + (i % 2) * 168, yy = y + Math.floor(i / 2) * 84;
     card(c, x, yy, 162, 80, cur === k ? '#ffe9b0' : '#fffaf0'); c.save(); c.translate(x + 8, yy + 4); c.scale(.97, .97); decorSwatch(c, tab, S, 0, 0); c.restore();
-    TS(c, S.name, x + 72, yy + 8, 14, INK); T(c, '美观 +' + S.beauty, x + 72, yy + 30, SUB, 'left', null); if (S.tip) T(c, '小费 +$' + S.tip, x + 72, yy + 46, '#2f6e56', 'left', null);
+    TS(c, S.name, x + 72, yy + 6, 14, INK); T(c, '美观 +' + S.beauty, x + 72, yy + 26, SUB, 'left', null, 12); if (S.tip) T(c, '小费 +$' + S.tip, x + 72, yy + 39, '#2f6e56', 'left', null, 12);
     if (cur === k) T(c, '使用中', x + 116, yy + 58, '#2f6e56', 'center', null);
     else btn(c, x + 74, yy + 52, 80, 24, own[k] ? '换上' : money$(S.cost), () => buyDecor(tab, k), own[k] || W.money >= S.cost ? 'gold' : 'off');
   });
@@ -258,13 +256,13 @@ function drawPlanPanel(c) {
     const yy = y + i * h, rh = h - 5;
     card(c, 14, yy, 332, rh, '#fffaf0'); half(c, PRODUCTS[p].img, 30, yy + rh / 2);
     { const ty = yy + rh / 2 - 7, last = W.history.length ? (W.history[W.history.length - 1].sold || {})[p] || 0 : 0;   // name, price, sold today (yesterday), on hand, speed
-      T(c, PRODUCTS[p].name, 46, ty, INK, 'left', null); T(c, '$' + priceOf(p), 100, ty, '#2f6e56', 'left', null);
-      T(c, (W.today.sold[p] || 0) + '/' + last, 124, ty, SUB, 'left', null); T(c, '存' + (shelfHave(p) + (W.stock[p] || 0)), 146, ty, '#8a6a4a', 'left', null); T(c, speedTag(p)[0], 176, ty, speedTag(p)[1], 'left', null); }
+      { const nm = PRODUCTS[p].name; T(c, nm.length > 4 ? nm.slice(0, 3) + '…' : nm, 46, ty, INK, 'left', null, nm.length > 3 ? 12 : FS); } T(c, '$' + priceOf(p), 100, ty, '#2f6e56', 'left', null, 12);
+      T(c, (W.today.sold[p] || 0) + '/' + last, 124, ty, SUB, 'left', null, 12); T(c, '存' + (shelfHave(p) + (W.stock[p] || 0)), 146, ty, '#8a6a4a', 'left', null, 12); T(c, speedTag(p)[0], 176, ty, speedTag(p)[1], 'left', null, 12); }
     [['pri', '主打'], ['on', '照常'], ['off', '不做']].forEach(([v, lab], k) => btn(c, 192 + k * 51, yy + (rh - Math.min(24, rh)) / 2, 47, Math.min(24, rh), lab, () => setPlan(p, v), W.plan[p] === v ? (v === 'off' ? 'red' : 'gold') : 'cream'));
   });
 }
 function drawShowcasePick(c, P_) {   // which item goes in the counter glass case today
-  let y = sheet(c, '招牌展示柜', '每日一样 · 多四成人买 · 美观 +2', 200);
+  let y = sheet(c, '招牌展示柜', '多四成人买 · 美观 +2', 200);
   const L = PIDS.filter(showcaseOk), per = 4, tw = 78;
   L.forEach((p, i) => { const x = 14 + (i % per) * (tw + 5), yy = y + Math.floor(i / per) * 64, on = W.showcase === p;
     card(c, x, yy, tw, 58, on ? '#ffe9b0' : '#fffaf0'); full(c, PRODUCTS[p].img, x + tw / 2, yy + 20); T(c, PRODUCTS[p].name, x + tw / 2, yy + 38, INK, 'center', null);
@@ -288,17 +286,18 @@ function drawGuestPanel(c, P_) {   // one kind of customer: portrait, who they a
   y += 84; if (LAB_FANS[kind]) T(c, LAB_FANS[kind] >= 1.5 ? '很喜欢港式 Lab 的新奇点心' : LAB_FANS[kind] < 1 ? '对新奇点心兴趣不大，偏爱老味道' : '新旧口味都可以', 180, y, SUB, 'center', null);
 }
 function drawMenuPanel(c) {   // the shop's full menu: what is on sale (with price) and what is still to come
-  let y = sheet(c, '街记餐单', PIDS.filter(p => !PRODUCTS[p].lab && unlocked(p)).length + '/' + PIDS.filter(p => !PRODUCTS[p].lab).length + ' 款', 70) - 2;
-  const grp = [['饮品 · 冰饮', p => PRODUCTS[p].where === 'fridge' && !PRODUCTS[p].cake && !PRODUCTS[p].lab && !['pudding', 'mango', 'dpn'].includes(p)], ['饼食 · 糖水', p => !PRODUCTS[p].cake && !PRODUCTS[p].lab && (PRODUCTS[p].where === 'table' || ['pudding', 'mango', 'dpn'].includes(p))], ['港式蛋糕', p => PRODUCTS[p].cake], ['港式 Lab', p => PRODUCTS[p].lab && unlocked(p)]];
+  let y = sheet(c, '餐单', PIDS.filter(p => !PRODUCTS[p].lab && unlocked(p)).length + '/' + PIDS.filter(p => !PRODUCTS[p].lab).length, 70) - 2;
+  const grp = [['饮品', p => PRODUCTS[p].where === 'fridge' && !PRODUCTS[p].cake && !PRODUCTS[p].lab && !['pudding', 'mango', 'dpn'].includes(p)], ['饼食', p => !PRODUCTS[p].cake && !PRODUCTS[p].lab && (PRODUCTS[p].where === 'table' || ['pudding', 'mango', 'dpn'].includes(p))], ['蛋糕', p => PRODUCTS[p].cake], ['港式 Lab', p => PRODUCTS[p].lab && unlocked(p)]];
   for (const [title, f] of grp) { const L_ = PIDS.filter(p => f(p) && !(PRODUCTS[p].lab && !unlocked(p)) && (PRODUCTS[p].lab || PRODUCTS[p].day < 999)); if (!L_.length) continue;
     TS(c, title, 14, y, 13, '#b8483c'); px(c, 14, y + 18, 332, 1, '#e3d6bc'); y += 22;
-    L_.forEach((p, i) => { const x = 14 + (i % 4) * 84, yy = y + Math.floor(i / 4) * 36, on = unlocked(p); card(c, x, yy, 80, 32, on ? '#fffaf0' : '#ece2cf');
-      if (on) { half(c, PRODUCTS[p].img, x + 14, yy + 16); T(c, PRODUCTS[p].name.slice(0, 4), x + 28, yy + 2, INK, 'left', null); T(c, '$' + priceOf(p), x + 28, yy + 17, '#2f6e56', 'left', null); }
-      else { T(c, '？', x + 14, yy + 9, '#b0a08c', 'center', null); T(c, PRODUCTS[p].name.slice(0, 4), x + 28, yy + 2, '#b0a08c', 'left', null); T(c, W.day >= PRODUCTS[p].day ? '可研发' : '第' + PRODUCTS[p].day + '天', x + 28, yy + 17, W.day >= PRODUCTS[p].day ? '#c99428' : '#b0a08c', 'left', null); } });
-    y += Math.ceil(L_.length / 4) * 36 + 6; }
+    L_.forEach((p, i) => { const x = 14 + (i % 3) * 112, yy = y + Math.floor(i / 3) * 42, on = unlocked(p); card(c, x, yy, 108, 38, on ? '#fffaf0' : '#ece2cf');
+      const nm = PRODUCTS[p].name, short = nm.length > 4 ? nm.slice(0, 4) : nm;   // one line: picture, name, price — locked ones just greyed
+      if (on) { half(c, PRODUCTS[p].img, x + 15, yy + 19); T(c, short, x + 30, yy + 11, INK, 'left', null, nm.length > 3 ? 12 : FS); T(c, '$' + priceOf(p), x + 104, yy + 12, '#2f6e56', 'right', null, 12); }
+      else { T(c, '？', x + 15, yy + 12, '#b0a08c', 'center', null); T(c, short, x + 30, yy + 11, '#b0a08c', 'left', null, nm.length > 3 ? 12 : FS); if (W.day >= PRODUCTS[p].day) T(c, '研发', x + 104, yy + 12, '#c99428', 'right', null, 12); } });
+    y += Math.ceil(L_.length / 3) * 42 + 6; }
 }
 function drawGuestsPanel(c) {   // every kind of customer: who comes, how loyal they are (gift at 8, their story + keepsake at 14), wealth, favourite
-  let y = sheet(c, '客人名册', '熟客：8 送礼 · 14 有故事', 70) - 4;
+  let y = sheet(c, '客人', '好感 8 送礼 · 14 故事', 70) - 4;
   const dayOf = ci => (GUEST_UNLOCK.find(q => q[0] === ci) || [0, 99])[1], list = CUST_POOL.filter(guestOpen).concat(CUST_POOL.filter(ci => !guestOpen(ci)).sort((a, b) => dayOf(a) - dayOf(b)));   // regulars first, then who comes next
   list.forEach((ci, i) => {
     const x = 14 + (i % 3) * 112, yy = y + Math.floor(i / 3) * 59, kind = guestKind(ci), open = guestOpen(ci), f = (W.fans || {})[kind] || 0;
@@ -309,9 +308,9 @@ function drawGuestsPanel(c) {   // every kind of customer: who comes, how loyal 
     T(c, '$'.repeat(wealthStars(ci)), x + 34, yy + 19, '#2f6e56', 'left', null);
     const fav = Object.entries(personaOf(ci).likes || {}).sort((a, b) => b[1] - a[1]).map(q => q[0]).find(p => PRODUCTS[p]); if (fav) half(c, PRODUCTS[fav].img, x + 96, yy + 24);
     px(c, x + 4, yy + 44, 100, 6, '#e3d6bc'); px(c, x + 4, yy + 44, R(100 * Math.min(1, f / LOYAL_STORY)), 6, f >= LOYAL_STORY ? '#c99428' : f >= GIFT_AT ? '#3fbf7a' : '#e88aa0'); px(c, x + 4 + R(100 * GIFT_AT / LOYAL_STORY), yy + 42, 1, 10, '#8a6a4a');   // loyalty, a tick at the gift
-    if ((W.keepsakes || {})[kind]) T(c, '♥', x + 100, yy + 3, '#d0453a', 'right', null);
+    if ((W.keepsakes || {})[kind]) T(c, '♥', x + 78, yy + 19, '#d0453a', 'left', null);
   });
-  const ks = Object.keys(W.keepsakes || {}); T(c, ks.length ? '纪念品：' + ks.map(k => KEEPSAKE[k]).join('、').slice(0, 24) + (ks.length > 3 ? '…' : '') : '熟客满 14 好感会送纪念品（舒适 +1）', 180, y + Math.ceil(CUST_POOL.length / 3) * 59 + 2, SUB, 'center', null);
+  const ks = Object.keys(W.keepsakes || {}); T(c, ks.length ? '纪念品 ' + ks.length + ' 件：' + KEEPSAKE[ks[ks.length - 1]] + (ks.length > 1 ? ' 等' : '') : '熟客满 14 好感会送纪念品（舒适 +1）', 180, y + Math.ceil(CUST_POOL.length / 3) * 59 + 2, SUB, 'center', null);
 }
 function drawPlaceAsk(c, P_) {   // just bought a floor piece: place it now, or leave it at its default spot
   const it = DECOR_ITEMS[P_.id]; c.save(); c.globalAlpha = .5; px(c, 0, 0, 360, 640, '#1c141c'); c.restore(); button(0, 0, 360, 640, () => {});
@@ -441,7 +440,7 @@ function drawTitle(c) {
   else { T(c, '谁来开店？', 180, 324, '#fbe9c0', 'center'); c.drawImage(STAFF_HD.hero_f.SE[0], 96, 346, 30, 61); c.drawImage(STAFF_HD.hero_m.SE[0], 234, 346, 30, 61);
     btn(c, 70, 414, 100, 36, '女店主', () => { audioUnlock(); startGame(true, 'f'); }); btn(c, 190, 414, 100, 36, '男店主', () => { audioUnlock(); startGame(true, 'm'); }); }
   T(c, 'v1.0 春 · 十二天', 180, 600, '#bba890', 'center', null);
-  btn(c, 250, 560, 96, 26, LANG === 'yue' ? '粵語 → 普通话' : '普通话 → 粵語', () => setLang(LANG === 'yue' ? 'cmn' : 'yue'), 'cream');   // language
+  btn(c, 228, 560, 118, 26, LANG === 'yue' ? '粵語 → 普通话' : '普通话 → 粵語', () => setLang(LANG === 'yue' ? 'cmn' : 'yue'), 'cream');   // language
 }
 function drawPanels(c) {
   if (DESK) { drawDesk(c); if (DIALOG) drawDialog(c); return; }
