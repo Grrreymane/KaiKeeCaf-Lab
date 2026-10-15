@@ -218,7 +218,8 @@ function drawBackground(c) {
   if (C.dot) for (let x = 0; x <= ROOM; x += 32) for (let y = 32; y <= ROOM; y += 32) { const [sx, sy] = P(x, y); g.quad([sx, sy - 4], [sx + 8, sy], [sx, sy + 4], [sx - 8, sy], C.dot); }
   // 两面后墙：右墙（y=0）亮一档，左墙（x=0）暗一档
   const wR = (xa, xb, z0, z1, col) => g.quad(P(xa, 0, z0), P(xb, 0, z0), P(xb, 0, z1), P(xa, 0, z1), col);
-  const wL = (ya, yb, z0, z1, col) => g.quad(P(0, ya, z0), P(0, yb, z0), P(0, yb, z1), P(0, ya, z1), col);
+  let XF = null;   // while a wall piece is drawn: its art moved into the slot the player chose
+  const wL = (ya, yb, z0, z1, col) => { if (XF) { [ya, z0] = XF(ya, z0); [yb, z1] = XF(yb, z1); } g.quad(P(0, ya, z0), P(0, yb, z0), P(0, yb, z1), P(0, ya, z1), col); };
   const WS = WALLS[(W && W.decor && W.decor.wall) || 'mint'] || WALLS.mint; C.wall = WS.wall; C.wallD = WS.wallD;   // wallpaper from the decor shop
   wR(0, ROOM, 0, WALL_H, C.wall); wL(0, ROOM, 0, WALL_H, shade(C.wall, -18));
   for (let t = 4; t < ROOM; t += 8) { g.seg(P(t, 0, 40), P(t, 0, WALL_H - 6), C.wallD); g.seg(P(0, t, 40), P(0, t, WALL_H - 6), shade(C.wallD, -18)); }
@@ -281,13 +282,13 @@ function drawBackground(c) {
     wL(115, 116, 100, 131, '#c9cdd0');
   }
   // wall pieces bought in 装修 → 摆设 (left wall below the fan, right wall by the bake room)
-  if (hasItem('clock')) { const cy = 202, cz = 136; for (let y = -10; y <= 10; y++) for (let z = -10; z <= 10; z++) { const d = Math.hypot(y, z); if (d > 10) continue; g.quad(P(0, cy + y, cz + z), P(0, cy + y + 1, cz + z), P(0, cy + y + 1, cz + z + 1), P(0, cy + y, cz + z + 1), d > 8.5 ? '#6b4a35' : d > 7.5 ? '#c99428' : '#fbf3e0'); }
-    for (let t = 0; t < 7; t++) { const [a, b] = P(0, cy - t * .1, cz + t); g.set(R(a), R(b), '#2a2024'); const [c2, d2] = P(0, cy + t * .7, cz + t * .3); g.set(R(c2), R(d2), '#2a2024'); } }
-  if (hasItem('calendar')) { wL(188, 216, 62, 118, '#6b4a35'); wL(190, 214, 64, 116, '#f4ead6'); wL(194, 210, 70, 104, '#e88aa0'); wL(198, 206, 96, 110, '#f6d0ae'); wL(196, 208, 106, 114, '#2a2024'); wL(190, 214, 64, 70, '#c8342c'); }
-  if (hasItem('photo')) { wL(262, 298, 64, 96, '#5a3c2a'); wL(264, 296, 66, 94, '#d8c4a0'); for (const y of [270, 279, 288]) { wL(y, y + 5, 76, 84, '#8a6a4a'); wL(y + 1, y + 4, 84, 88, '#6a4a30'); } }
-  if (hasItem('banner')) { wL(224, 254, 100, 156, '#b8342c'); wL(226, 252, 102, 150, '#d8402e'); for (let z = 108; z < 146; z += 8) wL(232, 246, z, z + 4, '#ffd23f'); wL(222, 256, 154, 157, '#6b4a35'); }   // 锦旗 from a regular
-  if (hasItem('card')) { wL(300, 312, 100, 116, '#f4ead6'); wL(301, 311, 112, 115, '#e88aa0'); for (const z of [104, 107]) wL(302, 310, z, z + 1, '#8a7a6a'); }
-  { const ws = W ? keepList('w') : []; if (ws.length) {   // the regulars' board: a cork board on the left wall, their flat keepsakes pinned on it
+  if (hasItem('clock')) { XF = wallXF('clock', 192, 212, 126, 146); const cy = 202, cz = 136; for (let y = -10; y <= 10; y++) for (let z = -10; z <= 10; z++) { const d = Math.hypot(y, z); if (d > 10) continue; wL(cy + y, cy + y + 1, cz + z, cz + z + 1, d > 8.5 ? '#6b4a35' : d > 7.5 ? '#c99428' : '#fbf3e0'); }
+    for (let t = 0; t < 7; t++) { wL(cy, cy + 1, cz + t, cz + t + 1, '#2a2024'); if (t < 6) wL(cy + t, cy + t + 1, cz, cz + 1, '#2a2024'); } }
+  if (hasItem('calendar')) { XF = wallXF('calendar', 188, 216, 62, 118); wL(188, 216, 62, 118, '#6b4a35'); wL(190, 214, 64, 116, '#f4ead6'); wL(194, 210, 70, 104, '#e88aa0'); wL(198, 206, 96, 110, '#f6d0ae'); wL(196, 208, 106, 114, '#2a2024'); wL(190, 214, 64, 70, '#c8342c'); }
+  if (hasItem('photo')) { XF = wallXF('photo', 262, 298, 64, 96); wL(262, 298, 64, 96, '#5a3c2a'); wL(264, 296, 66, 94, '#d8c4a0'); for (const y of [270, 279, 288]) { wL(y, y + 5, 76, 84, '#8a6a4a'); wL(y + 1, y + 4, 84, 88, '#6a4a30'); } }
+  if (hasItem('banner')) { XF = wallXF('banner', 222, 256, 100, 157); wL(224, 254, 100, 156, '#b8342c'); wL(226, 252, 102, 150, '#d8402e'); for (let z = 108; z < 146; z += 8) wL(232, 246, z, z + 4, '#ffd23f'); wL(222, 256, 154, 157, '#6b4a35'); }   // 锦旗 from a regular
+  if (hasItem('card')) { XF = wallXF('card', 300, 312, 100, 116); wL(300, 312, 100, 116, '#f4ead6'); wL(301, 311, 112, 115, '#e88aa0'); for (const z of [104, 107]) wL(302, 310, z, z + 1, '#8a7a6a'); }
+  { const ws = W ? keepList('w') : []; if (ws.length) { XF = wallXF('board', 260, 300, 102, 152);   // the regulars' board: a cork board on the left wall, their flat keepsakes pinned on it
     wL(260, 300, 102, 152, '#6b4a35'); wL(262, 298, 104, 150, '#c49a6a'); for (let y = 264; y < 298; y += 5) wL(y, y + 1, 106 + (y % 3), 107 + (y % 3), '#b08658');
     ws.slice(0, 12).forEach((k, i) => { const y0 = 264 + (i % 3) * 11, z0 = 140 - Math.floor(i / 3) * 12, [, t, col] = KEEP_ART[k];
       if (t === 'card' || t === 'postcard') { wL(y0, y0 + 9, z0, z0 + 7, t === 'postcard' ? '#ffffff' : '#f4ead6'); wL(y0 + 1, y0 + 8, z0 + 1, z0 + (t === 'postcard' ? 6 : 3), col); }
@@ -298,6 +299,7 @@ function drawBackground(c) {
       else if (t === 'bag') { wL(y0 + 1, y0 + 9, z0, z0 + 7, col); wL(y0 + 3, y0 + 7, z0 + 7, z0 + 9, '#8a7a6a'); wL(y0 + 3, y0 + 7, z0 + 2, z0 + 5, '#e07ab0'); }
       wL(y0 + 4, y0 + 5, z0 + 8, z0 + 9, '#d0453a');   // the pin
     }); } }
+  XF = null;
   if (hasItem('neon')) { wR(186, 232, 146, 172, '#1f1a24'); for (const z of [148, 170]) wR(188, 230, z, z + 1, '#ff5a9a'); for (const x of [188, 229]) wR(x, x + 1, 148, 171, '#ff5a9a'); wR(196, 222, 158, 160, '#7ff0ff'); wR(205, 207, 151, 167, '#7ff0ff'); }
   if (expandLv()) {   // next door opened up: same floor and wallpaper as the shop, a brass rail and two hanging lamps' worth of trim
     tiles(320, 0, 640, 320, 16, C.floorA, C.floorB);
@@ -600,6 +602,18 @@ function decorObj(id, x, y) {
       for (const [dx, dy, col] of [[-8, -16, '#d82a2a'], [6, -22, '#f0b43a'], [-4, -34, '#3f86d6'], [5, -40, '#d82a2a'], [-2, -50, '#f0b43a'], [9, -12, '#3f86d6']]) g.ell(a + dx, b + dy, 1.6, 1.6, col);
       g.tri(a - 3, b - 74, a + 3, b - 74, a, b - 80, '#ffd23f'); g.tri(a - 3, b - 77, a + 3, b - 77, a, b - 71, '#ffd23f'); }
   } }]);
+}
+// wall pieces on the left wall sit in six cells (3 along × 2 high); the player can move a piece to the next cell (swapping with what is there)
+const WALL_CELLS = [[184, 58], [184, 110], [224, 58], [224, 110], [264, 58], [264, 110]], WALL_IDS = ['calendar', 'clock', 'card', 'banner', 'photo', 'board'];
+const wallSlotOf = id => { const S = (W && W.wallSlot) || {}; return S[id] !== undefined ? S[id] : WALL_IDS.indexOf(id); };
+function wallXF(id, ya, yb, za, zb) {   // map a piece's own art box into its cell (centred, shrunk only if it would not fit)
+  const [y0, z0] = WALL_CELLS[wallSlotOf(id)], w = yb - ya, h = zb - za, k = Math.min(1, 36 / w, 48 / h), oy = y0 + (38 - w * k) / 2, oz = z0 + (50 - h * k) / 2;
+  return (y, z) => [oy + (y - ya) * k, oz + (z - za) * k];
+}
+function moveWall(id) {   // to the next cell; whatever hangs there takes this one's place
+  W.wallSlot = W.wallSlot || {}; for (const k of WALL_IDS) if (W.wallSlot[k] === undefined) W.wallSlot[k] = WALL_IDS.indexOf(k);
+  const cur = W.wallSlot[id], nxt = (cur + 1) % WALL_CELLS.length, o = WALL_IDS.find(k => k !== id && W.wallSlot[k] === nxt);
+  if (o) W.wallSlot[o] = cur; W.wallSlot[id] = nxt; camX = 0; applyDecor(); SFX.tap(); saveGame();
 }
 const ITEM_THUMB = {};
 function itemThumb(id) {   // a small picture of a decor piece for the 摆设 cards

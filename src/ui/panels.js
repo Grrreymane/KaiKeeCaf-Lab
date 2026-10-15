@@ -185,7 +185,7 @@ function drawDecorPanel(c, P_) {   // 装修: better shelves, wallpaper, booth s
     }
     if (cat === 'gift') {   // what regulars have given; how close each kind of customer is to bringing one
       const fans = Object.entries(W.fans || {}).sort((a, b) => b[1] - a[1]).slice(0, 8);
-      ['luckycat', 'bonsai', 'banner', 'card'].forEach((id, i) => { const x = 14 + (i % 2) * 168, yy = y + Math.floor(i / 2) * 40; card(c, x, yy, 162, 36, hasItem(id) ? '#e6f2ea' : '#ece2cf'); { const im = itemThumb(id), k = Math.min(1, 26 / im.width, 32 / im.height); if (hasItem(id)) c.drawImage(im, R(x + 16 - im.width * k / 2), R(yy + 34 - im.height * k), R(im.width * k), R(im.height * k)); else T(c, '？', x + 16, yy + 10, '#b0a08c', 'center', null); } T(c, DECOR_ITEMS[id].name, x + 32, yy + 4, INK, 'left', null); T(c, hasItem(id) ? '收到 · 舒适+' + DECOR_ITEMS[id].comfort : '熟客会送', x + 8, yy + 20, hasItem(id) ? '#2f6e56' : SUB, 'left', null); });
+      ['luckycat', 'bonsai', 'banner', 'card'].forEach((id, i) => { const x = 14 + (i % 2) * 168, yy = y + Math.floor(i / 2) * 40; card(c, x, yy, 162, 36, hasItem(id) ? '#e6f2ea' : '#ece2cf'); { const im = itemThumb(id), k = Math.min(1, 26 / im.width, 32 / im.height); if (hasItem(id)) c.drawImage(im, R(x + 16 - im.width * k / 2), R(yy + 34 - im.height * k), R(im.width * k), R(im.height * k)); else T(c, '？', x + 16, yy + 10, '#b0a08c', 'center', null); } T(c, DECOR_ITEMS[id].name, x + 32, yy + 4, INK, 'left', null); T(c, hasItem(id) ? '收到 · 舒适+' + DECOR_ITEMS[id].comfort : '熟客会送', x + 8, yy + 20, hasItem(id) ? '#2f6e56' : SUB, 'left', null);  if (hasItem(id) && WALL_IDS.includes(id)) btn(c, x + 104, yy + 8, 52, 20, '换位', () => moveWall(id), 'cream'); });
       let yy = y + 86; T(c, '熟客好感（满 ' + GIFT_AT + ' 会送礼）', 16, yy, SUB, 'left', null); yy += 16;
       if (!fans.length) T(c, '客人满意离开就会加', 16, yy, SUB, 'left', null);
       fans.forEach(([k, v], i) => { const x = 14 + (i % 2) * 168, y2 = yy + Math.floor(i / 2) * 18; T(c, k, x + 4, y2, INK, 'left', null); px(c, x + 76, y2 + 4, 80, 6, '#e3d6bc'); px(c, x + 76, y2 + 4, R(80 * Math.min(1, v / GIFT_AT)), 6, (W.gifted || {})[k] ? '#c99428' : '#3fbf7a'); });
@@ -197,7 +197,8 @@ function drawDecorPanel(c, P_) {   // 装修: better shelves, wallpaper, booth s
       TS(c, it.name, x + 58, yy + 5, 14, INK);
       T(c, it.note || ('舒适+' + it.comfort + ' 美观+' + it.beauty), x + 58, yy + 25, SUB, 'left', null, 12);
       if (it.season !== undefined) T(c, SEASONS[it.season].full + '摆 舒适×2' + (inSeason(it) ? ' ✓' : ''), x + 58, yy + 38, inSeason(it) ? '#2f6e56' : '#b0a08c', 'left', null, 12);
-      if (own) T(c, it.cat === 'wall' ? '挂咗' : '摆咗', x + 154, yy + 52, '#2f6e56', 'right', null);
+      if (own && it.cat === 'wall' && WALL_IDS.includes(id)) btn(c, x + 90, yy + 44, 66, 22, '换位置', () => moveWall(id), 'cream');
+      else if (own) T(c, it.cat === 'wall' ? '挂咗' : '摆咗', x + 154, yy + 52, '#2f6e56', 'right', null);
       else btn(c, x + 90, yy + 44, 66, 22, money$(it.cost), () => buyItem(id), W.money >= it.cost ? 'gold' : 'off');
     });
     return;
