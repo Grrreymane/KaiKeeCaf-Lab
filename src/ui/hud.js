@@ -62,7 +62,7 @@ function computeHint() {
 function drawInfoStrip(c) {   // one line under the sign: weather, today so far, comfort, reputation
   const D = W.today; if (!D) return; const st = D.stars.length ? D.stars.reduce((a, b) => a + b, 0) / D.stars.length : 0;
   c.save(); c.globalAlpha = .78; px(c, 0, 35, 290, 15, '#2a1d20'); c.restore();
-  const parts = [[wxOf().name, '#bfe0ff'], ['客 ' + D.served, '#fff4dc'], [money$(D.revenue), C.gold], ['★' + (st ? st.toFixed(1) : '-'), '#ffd75e'], ['舒适 ' + comfort(), '#9fe0b8'], ['清洁 ' + Math.round(100 - dirtOf()) + '%', dirtOf() > 50 ? '#ff9a8a' : '#c8f0d8'], ['名气 ' + W.rep.toFixed(1), '#f6c0a0']];
+  const parts = [[wxOf().name, '#bfe0ff'], ['客 ' + D.served, '#fff4dc'], [money$(D.revenue), C.gold], ['★' + (st ? st.toFixed(1) : '-'), '#ffd75e'], ['舒适 ' + comfort(), '#9fe0b8'], ['清洁 ' + Math.round(100 - dirtOf()) + '%', dirtOf() > 50 ? '#ff9a8a' : '#c8f0d8'], ['名气 ' + W.rep.toFixed(1), '#f6c0a0']]; if (vipMul() !== 1) parts.splice(1, 0, [vipMul() > 1 ? '贵宾 +15%' : '贵宾 -20%', vipMul() > 1 ? '#ffd75e' : '#ff9a8a']);
   c.font = fp(FS); const wOf = L_ => L_.reduce((a, [t]) => a + c.measureText(t).width, 0); while (parts.length > 4 && wOf(parts) + 4 * (parts.length - 1) > 282) parts.pop();   // it must stay left of the 研发 button: tighten the gaps, then drop the last items
   const gap = Math.min(10, (282 - wOf(parts)) / (parts.length - 1)); let x = 6; for (const [t, col] of parts) { T(c, t, R(x), 36, col, 'left', null); x += c.measureText(t).width + gap; }
 }

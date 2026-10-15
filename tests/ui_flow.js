@@ -135,3 +135,7 @@ ok(HIRE.temp.name && STAFF_HD.temp, "today's part-timer: " + HIRE.temp.name); { 
   const e = EPISODES[0]; W.eps = {}; playEpisode(e); ok(W.eps[e.id] && STORY_Q.some(q => q.key === 'ep'), 'an episode plays and is remembered'); STORY_Q.length = 0; DIALOG = null;
   const b0 = bagCost('flour'); W.today.rongSale = false; const full = bagCost('flour'); rongVisit(); ok(W.today.rongSale && bagCost('flour') < full && STORY_Q.some(q => q.key === 'rong'), '荣叔: sale today'); STORY_Q.length = 0; DIALOG = null; W.today.rongSale = false;
   const ph = PHASE, tu = W.tut; PHASE = 'prep'; W.tut = 9; W.tourOff = true; prepT = 0; MODE = 'play'; stepPrep(PREP_LEN + 1); ok(PHASE === 'open', 'the shop opens by itself at 9:00'); PHASE = ph; W.tut = tu; }
+// decor sets + VIP
+{ const it0 = { ...(W.items || {}) }, c0 = comfort(); W.items = { ...it0, pothos: true, bamboo: true, monstera: true }; ok(setBonus() >= 3 && comfort() > c0, 'a full decor set adds comfort');
+  W.items = { ...it0, money: true, luckycat: true }; ok(DECOR_SETS.find(S => S[0] === '招财进宝')[2] > DECOR_SETS.find(S => S[0] === '绿意盎然')[2], 'sets with a gift are worth more'); W.items = it0;
+  const d = { x: 100, y: 100, st: SEATS[0], ci: 23 }; W.vipBuff = null; vipDone(d, false); ok(vipMul() < 1, 'an unhappy VIP: fewer customers for a while'); vipDone(d, true); ok(vipMul() > 1, 'a happy VIP: more customers'); W.vipBuff = null; BUBBLES.length = 0; }

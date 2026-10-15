@@ -163,3 +163,26 @@ function newGuests() {
   if (k0) STORY_Q.push({ key: 'newguest', ci, lines: [[null, '新客人：' + k0 + '第一次来光顾。']].concat(FIRST_TALK[k0].filter(([w]) => !HIRE[w] || W.staff[w].hired)) });
   for (const k of fresh) if (k !== k0) notice('新客人：' + k + '开始来光顾');
 }
+
+// ---------------------------------------------------------------- 贵宾: a deluxe booth with good surroundings, or the word gets round (two days of fewer customers)
+const VIP_NEED = 28, VIP_WHO = [23, 18, 1];   // 西装金融男, 美艳人妻, 白领姐姐
+const boothEnv = st => {   // how nice a booth is: the shop's looks + decor pieces near it (gifts count double) + finished sets
+  const p = seatPos(st); let e = beauty() + setBonus();
+  for (const id in (W.itemPos || {})) if (hasItem(id)) { const [x, y] = W.itemPos[id]; if (Math.hypot(x - p.x, y - p.y) < 90) e += DECOR_ITEMS[id].cat === 'gift' ? 6 : 3; }
+  return e;
+};
+const vipOk = st => W.decor.booth === 'deluxe' && boothEnv(st) >= VIP_NEED;
+const vipMul = () => W && W.vipBuff && W.day <= W.vipBuff.until ? W.vipBuff.k : 1;
+function stepVip(dt) {
+  if (!W || PHASE !== 'open' || W.day < 7 || !WAITER) return; const T = W.today;
+  if (T.vipAt === undefined) T.vipAt = (W.lastVip || 0) <= W.day - 3 && rng() < .35 ? 30 + rng() * OPEN_LEN * .5 : -1;
+  if (T.vipAt < 0 || clockOpen < T.vipAt || T.vipDone) return;
+  const seats = SEATS.filter(q => !q.who && !q.dirty); if (!seats.length) { T.vipAt = clockOpen + 15; return; }   // wait for a free booth
+  const st = seats.sort((a, b) => boothEnv(b) - boothEnv(a))[0], n0 = DINERS.length; spawnDiner(st); const d = DINERS[DINERS.length - 1]; if (DINERS.length === n0 || !d) { T.vipDone = true; return; }
+  const ci = pick(VIP_WHO); d.ci = ci; d.ch = GUEST_HD[ci]; d.vip = true; d.tag = null; d.wants.push(...d.wants.slice(0, 2)); T.vipDone = true; W.lastVip = W.day;
+  notice('贵宾到！要高级卡座 + 环境 ≥ ' + VIP_NEED + '（这张 ' + boothEnv(st) + '）'); SFX.ding();
+}
+function vipDone(d, happy) {   // after the meal (or walking out)
+  if (happy) { W.vipBuff = { until: W.day + 2, k: 1.15 }; W.rep = Math.min(5, W.rep + .2); const [x, y] = P1(d.x, d.y, 50); earn(120, x, y - 30, '贵宾打赏 +$120'); say(d, '环境一流，我会介绍朋友来。', false); notice('贵宾很满意：两天客流 +15%'); }
+  else { W.vipBuff = { until: W.day + 2, k: .8 }; say(d, d.st && W.decor.booth !== 'deluxe' ? '连高级卡座都没有？' : '环境一般般……', true); notice('贵宾不满意：两天客流 -20%'); }
+}

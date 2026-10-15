@@ -234,14 +234,18 @@ const DECOR_ITEMS = {
   banner: { name: '锦旗「街坊至爱」', cat: 'wall', gift: true, cost: 0, comfort: 1, beauty: 4, note: '熟客送嘅' },
   card: { name: '手写感谢卡', cat: 'wall', gift: true, cost: 0, comfort: 2, beauty: 1, note: '熟客送嘅' },
 };
-const ITEM_CATS = [['plant', '植物'], ['wall', '墙饰'], ['season', '节日'], ['clean', '清洁'], ['air', '电器'], ['gift', '礼物']];
+const ITEM_CATS = [['plant', '植物'], ['wall', '墙饰'], ['season', '节日'], ['clean', '清洁'], ['air', '电器'], ['gift', '礼物'], ['combo', '搭配']];
+const DECOR_SETS = [   // [name, items, comfort]: the whole set in the shop = the bonus (gifts from regulars make the best sets)
+  ['绿意盎然', ['pothos', 'bamboo', 'monstera'], 3], ['老香港', ['clock', 'calendar', 'photo'], 4], ['企理干净', ['bin', 'doormat', 'vacuum'], 3],
+  ['霓虹夜冰室', ['neon', 'icebucket'], 3], ['招财进宝', ['money', 'luckycat'], 6], ['盆景雅座', ['rubber', 'bonsai'], 5], ['街坊至爱', ['banner', 'card', 'photo'], 8]];
+const setDone = S => S[1].every(hasItem), setBonus = () => DECOR_SETS.filter(setDone).reduce((a, S) => a + S[2], 0);
 const hasItem = id => !!(W && W.items && W.items[id]);
 const inSeason = it => it.season === undefined || seasonIdx((W && W.day) || 1) === it.season;
 const itemComfort = id => { const it = DECOR_ITEMS[id]; return it.cat === 'season' ? (inSeason(it) ? it.comfort * 2 : Math.floor(it.comfort / 2)) : it.comfort; };
 function comfort() {   // fan 2 → air conditioner 4 / 6 / 8, plus every item
   if (!W) return 0; let c = (upLv('ac') ? 2 + 2 * upLv('ac') : 2) + Object.keys(W.keepsakes || {}).length;   // each keepsake from a regular: +1
   for (const id in DECOR_ITEMS) if (hasItem(id)) c += itemComfort(id);
-  return c;
+  return c + setBonus();
 }
 const festive = () => Object.keys(DECOR_ITEMS).filter(id => hasItem(id) && DECOR_ITEMS[id].cat === 'season' && inSeason(DECOR_ITEMS[id])).length;
 const ACH = [

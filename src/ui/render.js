@@ -196,6 +196,7 @@ function drawWorldText(c) {
     if (o.tag === 'hurry') { px(c, x + 2, y + 1, 5, 7, '#d0453a'); px(c, x + 1, y + 2, 7, 5, '#d0453a'); px(c, x + 3, y + 2, 3, 5, '#fffaf0'); px(c, x + 2, y + 3, 5, 3, '#fffaf0'); px(c, x + 4, y + 2, 1, 3, '#2f2430'); px(c, x + 4, y + 4, 2, 1, '#2f2430'); }
     else { px(c, x + 1, y + 3, 5, 4, '#7a4a2e'); px(c, x + 2, y + 7, 3, 1, '#7a4a2e'); px(c, x + 6, y + 4, 2, 2, '#7a4a2e'); px(c, x + 2, y + 3, 3, 1, '#c88a4a'); px(c, x + 2, y + 1, 1, 1, '#c8c0b8'); px(c, x + 4, y, 1, 2, '#c8c0b8'); }
   }
+  for (const d of DINERS) if (d.vip && d.state !== 'out') { const [a, y0] = whereIs(d), x = R(a) - 6, y = R(y0 - FOOT) - 14; px(c, x - 1, y + 2, 14, 7, OUT); px(c, x, y + 3, 12, 5, C.gold); for (const k of [0, 5, 10]) { px(c, x + k - 1, y - 1, 4, 4, OUT); px(c, x + k, y, 2, 3, C.gold); } px(c, x + 5, y + 4, 2, 2, '#d0453a'); }   // 贵宾 crown
   drawBubbles(c);
 }
 function drawBubbles(c) {

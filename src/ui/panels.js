@@ -161,11 +161,11 @@ function drawDecorPanel(c, P_) {   // 装修: better shelves, wallpaper, booth s
   [['shelf', '货架'], ['wall', '墙纸'], ['booth', '卡座'], ['expand', '扩建'], ['items', '摆设']].forEach(([k, n], i) => btn(c, 14 + i * 66, y - 4, 62, 24, n, () => { P_.tab = k; SFX.tap(); }, tab === k ? 'gold' : 'cream'));
   { const lv = beautyLv(), nx = BEAUTY_STEPS[lv], b = beauty();   // milestone: what the next level of beauty gives
     T(c, nx ? '美观 ' + b + '/' + nx.at + ' → 下一级「' + nx.name + '」' : '已达「街知巷闻」，满级！', 14, y + 26, nx ? '#b8483c' : '#2f6e56', 'left', null);
-    T(c, lv ? '已有：' + BEAUTY_STEPS.slice(0, lv).map(s => s.perk).join('；') : '美观越高，客人越多', 14, y + 44, lv ? '#2f6e56' : SUB, 'left', null); }
+    T(c, lv ? '美观奖励 ' + lv + ' 级：' + BEAUTY_STEPS.slice(0, lv).map(s => s.name).join('、') : '美观越高，客人越多', 14, y + 44, lv ? '#2f6e56' : SUB, 'left', null, 12); }
   y += 66;
   if (tab === 'items') {   // 摆设: plants, wall pieces, festive pieces, the fan → air conditioner
     const cat = P_.cat || 'plant', cf = comfort();
-    ITEM_CATS.forEach(([k, n], i) => btn(c, 14 + i * 55, y, 52, 20, n, () => { P_.cat = k; SFX.tap(); }, cat === k ? 'gold' : 'cream'));
+    ITEM_CATS.forEach(([k, n], i) => btn(c, 14 + i * 47, y, 45, 20, n, () => { P_.cat = k; SFX.tap(); }, cat === k ? 'gold' : 'cream'));
     T(c, '舒适 ' + cf + ' → 客流 +' + cf + '% · 客人耐心 +' + (cf / 2).toFixed(1) + '%', 14, y + 26, '#2f6e56', 'left', null);
     y += 46;
     if (cat === 'air') {
@@ -174,6 +174,13 @@ function drawDecorPanel(c, P_) {   // 装修: better shelves, wallpaper, booth s
       T(c, '现在：舒适 +' + (n ? 2 + 2 * n : 2) + (n ? ' · 客人肯多等 ' + (15 * n) + '%' : ' · 吹吓风'), 22, y + 28, SUB, 'left', null);
       if (L) { T(c, '下一级：' + L[0] + '（舒适 +' + (4 + 2 * n) + '，' + L[2] + '）', 22, y + 46, '#b8483c', 'left', null); btn(c, 246, y + 8, 92, 28, money$(L[1]), () => buyUpgrade('ac'), W.money >= L[1] ? 'gold' : 'off'); }
       else T(c, '满级', 336, y + 18, '#2f6e56', 'right', null);
+      return;
+    }
+    if (cat === 'combo') {   // decor sets: which pieces, what's missing, the bonus
+      DECOR_SETS.forEach((S, i) => { const yy = y + i * 38, done = setDone(S), gift = S[1].some(id => DECOR_ITEMS[id].cat === 'gift' || ['banner', 'card'].includes(id));
+        card(c, 14, yy, 332, 35, done ? '#fff1c8' : '#fffaf0'); TS(c, S[0], 22, yy + 2, 14, done ? '#b8483c' : INK); T(c, '舒适 +' + S[2] + (gift ? ' · 含礼物' : ''), 22, yy + 20, done ? '#2f6e56' : SUB, 'left', null, 12);
+        S[1].forEach((id, k) => { const x = 150 + k * 64, im = itemThumb(id), kk = Math.min(1, 40 / im.width, 27 / im.height); px(c, x, yy + 3, 58, 29, hasItem(id) ? '#e6f2ea' : '#ece2cf');
+          c.save(); if (!hasItem(id)) c.globalAlpha = .35; c.drawImage(im, R(x + 29 - im.width * kk / 2), R(yy + 31 - im.height * kk), R(im.width * kk), R(im.height * kk)); c.restore(); }); });
       return;
     }
     if (cat === 'gift') {   // what regulars have given; how close each kind of customer is to bringing one
@@ -225,6 +232,7 @@ function drawDecorPanel(c, P_) {   // 装修: better shelves, wallpaper, booth s
     return;
   }
   const list = tab === 'wall' ? WALLS : BOOTH_STYLES, own = tab === 'wall' ? W.decor.walls : W.decor.booths, cur = W.decor[tab];
+  if (tab === 'booth' && SEATS.length) { const best = Math.max(...SEATS.map(boothEnv)); T(c, '贵宾要：高级卡座 + 环境 ≥ ' + VIP_NEED + '（最好一张 ' + best + '）', 14, y - 2, best >= VIP_NEED && W.decor.booth === 'deluxe' ? '#2f6e56' : '#b8483c', 'left', null, 12); y += 16; }
   Object.keys(list).forEach((k, i) => {
     const S = list[k], x = 14 + (i % 2) * 168, yy = y + Math.floor(i / 2) * 84;
     card(c, x, yy, 162, 80, cur === k ? '#ffe9b0' : '#fffaf0'); c.save(); c.translate(x + 8, yy + 4); c.scale(.97, .97); decorSwatch(c, tab, S, 0, 0); c.restore();

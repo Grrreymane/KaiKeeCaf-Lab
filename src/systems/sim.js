@@ -76,6 +76,7 @@ function applyDecor() {   // after loading / buying: wallpaper, booth style, she
   const bgKey = d.wall + ':' + expandLv() + ':' + upLv('ac') + ':' + Object.keys(DECOR_ITEMS).filter(id => DECOR_ITEMS[id].cat === 'wall' && hasItem(id)).join() + ':' + keepList('w').join() + ':' + PIDS.filter(p => unlocked(p)).map(p => p + priceOf(p)).join();
   if (BG && BG_WALL !== bgKey) { drawBackground(BG.getContext('2d')); BG_WALL = bgKey; }
   applyExpand(); applyExtraShelves(); applyItems(); applyKeepsakes();
+  W.sets = W.sets || {}; for (const S of DECOR_SETS) if (setDone(S) && !W.sets[S[0]]) { W.sets[S[0]] = W.day; if (PHASE !== 'title') notice('搭配完成「' + S[0] + '」舒适 +' + S[2]); }
   if (BOOTH_DONE !== d.booth) { restyleBooths(); BOOTH_DONE = d.booth; }
   for (const id of SHELF_IDS) { if (TABLES[id]._key !== ((d.tier[id] || 0) + ':' + (d.rot[id] || 0) + ':' + (isFridge(id) ? 1 : 0))) rebuildShelf(id); shelfCaps(id); }
   for (const id of ['P1', 'P2']) { const g = MOV.find(m => m.id === id), want = !!d.rot[id]; if (g && !!g.objs[0]._flip !== want) { const o = g.objs[0]; o.cv = flipC(o.cv); o._flip = want; o._a = null; } }
@@ -145,7 +146,7 @@ const reserve = p => ordered(p) + (W.showcase === p ? 6 : 0) + (takeOpen() && PR
 function spawnRate() {
   const tod = clamp(clockOpen / OPEN_LEN, 0, 1), g = (m, w) => Math.exp(-((tod - m) ** 2) / (2 * w * w));
   const curve = .55 + .9 * g(.12, .06) + 1.0 * g(.45, .07) + .7 * g(.7, .06);   // breakfast, lunch, afternoon tea
-  return .3 * curve * (.6 + W.rep * .12) * (W.day === 1 ? .85 : 1) * [1, 1.2, 1.3, 1.4][upLv('sign')] * (1 + .05 * upLv('ads')) * (hasPerk('shao_lure') ? 1.08 : 1) * (1 + beauty() * .015) * (beautyLv() >= 2 ? 1.05 : 1) * (beautyLv() >= 3 ? 1.1 : 1) * wxOf().rate * priceTier().rate * (hasPerk('qing_student') ? 1.06 : 1) * (1 + comfort() * .01) * (1 + .03 * festive()) * dirtSlow();   // comfort brings people in; festive pieces in season too   // a nicer shop draws more people; weather, prices
+  return .3 * curve * (.6 + W.rep * .12) * (W.day === 1 ? .85 : 1) * [1, 1.2, 1.3, 1.4][upLv('sign')] * (1 + .05 * upLv('ads')) * (hasPerk('shao_lure') ? 1.08 : 1) * (1 + beauty() * .015) * (beautyLv() >= 2 ? 1.05 : 1) * (beautyLv() >= 3 ? 1.1 : 1) * wxOf().rate * priceTier().rate * (hasPerk('qing_student') ? 1.06 : 1) * (1 + comfort() * .01) * (1 + .03 * festive()) * dirtSlow() * vipMul();   // comfort brings people in; festive pieces in season too   // a nicer shop draws more people; weather, prices
 }
 function freshLook() { const pool = guestPool(), used = new Set([...CUST, ...DINERS].map(c => c.ci)), free = pool.filter(i => !used.has(i)); return pick(free.length ? free : pool); }   // only the kinds of customer that have started coming
 function spawnCustomer(force) {
@@ -320,6 +321,7 @@ function stepDiners(dt) {
         const tip = !tier ? (rng() < .3 ? 1 : 0) : (tier === 2 ? 2 : 0) + (d.tag ? 2 : 0) + 3 + Math.floor(rng() * 3) + (d.server ? lvOf(d.server) - 1 : 0) + ((BOOTH_STYLES[W.decor.booth] || {}).tip || 0) + (beautyLv() >= 2 ? 1 : 0) + (hasPerk('wen_care') ? 1 : 0) + (hasPerk('shao_memo') ? 2 : 0);   // tip: only when the service was quick
         if (tip) { earn(tip, x, y - 16, (tier === 2 ? '快！' : '') + '小费 +$' + tip); W.today.tips = (W.today.tips || 0) + tip; }
         W.today.stars.push(d.slow ? 4 : 5); fanOf(d.ci, d.slow ? 4 : 5); if (rng() < .4) say(d, d.slow ? pick(['等得耐咗少少', '好味，不过慢咗啲']) : pick(['坐得好舒服', '招呼周到！', '好味！', '下次带朋友嚟']), !!d.slow);
+        if (d.vip) vipDone(d, vipOk(d.st) && !d.slow);
         d.st.items = []; d.st.dirty = true; leaveDiner(d);
       }
     }
@@ -327,7 +329,7 @@ function stepDiners(dt) {
   DINERS = DINERS.filter(d => !d.gone);
 }
 function leaveDiner(d, line, stars) {
-  if (line) { say(d, line, true); gripe('serve'); W.today.stars.push(stars); }
+  if (line) { say(d, line, true); gripe('serve'); W.today.stars.push(stars); if (d.vip) vipDone(d, false); }
   if (d.st.who === d) d.st.who = null;
   const p = seatPos(d.st), nav = navRoute([p.X - 7, p.y], [700, 338]); d.state = 'out'; d.route = nav ? [[p.x, p.y]].concat(nav) : p.X > 318 ? [[p.x, p.y], [p.X - 7, p.y], [p.X - 7, AISLE_Y], [259, AISLE_Y], [259, 338], [700, 338]] : [[p.x, p.y], [259, p.y], [259, 338], [700, 338]]; d.d = 0; d.L = polyLen(d.route);
 }
@@ -576,6 +578,6 @@ function simStep(dt) {
   stepFly(dt); stepLeavers(dt); stepMurmur(dt);
   stepWalkers(dt); stepBubbles(dt);
   for (const p of POPS) p.t += dt; POPS = POPS.filter(p => p.t < 1.4);
-  stepEpisodes(dt); if (PHASE === 'prep') stepPrep(dt);
+  stepEpisodes(dt); stepVip(dt); if (PHASE === 'prep') stepPrep(dt);
   if (PHASE === 'prep' || PHASE === 'open' || PHASE === 'closing') { stepStaff(dt); stepTrays(dt); stepCustomers(dt); stepDiners(dt); stepWaiter(dt); stepCleaners(dt); }
 }
