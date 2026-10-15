@@ -1,5 +1,5 @@
 // ==== render: world layer (panned by camX) + world-anchored text, then HUD and panels on top
-let camX = LM, MODE = 'play', BG = null, SHADE = null, gtime = 0;
+let camX = LM, MODE = 'play', BG = null, SHADE = null, gtime = 0, rtime = 0;   // rtime: real seconds (UI pulses and arrows ignore ×2/×3)
 function redoShadows() { if (!SHADE) return; const x = SHADE.getContext('2d'); x.clearRect(0, 0, WW, 1280); contactShadows(x); }
 
 // front-to-back: things with smaller x / y are behind

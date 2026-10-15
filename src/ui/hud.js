@@ -66,7 +66,7 @@ function drawInfoStrip(c) {   // one line under the sign: weather, today so far,
   let x = 6; c.font = fp(12); for (const [t, col] of parts) { T(c, t, x, 36, col, 'left', null); x += R(c.measureText(t).width) + 10; }
 }
 function drawHUD(c) {
-  const t = gtime;
+  const t = rtime;
   // top: dark wood sign board
   px(c, 0, 0, 360, 34, '#5a3a28'); for (let y = 5; y < 32; y += 6) for (let x = (y * 37) % 50; x < 360; x += 60) px(c, x, y, 34, 1, '#4e3222');
   px(c, 0, 0, 360, 1, '#7a5238'); px(c, 0, 32, 360, 2, '#3a2418');
@@ -165,7 +165,7 @@ const TOUR_DAYS = {
 const tourKey = () => { if (!W) return null; W.toured = W.toured || {}; if (TOUR_DAYS[W.day] && !W.toured[W.day]) return W.day; if (!W.toured.lab && labUnlocked()) return 'lab'; if (!W.toured.dirt && dirtOf() > 25) return 'dirt'; return null; };
 const tourOn = () => W && !W.tourOff && PHASE === 'prep' && MODE === 'play' && !DIALOG && !STORY_Q.length && !PANEL && !DESK && tourKey() !== null;
 function drawTour(c) {
-  const key = tourKey(), steps = TOUR_DAYS[key], i = Math.min(W.tourStep || 0, steps.length - 1), st = steps[i], t = gtime;
+  const key = tourKey(), steps = TOUR_DAYS[key], i = Math.min(W.tourStep || 0, steps.length - 1), st = steps[i], t = rtime;
   if (st.cam) { const want = clamp(R(P(st.cam[0], st.cam[1])[0]) - 360, 0, CAM_MAX); camX += (want - camX) * .2; }   // bring a target in the shop into view
   const r = st.rect ? st.rect() : null;
   const done = () => { W.toured[key] = true; W.tourStep = 0; saveGame(); }, next = () => { SFX.tap(); if (i + 1 >= steps.length) done(); else W.tourStep = i + 1; };
@@ -190,7 +190,7 @@ function drawTour(c) {
 }
 function drawEpisodeBar(c) {   // 小剧场 invitation at the top: 看 to watch (the shop pauses while reading), or let it pass
   const B = EP_BANNER; if (!B || PANEL || DIALOG || DESK) return;
-  const y = 54, pulse = Math.sin(gtime * 4) > -.2;
+  const y = 54, pulse = Math.sin(rtime * 4) > -.2;
   px(c, 8, y - 1, 280, 30, pulse ? C.gold : OUT); px(c, 9, y, 278, 28, '#fff3d6');
   T(c, '小剧场 · 店里好像有事发生', 18, y + 8, '#b8483c', 'left', null);
   btn(c, 200, y + 4, 44, 20, '看', () => { SFX.tap(); playEpisode(B.ep); }, 'gold'); btn(c, 248, y + 4, 34, 20, '×', () => { EP_BANNER = null; SFX.tap(); }, 'cream');

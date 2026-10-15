@@ -29,6 +29,6 @@ FONTS_READY.then(() => {
   render(CTX);   // first frame now (headless screenshots may never get a rAF)
   /*TEST_HOOK*/
   let last = performance.now();
-  const loop = now => { const dt = clamp((now - last) / 1000, 0, .05); last = now; for (let k = 0; k < SPEED_X(); k++) step(dt); render(CTX); requestAnimationFrame(loop); };   // fast-forward = several sim steps per frame
+  const loop = now => { const dt = clamp((now - last) / 1000, 0, .05); last = now; rtime += dt; for (let k = 0; k < SPEED_X(); k++) step(dt); render(CTX); requestAnimationFrame(loop); };   // fast-forward = several sim steps per frame
   requestAnimationFrame(loop);
 });
