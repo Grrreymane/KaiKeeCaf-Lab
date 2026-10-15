@@ -171,13 +171,15 @@ const canResearch = () => PHASE === 'ledger' || PHASE === 'prep';   // after clo
 const dramp = (cols, v) => cols[Math.max(0, Math.min(cols.length - 1, Math.floor((v + 1) / 2 * cols.length)))];
 const dlit = (x, y, cx, cy, rx, ry) => Math.max(-1, Math.min(1, -((x + .5 - cx) / rx) * .55 - ((y + .5 - cy) / ry) * .75 + .1));
 const dtone = (col, n = 4) => [shade(col, -40), shade(col, -18), col, shade(col, 22), shade(col, 40)].slice(5 - n);
-function finish(g, dark = '#4a3236') { const add = []; for (let y = 0; y < g.h; y++) for (let x = 0; x < g.w; x++) { if (g.get(x, y)) continue; const n = g.get(x, y + 1) || g.get(x - 1, y) || g.get(x + 1, y) || g.get(x, y - 1); if (n) add.push([x, y, mixHex(n, dark, .7)]); } add.forEach(([x, y, c]) => g.set(x, y, c)); return g.canvas(); }
+function finish(g, dark = OUT) { for (let pass = 0; pass < 2; pass++) { const add = []; for (let y = 0; y < g.h; y++) for (let x = 0; x < g.w; x++) { if (g.get(x, y)) continue; const n = g.get(x, y + 1) || g.get(x - 1, y) || g.get(x + 1, y) || g.get(x, y - 1); if (n) add.push([x, y, mixHex(n, dark, .82)]); } add.forEach(([x, y, c]) => g.set(x, y, c)); } return g.canvas(); }
 const SPR = {};
 const cache = (k, fn) => SPR[k] || (SPR[k] = fn());
 const hsh = (x, y, s = 1) => { const v = Math.sin(x * 12.9898 + y * 78.233 + s * 37.7) * 43758.5453; return v - Math.floor(v); };   // stable per-pixel noise
 const rel = (x, y, cx, cy, rx, ry) => ((x + .5 - cx) / rx) ** 2 + ((y + .5 - cy) / ry) ** 2;
 const dsk = (g, cx, cy, rx, ry, cols, lx = -.35, ly = -.45) => g.ell(cx, cy, rx, ry, (x, y) => dramp(cols, dlit(x, y, cx + lx * rx, cy + ly * ry, rx * 1.4, ry * 1.4)));   // lit disc / sphere
 function rrect(g, x, y, w, h, r, col) { for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) { const dx = Math.max(x + r - i - .5, 0, i + .5 - (x + w - r)), dy = Math.max(y + r - j - .5, 0, j + .5 - (y + h - r)); if (dx * dx + dy * dy <= r * r) g.set(i, j, typeof col === 'function' ? col(i, j) : col); } }
+const up2 = cv => { const o = mk(cv.width * 2, cv.height * 2), x = o.getContext('2d'); x.imageSmoothingEnabled = false; x.drawImage(cv, 0, 0, o.width, o.height); return o; };   // one game pixel = 2x2 device pixels, hard edges
+const band = (cols, v) => cols[Math.max(0, Math.min(cols.length - 1, Math.floor((v + 1) / 2 * cols.length)))];   // flat tone steps, like the shop's shading
 let SH_ID = 0;
 function shadowOf(cv) { return cache('sh:' + (cv._sid || (cv._sid = ++SH_ID)), () => { const o = mk(cv.width, cv.height), x = o.getContext('2d'); x.drawImage(cv, 0, 0); x.globalCompositeOperation = 'source-in'; x.fillStyle = '#3a2a20'; x.fillRect(0, 0, o.width, o.height); return o; }); }
 function putShadowed(c, cv, x, y, lift = 0, s = 1) {   // sprite centred on x,y with a shadow to the bottom-right; lift = how high it is held
@@ -309,16 +311,16 @@ function landed(k) {
 const EGG1 = () => cache('egg1', () => { const g = new Grid(34, 42); dsk(g, 17, 21, 14, 18, ['#d8c4a0', '#e8d6b4', '#f4e6cc', '#fff6e6']); return finish(g); });
 // 40 cm stainless mixing bowl, top view: bright rolled rim, inner wall (shadowed top-left, lit bottom-right), brushed base
 const BOWL_R = 130, BX = 360, BY = 712;
-const BOWL = () => cache('bowl', () => {
-  const s = BOWL_R * 2 + 4, g = new Grid(s, s), c0 = s / 2;
-  g.ell(c0, c0, BOWL_R, BOWL_R, (x, y) => {
-    const dx = x + .5 - c0, dy = y + .5 - c0, d = Math.hypot(dx, dy), a = Math.atan2(dy, dx), lit = -(Math.cos(a) * .55 + Math.sin(a) * .75);   // lit = 1 toward the top-left
-    if (d > BOWL_R - 7) return dramp(['#9aa0a3', '#c9cdd0', '#e4e8eb', '#ffffff'], lit * .9);
-    if (d > BOWL_R * .62) return dramp(['#8e959a', '#a8adb2', '#c5cacd', '#dfe3e6', '#f2f5f6'], -lit * .8 + (d - BOWL_R * .62) / BOWL_R * .6);
-    return Math.round(d) % 7 === 0 ? '#c5cacd' : '#d3d8db';
+const BOWL = () => cache('bowl', () => {   // stainless mixing bowl from above: lit rim, shaded inner wall, flat bottom with turning rings
+  const r = BOWL_R / 2, s0 = r * 2 + 4, g = new Grid(s0, s0), c0 = s0 / 2;
+  g.ell(c0, c0, r, r, (x, y) => {
+    const dx = x + .5 - c0, dy = y + .5 - c0, d = Math.hypot(dx, dy), a = Math.atan2(dy, dx), lit = -(Math.cos(a) * .55 + Math.sin(a) * .75);
+    if (d > r - 4) return band(['#9aa0a3', '#c9cdd0', '#e8ecee', '#ffffff'], lit * .9);
+    if (d > r * .62) return band(['#949a9f', '#a6acb0', '#b8bdc1', '#cacfd2', '#dce0e3'], -lit * .8 + (d - r * .62) / r);
+    return Math.round(d) % 6 === 0 ? '#c2c7ca' : '#d2d7da';
   });
-  for (let t = 3.5; t < 4.4; t += .01) g.set(R(c0 + Math.cos(t) * (BOWL_R - 3)), R(c0 + Math.sin(t) * (BOWL_R - 3)), '#ffffff');
-  return finish(g);
+  for (let t = 3.6; t < 4.3; t += .02) g.set(R(c0 + Math.cos(t) * (r - 2)), R(c0 + Math.sin(t) * (r - 2)), '#ffffff');   // the shine on the rim
+  g.selOutline(); return up2(g.canvas());
 });
 // tray of six moulds (top view)
 const moldXY = i => [BX + ((i % 3) - 1) * 112, BY - 58 + Math.floor(i / 3) * 116];
@@ -366,15 +368,16 @@ function mould(kind, fill, R0, stage) {
 const TRAY_TOP = () => cache('tray', () => { const g = new Grid(372, 248); rrect(g, 0, 0, 372, 248, 10, (x, y) => dramp(['#5a5e62', '#6e7276', '#8a8f93'], dlit(x, y, 40, 30, 372, 248))); rrect(g, 7, 7, 358, 234, 6, (x, y) => ((x % 12 === 6 && y % 12 === 6) ? '#45494c' : '#5e6266')); g.rect(8, 7, 356, 2, '#a8adb2'); return finish(g); });
 // oven (or fridge) at the bottom of the worktop: steel body, a big glass window into the chamber
 const OV = { x: 120, y: 902, w: 480, h: 206, wx: 150, wy: 930, ww: 420, wh: 156 };
-function ovenBody(fr) {
+function ovenBody(fr) {   // countertop oven (or the fridge) front: flat steel bands, black window frame, vents; drawn at game pixels
   return cache('oven:' + fr, () => {
-    const g = new Grid(OV.w, OV.h), body = fr ? ['#c9d6dc', '#dfe9ee', '#f2f7f9', '#ffffff'] : ['#8e959a', '#b4b9bc', '#d3d8d6', '#eef1f2'];
-    rrect(g, 0, 0, OV.w, OV.h, 10, (x, y) => dramp(body, dlit(x, y, 40, 20, OV.w, OV.h)));
-    const wx = OV.wx - OV.x, wy = OV.wy - OV.y; g.rect(wx - 6, wy - 6, OV.ww + 12, OV.wh + 12, fr ? '#a9c4cc' : '#3b3135');
-    for (let y = wy; y < wy + OV.wh; y++) for (let x = wx; x < wx + OV.ww; x++) g.d[y * OV.w + x] = null;   // the window is drawn live
-    if (!fr) { for (const x of [16, 464]) for (let y = 30; y < 180; y += 10) g.rect(x - 4, y, 8, 3, '#7a8083'); }
-    else for (let y = 30; y < 180; y += 8) { g.rect(10, y, 10, 2, '#a9c4cc'); g.rect(460, y, 10, 2, '#a9c4cc'); }
-    return finish(g);
+    const W2 = OV.w / 2, H2 = OV.h / 2, g = new Grid(W2, H2), body = fr ? ['#b9c8ce', '#d6e3e8', '#eef5f7'] : ['#8e959a', '#b4b9bc', '#d6dadb'];
+    rrect(g, 0, 0, W2, H2, 5, (x, y) => y < 3 ? body[2] : y > H2 - 6 ? shade(body[0], -10) : x > W2 - 4 ? body[0] : body[1]);
+    for (let x = 6; x < W2 - 6; x += 2) if (hsh(x, 1, 5) > .6) g.set(x, 2 + (x % 3), body[2]);   // brushed streaks
+    const wx = (OV.wx - OV.x) / 2, wy = (OV.wy - OV.y) / 2, ww = OV.ww / 2, wh = OV.wh / 2; g.rect(wx - 3, wy - 3, ww + 6, wh + 6, fr ? '#8fb0ba' : '#2f2830'); g.rect(wx - 3, wy - 3, ww + 6, 1, fr ? '#c9dde3' : '#4a4048');
+    for (let y = wy; y < wy + wh; y++) for (let x = wx; x < wx + ww; x++) g.d[y * W2 + x] = null;   // the window is drawn live
+    if (!fr) { for (const x of [8, 232]) for (let y = 15; y < 90; y += 5) g.rect(x - 2, y, 4, 2, '#6a7073'); g.rect(W2 / 2 - 12, H2 - 5, 24, 2, '#5a5e62'); }   // vents + handle
+    else for (let y = 15; y < 90; y += 4) { g.rect(5, y, 5, 1, '#8fb0ba'); g.rect(230, y, 5, 1, '#8fb0ba'); }
+    g.selOutline(); return up2(g.canvas());
   });
 }
 
@@ -465,22 +468,23 @@ function deskUp() {
 }
 
 // ---------------------------------------------------------------- drawing (device px inside c.scale(.5); text in UI px afterwards)
-const RACK = () => cache('rack', () => {   // two-tier wooden rack seen from above: boards, side rails, a bin per ingredient
-  const g = new Grid(720, 222);
-  g.rect(0, 0, 720, 222, (x, y) => ((y * 3 + Math.floor(x / 120) * 13) % 29 < 2) ? '#4a2e1e' : '#5e3e28');
+const RACK = () => cache('rack', () => {   // two-tier wooden rack from above: planked shelves, a bin per ingredient with a shadowed inner wall
+  const g = new Grid(360, 111);
+  g.rect(0, 0, 360, 111, '#4a2e1e');
   for (let r = 0; r < 2; r++) {
-    const y0 = 8 + r * 108; g.rect(0, y0, 720, 78, (x, y) => dramp(['#9a6a40', '#b07a4a', '#c48c58'], dlit(x, y, 60, y0, 720, 78) + (hsh(x >> 3, y, 2) - .5) * .3)); g.rect(0, y0, 720, 2, '#d9a066'); g.rect(0, y0 + 76, 720, 3, '#6e4a30');
-    for (let k = 0; k < 9; k++) { const x0 = k * 80 + 4; rrect(g, x0, y0 + 4, 72, 70, 4, (x, y) => (x < x0 + 4 || y < y0 + 8) ? '#7a5030' : (x > x0 + 67 || y > y0 + 69) ? '#d9a066' : '#8a5e3c'); }   // bin: shadowed inner walls top / left
+    const y0 = 4 + r * 54; g.rect(0, y0, 360, 39, (x, y) => { const pl = Math.floor((y - y0) / 13); return (y - y0) % 13 === 12 ? '#6e4a30' : hsh(x >> 2, y, pl + 3) > .93 ? '#a8744a' : ['#c48c58', '#b88250', '#c99360'][pl]; });   // three planks
+    g.rect(0, y0, 360, 1, '#e0aa70'); g.rect(0, y0 + 38, 360, 2, '#5a3a24');
+    for (let k = 0; k < 9; k++) { const x0 = k * 40 + 2; g.rect(x0, y0 + 2, 36, 35, '#3a2a2e'); g.rect(x0 + 1, y0 + 3, 34, 33, '#8a5e3c'); g.rect(x0 + 1, y0 + 3, 34, 3, '#6a4428'); g.rect(x0 + 1, y0 + 3, 2, 33, '#74492c'); g.rect(x0 + 33, y0 + 6, 2, 30, '#a6764a'); }   // bin: dark rim, shadowed top / left wall
   }
-  return g.canvas();
+  return up2(g.canvas());
 });
-const WORKTOP = () => cache('worktop', () => {   // honed white marble, a few thin wandering veins
-  const g = new Grid(720, 1040);
-  g.rect(0, 0, 720, 1040, (x, y) => { const v = hsh(x >> 1, y >> 1, 3); return v > .985 ? '#fbf4e4' : v < .02 ? '#e2d4b8' : (x * 7 + y * 13) % 61 === 0 ? '#e8dac0' : '#f1e6cf'; });
+const WORKTOP = () => cache('worktop', () => {   // marble bench like the shop's counters: warm white, a few veins, at game pixels
+  const g = new Grid(360, 520);
+  g.rect(0, 0, 360, 520, (x, y) => { const v = hsh(x, y, 3); return v > .99 ? '#fbf4e4' : v < .015 ? '#e2d4b8' : '#f1e6cf'; });
   let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-  for (let v = 0; v < 9; v++) { let x = rnd() * 720, y = rnd() * 1040, a = rnd() * 6.28; const col = v % 2 ? '#dccbaa' : '#e3d4b6';
-    for (let k = 0; k < 340; k++) { a += (rnd() - .5) * .45; x += Math.cos(a) * 2; y += Math.sin(a) * 1.2; if (x < 0 || x > 720 || y < 0 || y > 1040) break; g.set(x, y, col); if (k % 7 < 2) g.set(x + 1, y, shade(col, 8)); } }
-  return g.canvas();
+  for (let v = 0; v < 7; v++) { let x = rnd() * 360, y = rnd() * 520, a = rnd() * 6.28; const col = v % 2 ? '#e6d9be' : '#eadec6';
+    for (let k = 0; k < 200; k++) { a += (rnd() - .5) * .5; x += Math.cos(a); y += Math.sin(a) * .6; if (x < 0 || x > 360 || y < 0 || y > 520) break; g.set(x, y, col); } }
+  return up2(g.canvas());
 });
 function drawContents(c, D, t) {   // what is in the bowl: separate piles that swirl together into one batter while mixing
   const m = D.mix;
@@ -577,10 +581,17 @@ function drawOvenArea(c, D, R0, t) {
 }
 // ---- props for the process steps (top view, around the centre of the worktop)
 function ellF(c, x, y, rx, ry, col) { c.fillStyle = col; c.beginPath(); c.ellipse(R(x), R(y), rx, ry, 0, 0, 7); c.fill(); }
-function drawScale(c, D, s) {   // digital kitchen scale under the bowl, LCD in front
+const SCALE = () => cache('scale', () => {   // digital kitchen scale from above: bevelled steel plate, screws, LCD on the front lip
+  const g = new Grid(165, 160);
+  rrect(g, 0, 0, 165, 160, 4, (x, y) => y < 4 ? '#eef1f2' : x > 160 || y > 154 ? '#a8adb2' : x < 3 ? '#dfe3e5' : '#c9cdd0');
+  for (const [x, y] of [[6, 6], [157, 6], [6, 146], [157, 146]]) { g.rect(x, y, 3, 3, '#8e959a'); g.set(x, y, '#ffffff'); }
+  g.rect(42, 132, 80, 16, '#2a3a30'); g.rect(44, 134, 76, 12, '#9ad8a0'); g.rect(44, 134, 76, 2, '#c4f0c8');   // LCD
+  g.rect(130, 136, 8, 8, '#d0453a'); g.rect(130, 136, 8, 2, '#f07a6a');   // tare button
+  g.selOutline(); return up2(g.canvas());
+});
+function drawScale(c, D, s) {   // the scale under the bowl (its numbers are drawn on top in the UI)
   c.save(); c.globalAlpha = .22; c.fillStyle = '#3a2a20'; c.fillRect(BX - 158, BY - 146, 330, 330); c.restore();
-  c.fillStyle = '#c9cdd0'; c.fillRect(BX - 165, BY - 155, 330, 320); c.fillStyle = '#e4e8eb'; c.fillRect(BX - 165, BY - 155, 330, 8); c.fillStyle = '#a8adb2'; c.fillRect(BX + 157, BY - 155, 8, 320);
-  c.fillStyle = '#2a3a30'; c.fillRect(BX - 80, BY + 128, 160, 30); c.fillStyle = '#9ad8a0'; c.fillRect(BX - 76, BY + 132, 152, 22);
+  c.drawImage(SCALE(), BX - 165, BY - 155);
 }
 function drawWeighPour(c, D, s, t) {   // the bag / block held over the bowl, a stream while held, the pile grows with the grams
   const g = D.s.grams || 0, f = Math.min(1.3, g / s.g), im = landed(s.k), sc = .3 + .7 * Math.min(1, f), [sx, sy] = spotFor(D.blobs.length);
@@ -735,7 +746,7 @@ function drawDesk(c) {
   }
   const p = D.p, R0 = RECIPES[p], st = curStep(D) || D.flow[D.flow.length - 1];
   { const dv = DESK_DEV || (DESK_DEV = mk(720, 1280)), sm = DESK_SM || (DESK_SM = mk(360, 640)), dx = dv.getContext('2d'), sx = sm.getContext('2d');   // bench at full res → one game pixel per 2×2 (same grain as the shop)
-    dx.clearRect(0, 0, 720, 1280); drawDeskDevice(dx); sx.imageSmoothingEnabled = true; sx.clearRect(0, 0, 360, 640); sx.drawImage(dv, 0, 0, 360, 640); c.save(); c.imageSmoothingEnabled = false; c.drawImage(sm, 0, 0, 360, 640); c.restore(); }
+    dx.clearRect(0, 0, 720, 1280); drawDeskDevice(dx); sx.imageSmoothingEnabled = false; sx.clearRect(0, 0, 360, 640); sx.drawImage(dv, 0, 0, 360, 640); c.save(); c.imageSmoothingEnabled = false; c.drawImage(sm, 0, 0, 360, 640); c.restore(); }
   { const nm = PRODUCTS[p].name; TS(c, nm.length > 4 ? nm.slice(0, 4) + '…' : nm, 80, 10, 16, C.gold); }   // long Lab names would run into the step label
   { const n = D.flow.length, si = D.mode === 'done' ? n : D.si;   // the whole process: a dot per step, the current one named
     D.flow.forEach((q, i) => { const x = 150 + i * Math.min(14, 140 / n); px(c, x, 30, 9, 6, i < si ? '#6cb86c' : i === si ? C.gold : '#6a5a68'); });
