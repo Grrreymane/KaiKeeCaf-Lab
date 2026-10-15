@@ -57,7 +57,7 @@ const EPISODES = [
   { id: 'firstday', ok: () => W.staff.temp.hired, lines: [['temp', '请问堂食还是外带？'], ['cust', '（举着外带袋）你猜？'], ['temp', '……外带，马上来！']] },
   { id: 'rush', ok: () => W.staff.wen.hired, lines: [['wen', '三杯冻奶茶、两杯鸳鸯、一杯柠檬茶——'], ['wen', '（深呼吸）……好，一杯一杯来。'], ['lin', '雯姐，你的手比电脑还快呀！']] },
   { id: 'qingpush', ok: () => W.staff.qing.hired, lines: [['qing', '今天听我的，试试新品嘛~'], ['cust', '我只是想要杯热奶茶……'], ['qing', '……好吧，热奶茶一杯。（委屈）']] },
-  { id: 'shaotrouble', ok: () => W.staff.shao.hired && W.day >= 6, fx: 'shao', ci: 19, cname: '咏欣', lines: [[null, '一个女生冲进店里。'], ['cust', '阿少！你说周末请我看戏的呢？'], ['shao', '（递上一杯热奶茶）啊？哦..先坐下……慢慢说。'], ['cust', '……（脸红）好吧。'], ['lin', '又来了……（阿少要陪她一阵子）']] },
+  { id: 'shaotrouble', ok: () => W.staff.shao.hired && W.day >= 6 && W.eps && W.eps.shao1, fx: 'shao', ci: 24, cname: '阿千', lines: [[null, '阿千又冲进店里。'], ['cust', '阿少！周末的电影你到底去不去嘛！'], ['shao', '……不去。'], ['cust', '（鼓起脸）那我就坐在这里等到你去！'], ['shao', '（叹气，递上一杯热奶茶）……先喝。慢慢说。'], ['cust', '……（脸红）哼，好吧。'], ['lin', '又来了……（阿少要陪她一阵子）']] },
   { id: 'richfriend', ok: () => W.staff.wen.hired && W.day >= 5, ci: 18, cname: '雯姐的朋友', fx: 'rich', lines: [[null, '几位打扮讲究的太太走进店里。'], ['cust', '阿雯！原来你真的在这里打工！'], ['wen', '（压低声音）！你们...照样排队哦。'], ['cust', '那我们每样来两份，全部外带！'], [null, '（雯姐的朋友一口气买了好多...）']] },
   { id: 'fans', ok: () => W.staff.shao.hired && W.day >= 8, ci: 2, cname: '女学生', fx: 'fans', lines: [[null, '两个女学生在门口探头探脑。'], ['cust', '（小声）就是他……真的是他！'], ['shao', '（竖起手指）嘘……要买蛋挞吗？'], ['cust', '要！要十个！'], ['lin', '……阿少，你到底是谁啊？']] },
   { id: 'yaotaste', ok: () => W.staff.yao.hired, ci: 8, lines: [['yao', '可可浓度……是不是太高了？'], ['cust', '好吃，但可以切大块一点吗？'], ['yao', '（写在本子上）……大块一点。']] },
@@ -77,23 +77,24 @@ const epSeen = (id, gap = 2) => () => W.eps && W.eps[id] && W.day - W.eps[id] >=
 const hired = k => W.staff[k] && W.staff[k].hired;
 const EP_ARCS = [
   // 阿少的心事 — the florist who comes every Wednesday, and the past he doesn't talk about
-  { id: 'shao1', arc: '阿少的心事', part: 1, ok: () => hired('shao') && W.day >= 6, ci: 19, cname: '咏欣', lines: [
-    [null, '咏欣抱着一束白色桔梗走进店里。'], ['cust', '阿少，今天的花。放老位置哦。'], ['shao', '……嗯。放那边。'],
-    ['lin', '（小声）又是周三，又是桔梗~'], ['cust', '阿少，你对别的客人都笑眯眯的，怎么对我这么冷淡？'], ['shao', '……没有。'],
-    ['shao', '（顿了一下）你今天剪了头发。'], ['cust', '……（脸红）你、你怎么看出来的！'], ['lin', '哎哟哟，冷冰冰的，眼睛倒是很尖嘛~'], ['shao', '莲姨，客人在等。']] },
+  { id: 'shao1', arc: '阿少的心事', part: 1, ok: () => hired('shao') && W.day >= 6, ci: 24, cname: '阿千', lines: [
+    [null, '花店的咏欣照例送来一束白色桔梗。阿少微笑着道谢，替她拉开门。'], [null, '门还没关上，一个短发女生就冲了进来。'], ['cust', '阿少！我又来啦！今天有什么新品？'],
+    ['shao', '……没有。'], ['cust', '那我要上次那个！你推荐的那个！'], ['shao', '……冻柠茶，少冰。（已经在做了）'],
+    ['lin', '（小声）对咏欣那么有礼貌，对阿千这么冷淡……'], ['wen', '（小声）可是你看他的眼睛。'], ['cust', '（喝一口）好喝！明天见！'],
+    ['shao', '……（看着她跑出门，直到看不见）']] },
   { id: 'shao2', arc: '阿少的心事', part: 2, ok: () => hired('shao') && epSeen('shao1')(), lines: [
     [null, '收银台旁边放着一本旧杂志，封面是一个拿着麦克风的年轻歌手。'], ['lin', '（举起杂志）阿少！这个人……这个人跟你一模一样啊！'],
     ['shao', '……是吗。'], ['lin', '「林少恒，十年前退出乐坛，至今下落不明」……少恒？阿少？'], ['shao', '（把杂志轻轻合上）莲姨，那个人已经不唱了。'],
     ['lin', '……（惊）那、那就是说——'], ['shao', '今天的蛋挞出炉了。我去摆。'], ['lin', '（小声）我什么都没看见，什么都没看见……']] },
-  { id: 'shao3', arc: '阿少的心事', part: 3, ok: () => hired('shao') && epSeen('shao2')() && epSeen('ex2', 1)() && !!wxOf().rain, ci: 19, cname: '咏欣', bg: 'rain', lines: [
-    [null, '下雨了。咏欣站在门口，没有带伞。'], ['shao', '（递过一把伞）拿去吧。'], ['cust', '那你呢？'], ['shao', '我等雨停。'],
+  { id: 'shao3', arc: '阿少的心事', part: 3, ok: () => hired('shao') && epSeen('shao2')() && epSeen('ex2', 1)() && !!wxOf().rain, ci: 24, cname: '阿千', bg: 'rain', lines: [
+    [null, '下雨了。阿千站在门口，没有带伞。'], ['shao', '（把伞塞到她手里）……拿去。'], ['cust', '那你呢？'], ['shao', '我等雨停。'],
     ['cust', '……阿少，莲姨说你以前是歌手。'], ['shao', '……她说得太快了。'], ['cust', '为什么不唱了？'],
     ['shao', '每天都被很多人看着，看到最后……忘了自己长什么样。'], ['shao', '这里不一样。这里的人只问我，蛋挞还有没有。'],
-    ['cust', '……那我也不问了。'], ['cust', '（撑开伞）周三见。'], ['shao', '（笑了一下）嗯，周三见。']] },
-  { id: 'shao4', arc: '阿少的心事', part: 4, ok: () => hired('shao') && epSeen('shao3', 3)(), ci: 19, cname: '咏欣', lines: [
-    [null, '今天是周三。但是先推门进来的，是阿少。'], ['shao', '（手里拿着一束桔梗）……今天换我送。'], ['cust', '诶？！'],
-    ['shao', '我不太会说话，以前的歌词都是别人写的。'], ['shao', '所以……这次我想自己说。'], ['shao', '咏欣，周末一起去看海吧。'],
-    ['cust', '……（点头）嗯！'], ['wen', '（压低声音）莲姨，你别哭啊。'], ['lin', '（擦眼泪）我没有……是洋葱……'], ['kun', '……今天没切洋葱。']] },
+    ['cust', '……那我也不问了。'], ['cust', '（撑开伞）明天见！'], ['shao', '（很小声）……嗯，明天见。']] },
+  { id: 'shao4', arc: '阿少的心事', part: 4, ok: () => hired('shao') && epSeen('shao3', 3)(), ci: 24, cname: '阿千', lines: [
+    [null, '阿千像往常一样冲进店里。'], ['cust', '阿少！今天的冻柠茶——'], ['shao', '（已经放在柜台上）少冰。'], ['cust', '……诶？你记得？'],
+    ['shao', '我不太会说话，以前的歌词都是别人写的。'], ['shao', '所以……这次我想自己说。'], ['shao', '阿千，周末一起去看海吧。'],
+    ['cust', '（惊）……（用力点头）嗯！'], ['wen', '（压低声音）莲姨，你别哭啊。'], ['lin', '（擦眼泪）我没有……是洋葱……'], ['kun', '……今天没切洋葱。']] },
   // 坤伯与阿珍 — what 荣叔 has been carrying for twenty years
   { id: 'jan1', arc: '坤伯与阿珍', part: 1, ok: () => W.day >= 7 && (W.rongN || 0) >= 1, lines: [
     [null, '午后，荣叔又路过，探头进来。'], ['rong', '老坤，阿珍下个月从加拿大回来。'], ['kun', '……嗯。'],
@@ -166,7 +167,7 @@ const EP_ARCS = [
   { id: 'ex2', arc: '阿少的前女友', part: 2, ok: () => hired('shao') && epSeen('ex1', 2)(), ci: 12, cname: '阿珊', lines: [
     ['lin', '阿少，阿珊是不是……你以前的女朋友？'], ['shao', '……嗯。以前我还在唱歌的时候，她是我的造型师。'], ['lin', '（惊）那、那你们怎么分开的？'],
     ['shao', '她想要一个会准时下班的人。我那时候做不到。'], ['shao', '现在我们是朋友。她开了理发店，我在这里招待客人。'], [null, '这时，阿珊又探头进来。'],
-    ['cust', '阿少，我说一句就走。'], ['cust', '那个卖花的女孩子，你对她冷冰冰的——'], ['cust', '可是你的眼睛，一直跟着她转。'], ['shao', '……阿珊。'],
+    ['cust', '阿少，我说一句就走。'], ['cust', '卖花的咏欣喜欢你，你对她客客气气，那是礼貌。'], ['cust', '那个天天来找你的阿千，你对她冷冰冰的——'], ['cust', '可是你的眼睛，一直跟着她转。'], ['shao', '……阿珊。'],
     ['cust', '（摆摆手）这次，记得准时下班啊。'], ['lin', '（捂嘴）哇……']] },
   // 阿青的人气 — all business, never notices she is the one people come to see
   { id: 'qp1', arc: '阿青的人气', part: 1, ok: () => hired('qing'), ci: 3, cname: '中学男生', lines: [
@@ -357,3 +358,8 @@ const GIFT_THANKS = {
   '严肃老师': [['cust', '服务周到，值得表扬。这个，作为奖励。']],
   '西装金融男': [['cust', '好的投资要长期持有。你们这间店，值得。']],
 };
+
+// each kind of regular brings one piece of their own at loyalty 8 (no repeats: no two kinds share one)
+const GIFT_ITEM = { '上班族': 'fishtank', '白领姐姐': 'aroma', '女学生': 'easel', '中学男生': 'basketball', '小男孩': 'plane', '小女孩': 'pinwheel', '街坊阿姨': 'luckycat',
+  '婆婆': 'bonsai', '拐杖阿伯': 'banner', '潮人（男）': 'record', '潮人（女）': 'mirror', '外国游客': 'globe', '背包客': 'suitcase', '精壮工人': 'chili', '新鲜人': 'card',
+  '美艳人妻': 'vase', '韩系女生': 'bunny', '日系男生': 'chime', '叛逆学生': 'skate', '严肃老师': 'screen', '西装金融男': 'radio' };

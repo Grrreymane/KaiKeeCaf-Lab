@@ -327,6 +327,7 @@ const GUEST_DEF = [
   { name: '叛逆学生', sex: 'm', age: 'teen', note: '染金刺头 · 校服 · 耳机', hair: '#e8c860', hs: 'spiky', top: '#ffffff', sleeve: 'short', low: '#2a2a32', pack: '#2a2a32', phones: true, body: 'teen' },
   { name: '严肃老师', sex: 'f', age: 'adult', note: '盘发 · 眼镜 · 灰开衫 · 长裙', hair: '#2a2024', hs: 'bun', tieCol: '#2a2024', top: '#8a8a92', cardigan: true, sleeve: 'long', skirt: '#3a3a46', longSkirt: true, glasses: '#8a6a3a', bag: '#5a3a2a' },
   { name: '西装金融男', sex: 'm', age: 'adult', note: '油头 · 深色西装 · 红领带 · 公事包', hair: '#1a1416', hs: 'undercut', top: '#ffffff', blazer: '#2a2f3e', tie: '#9a2a2a', sleeve: 'long', low: '#2a2f3e', bag: '#3a2a20', shoe: '#1a1416' },
+  { name: '阿千', sex: 'f', age: 'adult', note: '短发 · 黄色运动外套 · 活泼', hair: '#3a2420', hs: 'bob', top: '#f0b43a', zip: '#ffffff', sleeve: 'long', low: '#3f6ab0', body: 'slim', blush: true },   // 阿少's 阿千 (story only)
 ];
 const STAFF_CH = Object.fromEntries(Object.entries(STAFF_DEF).map(([k, o]) => [k, makeChar(o)]));
 const GUEST_CH = GUEST_DEF.map(makeChar);

@@ -243,12 +243,11 @@ function fanOf(ci, st) {   // happy visits by this kind of customer add up; at G
   if (W.fans[kind] >= LOYAL_STORY) loyalStory(kind, ci);   // a true regular: their own scene + a keepsake (guests.js)
   if (W.fans[kind] < GIFT_AT || W.gifted[kind]) return;
   W.gifted[kind] = true;
-  const pool = ['luckycat', 'bonsai', 'banner', 'card'].filter(id => !hasItem(id)), alt = Object.keys(DECOR_ITEMS).filter(id => !hasItem(id) && DECOR_ITEMS[id].cat !== 'season' && DECOR_ITEMS[id].cost && DECOR_ITEMS[id].cost <= 200);
-  const id = pool.length ? pick(pool) : alt.length ? pick(alt) : null, it = id && DECOR_ITEMS[id];
+  const id = GIFT_ITEM[kind], it = id && !hasItem(id) && DECOR_ITEMS[id]; if (!it) return;   // their own piece, once
   if (it) { let pos = null; if (it.cat !== 'wall') pos = findItemSpot(); if (it.cat === 'wall' || pos) { (W.items = W.items || {})[id] = true; if (pos) { (W.itemPos = W.itemPos || {})[id] = pos; GIFT_PLACE = id; } applyDecor(); } }
-  else W.money += 100;
-  STORY_Q.push({ key: 'gift', ci, lines: [[null, '一位' + kind + '熟客走到收银台。'], ...(GIFT_THANKS[kind] || [['cust', '常来光顾，你们招呼得很好。这个送给你！']]).filter(([w]) => !HIRE[w] || W.staff[w].hired), [null, it ? '收到「' + it.name + '」' + (it.cat === 'wall' ? '，已经挂好了。' : '，摆在店里了（「摆放」里可以移动）。') : '收到一封红包：$100']] });
-  NOTICES.push('熟客送礼：' + (it ? it.name : '红包 $100')); SFX.ding();
+  else { (W.items = W.items || {})[id] = true; }   // no room on the floor right now: it waits for 摆放
+  STORY_Q.push({ key: 'gift', ci, lines: [[null, '一位' + kind + '熟客走到收银台。'], ...(GIFT_THANKS[kind] || [['cust', '常来光顾，你们招呼得很好。这个送给你！']]).filter(([w]) => !HIRE[w] || W.staff[w].hired), [null, '收到「' + it.name + '」' + (it.cat === 'wall' ? '，已经挂好了。' : '。')]] });
+  NOTICES.push('熟客送礼：' + it.name); SFX.ding();
 }
 function gripe(k) { W.today.gripes[k] = (W.today.gripes[k] || 0) + 1; LAST_GRIPE = { k, t: 0 }; }
 function stepCustomers(dt) {
