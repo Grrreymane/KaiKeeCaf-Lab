@@ -26,6 +26,7 @@ function startDay() {
     W.today.fc = forecast(); notice('今日' + wxOf().name + ' · 约 ' + W.today.fc.n + ' 位客 · 好卖' + PRODUCTS[W.today.fc.top[0]].name); }
   morningStory();
   newGuests();   // kinds of customer coming for the first time: a short scene for one of them (guests.js)
+  morningSpecials();   // staff 特技: plan, research, restock, shelves
   for (const k in HIRE) if (!HIRE[k].temp && HIRE[k].day === W.day && !W.staff[k].hired) notice(HIRE[k].name + '来应征 → 员工里请' + (k === 'wen' || k === 'qing' ? '她' : '他'));
   if (W.day === PARENTS_DAY && !W.seen.parents) notice('今天爸妈说要来探班');
 }
@@ -225,3 +226,26 @@ function setPost(k, post) {   // several people can share a post (up to POST_MAX
   W.staff[k].post = post; SFX.tap(); syncStaff(); saveGame();
 }
 function setPlan(p, v) { W.plan[p] = v; SFX.tap(); if (PHASE === 'prep') saveGame(); }
+
+// ---------------------------------------------------------------- 特技 (staff specials): what they do by themselves each morning
+function morningSpecials() {
+  const quiet = f => { const d = SFX.deny, b = SFX.buy; SFX.deny = SFX.buy = () => {}; try { f(); } finally { SFX.deny = d; SFX.buy = b; } };
+  if (hasSk('kun_plan') && W.history.length) {   // yesterday's two best sellers become today's leads
+    const sold = W.history[W.history.length - 1].sold || {}, top = PIDS.filter(p => unlocked(p) && sold[p]).sort((a, b) => sold[b] - sold[a]).slice(0, 2);
+    if (top.length) { for (const p of PIDS) if (W.plan[p] === 'pri') W.plan[p] = 'on'; for (const p of top) W.plan[p] = 'pri'; notice('坤伯定好主打：' + top.map(p => PRODUCTS[p].name).join('、')); }
+  }
+  if (hasSk('yao_rd')) { const L_ = researchable(); if (L_.length && canResearch()) { const p = L_[0]; W.known[p] = true; W.rdDay = W.day; applyDecor(); notice('耀仔研发好了「' + PRODUCTS[p].name + '」'); } }
+  if (hasSk('lin_auto')) { const m0 = W.money; quiet(() => restock(3)); if (m0 > W.money) notice('莲姨自动进货 -' + money$(m0 - W.money)); }
+  if (hasSk('qing_shelf')) {   // empty layers get what is planned and not on display yet (leads first)
+    const shown = new Set(); for (const id of SHELF_IDS) for (const L_ of W.shelves[id].layers) if (L_.p) shown.add(L_.p);
+    const want = PIDS.filter(p => unlocked(p) && W.plan[p] !== 'off' && !shown.has(p)).sort((a, b) => (W.plan[b] === 'pri') - (W.plan[a] === 'pri') || wantOf(b) - wantOf(a)); let n = 0;
+    for (const id of SHELF_IDS) { const st = W.shelves[id]; if (st.locked) continue; st.layers.forEach((L_, li) => { if (L_.p) return; const i = want.findIndex(p => (PRODUCTS[p].where === 'fridge') === !!st.fridge); if (i < 0) return; if (assignLayer(id, li, want[i])) { want.splice(i, 1); n++; } }); }
+    if (n) notice('阿晴摆好了 ' + n + ' 层货架');
+  }
+}
+function buySpecial(k) {   // unlock with ★ (Lv4+); later taps switch it on / off
+  const [id, name, , cost] = SPECIALS[k]; W.sk = W.sk || {};
+  if (W.sk[id] !== undefined) { W.sk[id] = !W.sk[id]; SFX.tap(); saveGame(); return true; }
+  if (lvOf(k) < SK_LV || (W.pts || 0) < cost) { SFX.deny(); NOTICE = { text: lvOf(k) < SK_LV ? '要先升到 Lv' + SK_LV : '积分不够', t: 0 }; return false; }
+  W.pts -= cost; W.sk[id] = true; SFX.ding(); notice((NAMES[k] || k) + '学会了「' + name + '」'); saveGame(); return true;
+}

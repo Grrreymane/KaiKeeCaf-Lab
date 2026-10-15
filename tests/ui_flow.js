@@ -143,3 +143,7 @@ ok(HIRE.temp.name && STAFF_HD.temp, "today's part-timer: " + HIRE.temp.name); { 
   W.eps = {}; W.staff.shao.hired = true; W.day = 8; ok(s1.ok() && !s2.ok(), 'part 2 waits for part 1');
   playEpisode(s1); STORY_Q.length = 0; DIALOG = null; ok(!s2.ok(), '...and for a couple of days'); W.day = 10; ok(s2.ok(), 'then part 2 is due');
   W.eps = e0; W.day = d0; W.staff.shao.hired = h0; }
+// 特技: unlocked with points at Lv4; 莲姨 restocks by herself
+{ const lv0 = W.lv.lin, p0 = W.pts, m0 = W.money; W.sk = {}; W.lv.lin = 3; W.pts = 999; ok(!buySpecial('lin'), 'needs Lv4'); W.lv.lin = 4; ok(buySpecial('lin') && hasSk('lin_auto') && W.pts === 999 - SPECIALS.lin[3], 'unlocked with ★');
+  W.money = 5000; for (const k in W.ing) W.ing[k] = 0; morningSpecials(); ok(W.money < 5000, '莲姨 restocked in the morning'); buySpecial('lin'); ok(!hasSk('lin_auto'), 'and can be switched off');
+  W.sk = {}; W.lv.lin = lv0; W.pts = p0; W.money = m0; NOTICES.length = 0; }

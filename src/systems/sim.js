@@ -123,7 +123,7 @@ const JOB = { kun: null, lin: null, bar: null, till: null };   // kun: baking; l
 let WAITER = null, WAITERS = [];   // WAITERS: everyone on the serve post { k, x, y, task, route, d, carry }; WAITER = the one being stepped / the first
 const newWaiter = (k, i) => ({ k, x: 244 - i * 10, y: 56, task: null, route: null, d: 0, carry: [], face: 'SW' });
 const ORDERS = [];   // dine-in items ordered but not yet picked up: { p }
-let spawnT = 2, refillT = 0, bubbleT = 0, takeT = 6, LAST_GRIPE = null;
+let TIDY_T = 6, spawnT = 2, refillT = 0, bubbleT = 0, takeT = 6, LAST_GRIPE = null;
 const inflight = {};
 function resetRuntime() {
   CUST = []; TRAYS = []; POPS = []; BUBBLES = []; DINERS = []; FLY = []; LEAVERS = []; ORDERS.length = 0; JOB.kun = JOB.lin = JOB.bar = JOB.bar2 = JOB.till = null; spawnT = 2; takeT = 6;
@@ -567,6 +567,8 @@ let CLEANERS = [];
 function stepCleaners(dt) {
   CLEANERS = postsOf('clean').map(k => CLEANERS.find(q => q.k === k) || { k, x: 230, y: 280, route: null, d: 0, mop: 0, face: 'SW', walk: 0 });
   if (hasItem('vacuum') && isOpenPhase()) W.dirt = Math.max(0, dirtOf() - dt * .05);
+  if (hasSk('shao_clean') && isOpenPhase() && !WAITERS.some(w => w.k === 'shao' && w.task)) W.dirt = Math.max(0, dirtOf() - dt * .06);   // 特技: 阿少 tidies up when idle
+  if (hasSk('wen_tidy') && isOpenPhase() && (TIDY_T -= dt) <= 0) { TIDY_T = 6; const st = SEATS.find(q => q.dirty && !q.who); if (st) { st.dirty = false; st.items = []; } }   // 特技: 雯姐 clears a booth
   for (const q of CLEANERS) {
     if (q.route) { const v = 40 / lvSpeed(q.k); q.d += v * dt; q.walk += v * dt; const p = posOn(q.route, q.d); q.x = p.x; q.y = p.y; q.face = p.face; if (q.d >= polyLen(q.route)) { q.route = null; q.mop = 2.2; } continue; }
     if (q.mop > 0) { q.mop -= dt; W.dirt = Math.max(0, dirtOf() - dt * 2.6 / lvSpeed(q.k)); if (q.mop <= 0) workDone(q.k); continue; }

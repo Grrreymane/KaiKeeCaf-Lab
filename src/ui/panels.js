@@ -110,6 +110,7 @@ function staffStatus(id) {
 }
 function drawStaffPanel(c) {   // each row: who, what they do now, level + affection, upgrade with points
   let y = sheet(c, '员工', '积分 ' + (W.pts || 0) + ' · 工钱 ' + money$(wages() - DAILY.rent) + '/天', 166) - 4;
+  btn(c, 62, 169, 72, 20, '特技 ★', () => { PANEL = { kind: 'special', bar: 3 }; SFX.tap(); }, Object.keys(SPECIALS).some(k => lvOf(k) >= SK_LV && !(W.sk || {})[SPECIALS[k][0]] && (W.pts || 0) >= SPECIALS[k][3] && (!HIRE[k] || W.staff[k].hired)) ? 'gold' : 'cream');   // the specials sheet
   const rows = [['kun', '坤伯', '烘焙'], ['lin', '莲姨', '包装']].concat(Object.keys(HIRE).filter(k => W.staff[k].hired || W.day >= HIRE[k].day - 2).map(k => [k, HIRE[k].name, null]));   // people not due for days yet stay hidden
   const rh = Math.max(52, Math.min(66, Math.floor((BAR_Y - 6 - y) / rows.length)));   // rows grow to use the sheet's height (bigger text needs the room)
   rows.forEach(([id, name, role], i) => {
@@ -280,6 +281,18 @@ function drawShowcasePick(c, P_) {   // which item goes in the counter glass cas
     if (PRODUCTS[p].cake) T(c, '蛋糕', x + tw - 4, yy + 3, '#b8483c', 'right', null);
     button(x, yy, tw, 58, () => { W.showcase = p; SFX.tap(); PANEL = P_.back || null; saveGame(); }); });
   { const yb = y + Math.ceil(L.length / per) * 64 + 4; T(c, '招牌货放喺前台玻璃柜（由厨房拎）', 180, yb, SUB, 'center', null); T(c, '客人埋单时有机会顺手买一件', 180, yb + 16, SUB, 'center', null); }
+}
+function drawSpecialPanel(c) {   // 特技: unlocked with ★ once someone is Lv4; then a switch
+  let y = sheet(c, '员工特技', '积分 ' + (W.pts || 0) + ' ★', 140) - 2;
+  T(c, '升到 Lv' + SK_LV + ' 后用积分解锁，解锁后可随时开关', 14, y, SUB, 'left', null, 12); y += 18;
+  const rh = Math.min(64, Math.floor((BAR_Y - 6 - y) / Object.keys(SPECIALS).length));
+  Object.keys(SPECIALS).forEach((k, i) => { const [id, name, desc, cost] = SPECIALS[k], yy = y + i * rh, has = (W.sk || {})[id], on = has === true, here = !HIRE[k] || W.staff[k].hired, lv = lvOf(k);
+    card(c, 14, yy, 332, rh - 4, on ? '#fff1c8' : here ? '#fffaf0' : '#ece2cf'); const img = STAFF_HD[k].SE[0]; c.drawImage(img, 0, 0, img.width, 56, 20, yy + 4, img.width / 2, 28);
+    TS(c, name, 56, yy + 4, 15, here ? INK : '#b0a08c'); T(c, (NAMES[k] || k) + ' · Lv' + lv, 140, yy + 7, '#b8483c', 'left', null, 12);
+    T(c, desc, 56, yy + 26, SUB, 'left', null, 12);
+    if (has !== undefined) btn(c, 270, yy + 8, 70, 24, on ? '开着' : '关着', () => buySpecial(k), on ? 'gold' : 'cream');
+    else btn(c, 262, yy + 8, 78, 24, cost + '★', () => buySpecial(k), here && lv >= SK_LV && (W.pts || 0) >= cost ? 'gold' : 'off');
+    if (has === undefined && lv < SK_LV) T(c, '需 Lv' + SK_LV, 300, yy + 36, '#b0a08c', 'center', null, 12); });
 }
 function drawGuestPanel(c, P_) {   // one kind of customer: portrait, who they are, what they like, how close they are
   const ci = P_.ci, kind = guestKind(ci), f = (W.fans || {})[kind] || 0, per = personaOf(ci);
@@ -486,6 +499,7 @@ function drawPanels(c) {
   else if (PANEL.kind === 'lab') drawLabPanel(c, PANEL);
   else if (PANEL.kind === 'guests') drawGuestsPanel(c);
   else if (PANEL.kind === 'guest') drawGuestPanel(c, PANEL);
+  else if (PANEL.kind === 'special') drawSpecialPanel(c);
   else if (PANEL.kind === 'menu') drawMenuPanel(c);
   else if (PANEL.kind === 'book') drawBookPanel(c);
   else if (PANEL.kind === 'plan') drawPlanPanel(c);

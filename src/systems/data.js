@@ -108,6 +108,15 @@ const PERKS = {
   qing: { 3: [['qing_menu', '手绘菜单', '美观 +3'], ['qing_ice', '冰饮专长', '冻饮多两成人买']], 5: [['qing_promo', '宣传鬼才', '促销效果多五成'], ['qing_student', '学生套餐', '客流 +6%']] },
   shao: { 3: [['shao_lure', '招客', '客流 +8%'], ['shao_memo', '记性好', '卡座小费 +$2']], 5: [['shao_fans', '街坊人缘', '外卖客多一倍'], ['shao_run', '飞毛腿', '招待走快三成']] },
 };
+const SPECIALS = {   // [id, name, what it does, ★ cost] — needs Lv4
+  lin: ['lin_auto', '自动进货', '每天早上按今日安排自动补齐原料', 300],
+  kun: ['kun_plan', '自动排产', '每天早上按昨天卖得好的自动定主打', 250],
+  wen: ['wen_tidy', '收台快手', '卡座吃完自动收拾干净', 250],
+  shao: ['shao_clean', '顺手打扫', '空闲时顺手打扫，店里脏得慢', 300],
+  qing: ['qing_shelf', '自动摆货', '空着的货架层自动摆上要卖的', 300],
+  yao: ['yao_rd', '自动研发', '每天早上自动研发当天的新品', 400],
+};
+const SK_LV = 4, hasSk = id => { const k = id.split('_')[0]; return !!(W && W.sk && W.sk[id] === true) && (!HIRE[k] || W.staff[k].hired); };   // owned and switched on
 const hasPerk = id => { if (!W || !W.perks) return false; const k = id.split('_')[0]; return (W.perks[k] || []).includes(id) && (!HIRE[k] || W.staff[k].hired); };
 const perkInfo = id => { for (const k in PERKS) for (const lv in PERKS[k]) for (const q of PERKS[k][lv]) if (q[0] === id) return q; return null; };
 const LV_SKILL = { kun: '烘焙', lin: '包装、冲饮', wen: '水吧', shao: '招待、外卖', qing: '冰饮', yao: '烘焙' };
