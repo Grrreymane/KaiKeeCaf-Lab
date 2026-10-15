@@ -3180,7 +3180,7 @@ function fanOf(ci, st) {   // happy visits by this kind of customer add up; at G
   W.gifted[kind] = true;
   const pool = ['luckycat', 'bonsai', 'banner', 'card'].filter(id => !hasItem(id)), alt = Object.keys(DECOR_ITEMS).filter(id => !hasItem(id) && DECOR_ITEMS[id].cat !== 'season' && DECOR_ITEMS[id].cost && DECOR_ITEMS[id].cost <= 200);
   const id = pool.length ? pick(pool) : alt.length ? pick(alt) : null, it = id && DECOR_ITEMS[id];
-  if (it) { let pos = null; if (it.cat !== 'wall') pos = findItemSpot(); if (it.cat === 'wall' || pos) { (W.items = W.items || {})[id] = true; if (pos) (W.itemPos = W.itemPos || {})[id] = pos; applyDecor(); } }
+  if (it) { let pos = null; if (it.cat !== 'wall') pos = findItemSpot(); if (it.cat === 'wall' || pos) { (W.items = W.items || {})[id] = true; if (pos) { (W.itemPos = W.itemPos || {})[id] = pos; GIFT_PLACE = id; } applyDecor(); } }
   else W.money += 100;
   STORY_Q.push({ key: 'gift', ci, lines: [[null, '一位' + kind + '熟客走到收银台：'], ['cust', '常来光顾，你们招呼得很好。这个送给你！'], [null, it ? '收到「' + it.name + '」' + (it.cat === 'wall' ? '，已经挂好了。' : '，摆在店里了（「摆放」里可以移动）。') : '收到一封红包：$100']] });
   NOTICES.push('熟客送礼：' + (it ? it.name : '利是 $100')); SFX.ding();
@@ -3481,12 +3481,20 @@ function stepCars(dt) {
   CARS = CARS.filter(c => c.dx < 700);
 }
 // dirt spots: free floor cells in a fixed shuffled order; the first round(dirt / 100 * n) of them show, the cleaner works from the last one back
-let DIRT_SPOTS = null, DIRT_NAV = null;
+let DIRT_SPOTS = null, DIRT_NAV = null, GRIME = null;
+function grimeLayer() {   // the floor going grubby: dithered scuff marks and shoe smudges over every walkable cell, faded in with the dirt level
+  if (GRIME) return GRIME; const g = navGrid(), x1 = expandLv() ? 630 : 310, cv = mk(WW, 1280), c = cv.getContext('2d');
+  for (let y = 56; y < 316; y += 9) for (let x = 8; x < x1; x += 9) { const cx = Math.floor((x - NAV_X0) / NAV_C), cy = Math.floor(y / NAV_C); if (g[cy * NAV_W + cx] || mhash(x * 5, y * 3) < .45) continue;
+    const [a, b] = P(x + (mhash(x, y * 2) - .5) * 8, y + (mhash(y, x * 2) - .5) * 8), r = 4 + mhash(x * 7, y) * 9, col = mhash(x, y * 9) < .3 ? '#3a2a1a' : '#5a4430';
+    c.fillStyle = col; for (let dy = -r / 2; dy <= r / 2; dy++) for (let dx = -r; dx <= r; dx++) { const d = Math.hypot(dx / r, dy / (r / 2)); if (d < 1 && ((dx + dy) & 1) === 0 && mhash(a + dx, b + dy) < .75 - d * .6) c.fillRect(R(a) + dx, R(b) + dy, 1, 1); }
+    if (mhash(x * 2, y * 5) < .3) { c.fillStyle = '#4a3828'; for (let k = 0; k < 10; k++) c.fillRect(R(a) - 6 + k, R(b) + 3 + (k >> 2), 1, 1); } }   // a shoe scuff
+  return (GRIME = cv);
+}
 function dirtSpots() {
   const g = navGrid(); if (DIRT_SPOTS && DIRT_NAV === g) return DIRT_SPOTS;
   const L = [], x1 = expandLv() ? 630 : 310;
-  for (let y = 60; y < 312; y += 12) for (let x = 12; x < x1; x += 12) { const cx = Math.floor((x - NAV_X0) / NAV_C), cy = Math.floor(y / NAV_C); if (!g[cy * NAV_W + cx]) L.push([x + (mhash(x, y) - .5) * 6, y + (mhash(y, x) - .5) * 6, Math.floor(mhash(x, y + 7) * 4), mhash(x * 3, y)]); }
-  L.sort((a, b) => a[3] - b[3]); DIRT_NAV = g; return (DIRT_SPOTS = L.slice(0, 40));
+  for (let y = 60; y < 312; y += 12) for (let x = 12; x < x1; x += 12) { const cx = Math.floor((x - NAV_X0) / NAV_C), cy = Math.floor(y / NAV_C); if (!g[cy * NAV_W + cx]) L.push([x + (mhash(x, y) - .5) * 6, y + (mhash(y, x) - .5) * 6, Math.floor(mhash(x, y + 7) * 6), mhash(x * 3, y)]); }
+  L.sort((a, b) => a[3] - b[3]); DIRT_NAV = g; GRIME = null; return (DIRT_SPOTS = L.slice(0, 64));
 }
 const dirtShown = () => Math.round(dirtOf() / 100 * dirtSpots().length);
 let CLEANERS = [];
@@ -3890,7 +3898,9 @@ function playScene(key) {
   const lines = pick(pool).map(([who, text]) => [who === 'bar' ? (W.staff.wen.hired ? 'wen' : 'lin') : who, text]);
   STORY_Q.push({ key, lines: tonedLines(lines) });
 }
-function stepStory() { if (!DIALOG && STORY_Q.length && !PANEL && PHASE !== 'title' && PHASE !== 'ledger' && !DESK) DIALOG = { ...STORY_Q.shift(), i: 0, t: 0 }; if (DIALOG) DIALOG.t += 1 / 60; }
+let GIFT_PLACE = null;   // a floor gift from a regular: once its scene is over, ask whether to place it now (like buying)
+function stepStory() { if (GIFT_PLACE && !DIALOG && !STORY_Q.length && !PANEL && !DESK && MODE === 'play' && PHASE !== 'title' && PHASE !== 'ledger') { PANEL = { kind: 'placeask', id: GIFT_PLACE, gift: true }; GIFT_PLACE = null; }
+  if (!DIALOG && STORY_Q.length && !PANEL && PHASE !== 'title' && PHASE !== 'ledger' && !DESK) DIALOG = { ...STORY_Q.shift(), i: 0, t: 0 }; if (DIALOG) DIALOG.t += 1 / 60; }
 function advanceDialog() { if (!DIALOG) return; SFX.tap(); DIALOG.i++; DIALOG.t = 0; if (DIALOG.i >= DIALOG.lines.length) DIALOG = null; }
 // a day worked together: affection +1 for everyone on the payroll; crossing a step queues that person's scene for the morning
 function gainAffection() {
@@ -4212,12 +4222,15 @@ function drawWorld(c) {
   const feet = [...CUST.filter(o => !o.sitting).map(custPos), ...WALKERS, ...DINERS.filter(d => d.state === 'in' || d.state === 'out'), ...LEAVERS, ...WAITERS, ...staff.filter(s => !s.z)];
   for (const f of feet) { const [a, b] = P(f.x, f.y); c.beginPath(); c.ellipse(R(a), R(b), 18, 7, 0, 0, 7); c.fill(); }
   c.restore();
+  { const dl = dirtOf(); if (dl > 25) { c.save(); c.globalAlpha = Math.min(.85, (dl - 25) / 55); c.drawImage(grimeLayer(), 0, 0); c.restore(); } }   // grime layer: from about 25% dirt the floor visibly greys over
   { const n = dirtShown(), S = dirtSpots(), wet = wxNow().rain || wxNow().snow;   // dirt on the floor: crumbs, a paper cup, a napkin, a (muddy) footprint
     for (let i = 0; i < n; i++) { const [x, y, kind] = S[i], [a, b] = P(x, y), X = R(a), Y = R(b);
       if (kind === 0) { c.fillStyle = '#b58a5a'; for (const [dx, dy] of [[0, 0], [3, 1], [-2, 2], [5, -1]]) c.fillRect(X + dx, Y + dy, 2, 1); }
       else if (kind === 1) { c.fillStyle = '#f4efe6'; c.fillRect(X - 3, Y - 2, 6, 3); c.fillStyle = '#d0453a'; c.fillRect(X - 3, Y - 2, 6, 1); }
       else if (kind === 2) { c.fillStyle = '#ffffff'; c.fillRect(X - 3, Y - 1, 5, 3); c.fillStyle = '#d8d0c4'; c.fillRect(X, Y, 2, 2); }
-      else { c.fillStyle = wet ? 'rgba(90,70,50,.55)' : 'rgba(120,100,80,.35)'; c.fillRect(X - 2, Y, 3, 2); c.fillRect(X + 3, Y - 2, 3, 2); } } }
+      else if (kind === 3) { c.fillStyle = wet ? 'rgba(90,70,50,.55)' : 'rgba(120,100,80,.35)'; c.fillRect(X - 2, Y, 3, 2); c.fillRect(X + 3, Y - 2, 3, 2); }
+      else if (kind === 4) { c.fillStyle = 'rgba(150,100,50,.55)'; c.fillRect(X - 5, Y - 1, 10, 3); c.fillRect(X - 3, Y - 2, 6, 5); c.fillStyle = 'rgba(255,240,210,.5)'; c.fillRect(X - 2, Y - 1, 2, 1); }   // spilt milk tea
+      else { c.fillStyle = '#efe8dc'; c.fillRect(X - 3, Y - 3, 6, 4); c.fillRect(X - 2, Y - 4, 4, 6); c.fillStyle = '#c9c0b2'; c.fillRect(X - 1, Y - 2, 2, 1); c.fillRect(X + 1, Y, 1, 2); } } }   // crumpled tissue
   const items = [...STATICS];
   staff.forEach((s, i) => { const kind = workKind(s), bob = kind ? 0 : (Math.sin(gtime * 2 + i * 2) > .7 ? .5 : 0); items.push(personItem(kind ? workFrame(s.ch, kind, gtime + i * .37) : s.ch[s.face][0], s.x, s.y, s.z + bob)); });
   for (const w of WAITERS) {   // walks with the order on a tray; at the table: writes the order / holds the tray out / wipes
@@ -4357,9 +4370,11 @@ function umbFrame(ch, face, fr) {
   return (ch.work[key] = face === 'SW' || face === 'NW' ? flipC(im) : im);
 }
 const walkImg = (who, ch, face, fr, x, y) => { if (!ch.work || !ch.o || face === 'NE' || face === 'NW') return ch[face][fr]; const seed = who._us || (who._us = Math.floor(Math.random() * 1e6)); return umbrellaFor(who, x, y, seed) ? umbFrame(ch, face, fr) : ch[face][fr]; };
-function drawUmbrella(c, x, y, col, face) {
-  const side = face === 'SW' || face === 'NW' ? -1 : 1, [a, b] = P(x, y), hand = R(b) - 64, top = R(b) - FOOT * K - 4, cx = R(a) + side * 5;   // pole from the canopy down into the raised hand
-  const back = face === 'NE' || face === 'NW'; c.fillStyle = '#4a3a3a'; if (!back) { c.fillRect(cx, top, 2, hand - top + 2); c.fillRect(cx - 1, hand + 1, 3, 3); }   // from behind, the arm and the pole are hidden by the body
+const headTop = img => { if (img._top !== undefined) return img._top; const d = img.getContext('2d').getImageData(0, 0, img.width, img.height).data; let t = 0; outer: for (; t < img.height; t++) for (let x = 0; x < img.width; x++) if (d[(t * img.width + x) * 4 + 3]) break outer; return (img._top = t); };
+function drawUmbrella(c, x, y, col, face, img) {
+  const side = face === 'SW' || face === 'NW' ? -1 : 1, back = face === 'NE' || face === 'NW', [a, b] = P(x, y), head = R(b) - FOOT * K + 2 + (img ? headTop(img) : 6);   // the canopy sits just over this person's own head
+  const top = head - 11, hand = head + 22, cx = R(a) + side * (back ? 2 : 5);
+  c.fillStyle = '#4a3a3a'; if (!back) { c.fillRect(cx, top, 2, hand - top + 2); c.fillRect(cx - 1, hand + 1, 3, 2); } else c.fillRect(cx, top, 2, 12);   // short pole into the raised hand; from behind the hand is hidden, only the top of the pole shows
   for (let r = 0; r < 12; r++) { const w = R(Math.sqrt(1 - ((11 - r) / 12) ** 2) * 28); c.fillStyle = r < 3 ? shade(col, 22) : r > 9 ? shade(col, -26) : col; c.fillRect(cx - w, top - 12 + r, w * 2, 1); }
   c.fillStyle = shade(col, -40); for (let k = 0; k <= 4; k++) { c.fillRect(cx - 28 + k * 14, top - 1, 1, 2); c.fillRect(cx - 14 + k * 7, top - 11, 1, 10); }
   c.fillStyle = '#2a2024'; c.fillRect(cx, top - 15, 2, 3);
@@ -4370,7 +4385,7 @@ function drawOutdoor(c) {   // umbrellas over everyone outside, then the weather
   for (const o of CUST) if (!o.sitting) { const p = custPos(o); L.push([p.x, p.y, o, custFace(o)]); }
   for (const d of DINERS) if (d.state === 'in' || d.state === 'out') L.push([d.x, d.y, d, d.face]);
   for (const w of LEAVERS) L.push([w.x, w.y, w, w.face]);
-  for (const [x, y, who, face] of L) { const seed = who._us || (who._us = Math.floor(Math.random() * 1e6)), col = umbrellaFor(who, x, y, seed); if (col) drawUmbrella(c, x, y, col, face); }
+  for (const [x, y, who, face] of L) { const seed = who._us || (who._us = Math.floor(Math.random() * 1e6)), col = umbrellaFor(who, x, y, seed); if (col) drawUmbrella(c, x, y, col, face, (who.ch && who.ch[face] || [])[0]); }
   drawWeather(c);
 }
 function render(c) {
@@ -4451,7 +4466,8 @@ function drawInfoStrip(c) {   // one line under the sign: weather, today so far,
   const D = W.today; if (!D) return; const st = D.stars.length ? D.stars.reduce((a, b) => a + b, 0) / D.stars.length : 0;
   c.save(); c.globalAlpha = .78; px(c, 0, 35, 290, 15, '#2a1d20'); c.restore();
   const parts = [[wxOf().name, '#bfe0ff'], ['客 ' + D.served, '#fff4dc'], [money$(D.revenue), C.gold], ['★' + (st ? st.toFixed(1) : '-'), '#ffd75e'], ['舒适 ' + comfort(), '#9fe0b8'], ['清洁 ' + Math.round(100 - dirtOf()) + '%', dirtOf() > 50 ? '#ff9a8a' : '#c8f0d8'], ['名气 ' + W.rep.toFixed(1), '#f6c0a0']];
-  let x = 6; c.font = fp(12); for (const [t, col] of parts) { T(c, t, x, 36, col, 'left', null); x += R(c.measureText(t).width) + 10; }
+  c.font = fp(12); const wOf = L_ => L_.reduce((a, [t]) => a + c.measureText(t).width, 0); while (parts.length > 4 && wOf(parts) + 4 * (parts.length - 1) > 282) parts.pop();   // it must stay left of the 研发 button: tighten the gaps, then drop the last items
+  const gap = Math.min(10, (282 - wOf(parts)) / (parts.length - 1)); let x = 6; for (const [t, col] of parts) { T(c, t, R(x), 36, col, 'left', null); x += c.measureText(t).width + gap; }
 }
 function drawHUD(c) {
   const t = rtime;
@@ -4463,7 +4479,7 @@ function drawHUD(c) {
   c.drawImage(COIN_HK, 8, 10); T(c, money$(W ? W.money : 0), 26, 11, W && W.money < 0 ? '#ff9a8a' : '#fff4dc'); px(c, 82, 8, 1, 18, '#3a2418');
   { const p = W ? (W.pts || 0) : 0, can = W && W.staff && regulars().some(k => lvOf(k) < LV_MAX && p >= LV_COST[lvOf(k) + 1]);   // points chip (tap: staff / upgrades)
     px(c, 204, 7, 54, 20, '#3a2418'); px(c, 205, 8, 52, 18, can && Math.sin(t * 3) > -.3 ? '#7a5a20' : '#4e3222');
-    T(c, '★', 214, 11, C.gold, 'center', null); T(c, String(p), 222, 11, '#fff4dc', 'left', null); T(c, '分', 252, 11, '#d9c49a', 'right', null);
+    T(c, '★', 214, 11, C.gold, 'center', null); { const ps = p >= 10000 ? (p / 1000).toFixed(p >= 100000 ? 0 : 1) + 'k' : String(p); T(c, ps, 222, 11, '#fff4dc', 'left', null); if (ps.length < 4) T(c, '分', 252, 11, '#d9c49a', 'right', null); }   // 4+ digits: no room for 分
     if (W && PHASE !== 'title') button(204, 7, 54, 20, () => clickBar(3)); }
   c.drawImage(ALARM, 88, 7);
   { const tm = clockText().split(':').map(Number), m = tm[0] * 60 + tm[1], cx = 97, cy = 18, ha = (m / 720) * 6.283 - 1.571, ma = (m % 60) / 60 * 6.283 - 1.571;
@@ -4923,7 +4939,7 @@ function drawGuestsPanel(c) {   // every kind of customer: who comes, how loyal 
 }
 function drawPlaceAsk(c, P_) {   // just bought a floor piece: place it now, or leave it at its default spot
   const it = DECOR_ITEMS[P_.id]; c.save(); c.globalAlpha = .5; px(c, 0, 0, 360, 640, '#1c141c'); c.restore(); button(0, 0, 360, 640, () => {});
-  card(c, 50, 230, 260, 150, PAPER); TS(c, it.name + ' 买咗', 180, 244, 18, INK, 'center');
+  card(c, 50, 230, 260, 150, PAPER); TS(c, it.name + (P_.gift ? ' 收到' : ' 买咗'), 180, 244, 18, INK, 'center');
   T(c, '已经摆喺默认位置（靠墙、唔挡路）', 180, 276, SUB, 'center', null); T(c, '舒适 ' + comfort() + ' · 美观 ' + beauty(), 180, 294, '#2f6e56', 'center', null);
   btn(c, 66, 322, 110, 36, '现在摆放', () => { SFX.tap(); placeNow(P_.id); }, 'gold');
   btn(c, 184, 322, 110, 36, '就放默认位置', () => { SFX.tap(); PANEL = P_.back || null; }, 'cream');

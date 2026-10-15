@@ -106,12 +106,15 @@ function drawWorld(c) {
   const feet = [...CUST.filter(o => !o.sitting).map(custPos), ...WALKERS, ...DINERS.filter(d => d.state === 'in' || d.state === 'out'), ...LEAVERS, ...WAITERS, ...staff.filter(s => !s.z)];
   for (const f of feet) { const [a, b] = P(f.x, f.y); c.beginPath(); c.ellipse(R(a), R(b), 18, 7, 0, 0, 7); c.fill(); }
   c.restore();
+  { const dl = dirtOf(); if (dl > 25) { c.save(); c.globalAlpha = Math.min(.85, (dl - 25) / 55); c.drawImage(grimeLayer(), 0, 0); c.restore(); } }   // grime layer: from about 25% dirt the floor visibly greys over
   { const n = dirtShown(), S = dirtSpots(), wet = wxNow().rain || wxNow().snow;   // dirt on the floor: crumbs, a paper cup, a napkin, a (muddy) footprint
     for (let i = 0; i < n; i++) { const [x, y, kind] = S[i], [a, b] = P(x, y), X = R(a), Y = R(b);
       if (kind === 0) { c.fillStyle = '#b58a5a'; for (const [dx, dy] of [[0, 0], [3, 1], [-2, 2], [5, -1]]) c.fillRect(X + dx, Y + dy, 2, 1); }
       else if (kind === 1) { c.fillStyle = '#f4efe6'; c.fillRect(X - 3, Y - 2, 6, 3); c.fillStyle = '#d0453a'; c.fillRect(X - 3, Y - 2, 6, 1); }
       else if (kind === 2) { c.fillStyle = '#ffffff'; c.fillRect(X - 3, Y - 1, 5, 3); c.fillStyle = '#d8d0c4'; c.fillRect(X, Y, 2, 2); }
-      else { c.fillStyle = wet ? 'rgba(90,70,50,.55)' : 'rgba(120,100,80,.35)'; c.fillRect(X - 2, Y, 3, 2); c.fillRect(X + 3, Y - 2, 3, 2); } } }
+      else if (kind === 3) { c.fillStyle = wet ? 'rgba(90,70,50,.55)' : 'rgba(120,100,80,.35)'; c.fillRect(X - 2, Y, 3, 2); c.fillRect(X + 3, Y - 2, 3, 2); }
+      else if (kind === 4) { c.fillStyle = 'rgba(150,100,50,.55)'; c.fillRect(X - 5, Y - 1, 10, 3); c.fillRect(X - 3, Y - 2, 6, 5); c.fillStyle = 'rgba(255,240,210,.5)'; c.fillRect(X - 2, Y - 1, 2, 1); }   // spilt milk tea
+      else { c.fillStyle = '#efe8dc'; c.fillRect(X - 3, Y - 3, 6, 4); c.fillRect(X - 2, Y - 4, 4, 6); c.fillStyle = '#c9c0b2'; c.fillRect(X - 1, Y - 2, 2, 1); c.fillRect(X + 1, Y, 1, 2); } } }   // crumpled tissue
   const items = [...STATICS];
   staff.forEach((s, i) => { const kind = workKind(s), bob = kind ? 0 : (Math.sin(gtime * 2 + i * 2) > .7 ? .5 : 0); items.push(personItem(kind ? workFrame(s.ch, kind, gtime + i * .37) : s.ch[s.face][0], s.x, s.y, s.z + bob)); });
   for (const w of WAITERS) {   // walks with the order on a tray; at the table: writes the order / holds the tray out / wipes
@@ -251,9 +254,11 @@ function umbFrame(ch, face, fr) {
   return (ch.work[key] = face === 'SW' || face === 'NW' ? flipC(im) : im);
 }
 const walkImg = (who, ch, face, fr, x, y) => { if (!ch.work || !ch.o || face === 'NE' || face === 'NW') return ch[face][fr]; const seed = who._us || (who._us = Math.floor(Math.random() * 1e6)); return umbrellaFor(who, x, y, seed) ? umbFrame(ch, face, fr) : ch[face][fr]; };
-function drawUmbrella(c, x, y, col, face) {
-  const side = face === 'SW' || face === 'NW' ? -1 : 1, [a, b] = P(x, y), hand = R(b) - 64, top = R(b) - FOOT * K - 4, cx = R(a) + side * 5;   // pole from the canopy down into the raised hand
-  const back = face === 'NE' || face === 'NW'; c.fillStyle = '#4a3a3a'; if (!back) { c.fillRect(cx, top, 2, hand - top + 2); c.fillRect(cx - 1, hand + 1, 3, 3); }   // from behind, the arm and the pole are hidden by the body
+const headTop = img => { if (img._top !== undefined) return img._top; const d = img.getContext('2d').getImageData(0, 0, img.width, img.height).data; let t = 0; outer: for (; t < img.height; t++) for (let x = 0; x < img.width; x++) if (d[(t * img.width + x) * 4 + 3]) break outer; return (img._top = t); };
+function drawUmbrella(c, x, y, col, face, img) {
+  const side = face === 'SW' || face === 'NW' ? -1 : 1, back = face === 'NE' || face === 'NW', [a, b] = P(x, y), head = R(b) - FOOT * K + 2 + (img ? headTop(img) : 6);   // the canopy sits just over this person's own head
+  const top = head - 11, hand = head + 22, cx = R(a) + side * (back ? 2 : 5);
+  c.fillStyle = '#4a3a3a'; if (!back) { c.fillRect(cx, top, 2, hand - top + 2); c.fillRect(cx - 1, hand + 1, 3, 2); } else c.fillRect(cx, top, 2, 12);   // short pole into the raised hand; from behind the hand is hidden, only the top of the pole shows
   for (let r = 0; r < 12; r++) { const w = R(Math.sqrt(1 - ((11 - r) / 12) ** 2) * 28); c.fillStyle = r < 3 ? shade(col, 22) : r > 9 ? shade(col, -26) : col; c.fillRect(cx - w, top - 12 + r, w * 2, 1); }
   c.fillStyle = shade(col, -40); for (let k = 0; k <= 4; k++) { c.fillRect(cx - 28 + k * 14, top - 1, 1, 2); c.fillRect(cx - 14 + k * 7, top - 11, 1, 10); }
   c.fillStyle = '#2a2024'; c.fillRect(cx, top - 15, 2, 3);
@@ -264,7 +269,7 @@ function drawOutdoor(c) {   // umbrellas over everyone outside, then the weather
   for (const o of CUST) if (!o.sitting) { const p = custPos(o); L.push([p.x, p.y, o, custFace(o)]); }
   for (const d of DINERS) if (d.state === 'in' || d.state === 'out') L.push([d.x, d.y, d, d.face]);
   for (const w of LEAVERS) L.push([w.x, w.y, w, w.face]);
-  for (const [x, y, who, face] of L) { const seed = who._us || (who._us = Math.floor(Math.random() * 1e6)), col = umbrellaFor(who, x, y, seed); if (col) drawUmbrella(c, x, y, col, face); }
+  for (const [x, y, who, face] of L) { const seed = who._us || (who._us = Math.floor(Math.random() * 1e6)), col = umbrellaFor(who, x, y, seed); if (col) drawUmbrella(c, x, y, col, face, (who.ch && who.ch[face] || [])[0]); }
   drawWeather(c);
 }
 function render(c) {

@@ -244,7 +244,7 @@ function fanOf(ci, st) {   // happy visits by this kind of customer add up; at G
   W.gifted[kind] = true;
   const pool = ['luckycat', 'bonsai', 'banner', 'card'].filter(id => !hasItem(id)), alt = Object.keys(DECOR_ITEMS).filter(id => !hasItem(id) && DECOR_ITEMS[id].cat !== 'season' && DECOR_ITEMS[id].cost && DECOR_ITEMS[id].cost <= 200);
   const id = pool.length ? pick(pool) : alt.length ? pick(alt) : null, it = id && DECOR_ITEMS[id];
-  if (it) { let pos = null; if (it.cat !== 'wall') pos = findItemSpot(); if (it.cat === 'wall' || pos) { (W.items = W.items || {})[id] = true; if (pos) (W.itemPos = W.itemPos || {})[id] = pos; applyDecor(); } }
+  if (it) { let pos = null; if (it.cat !== 'wall') pos = findItemSpot(); if (it.cat === 'wall' || pos) { (W.items = W.items || {})[id] = true; if (pos) { (W.itemPos = W.itemPos || {})[id] = pos; GIFT_PLACE = id; } applyDecor(); } }
   else W.money += 100;
   STORY_Q.push({ key: 'gift', ci, lines: [[null, '一位' + kind + '熟客走到收银台：'], ['cust', '常来光顾，你们招呼得很好。这个送给你！'], [null, it ? '收到「' + it.name + '」' + (it.cat === 'wall' ? '，已经挂好了。' : '，摆在店里了（「摆放」里可以移动）。') : '收到一封红包：$100']] });
   NOTICES.push('熟客送礼：' + (it ? it.name : '利是 $100')); SFX.ding();
@@ -545,12 +545,20 @@ function stepCars(dt) {
   CARS = CARS.filter(c => c.dx < 700);
 }
 // dirt spots: free floor cells in a fixed shuffled order; the first round(dirt / 100 * n) of them show, the cleaner works from the last one back
-let DIRT_SPOTS = null, DIRT_NAV = null;
+let DIRT_SPOTS = null, DIRT_NAV = null, GRIME = null;
+function grimeLayer() {   // the floor going grubby: dithered scuff marks and shoe smudges over every walkable cell, faded in with the dirt level
+  if (GRIME) return GRIME; const g = navGrid(), x1 = expandLv() ? 630 : 310, cv = mk(WW, 1280), c = cv.getContext('2d');
+  for (let y = 56; y < 316; y += 9) for (let x = 8; x < x1; x += 9) { const cx = Math.floor((x - NAV_X0) / NAV_C), cy = Math.floor(y / NAV_C); if (g[cy * NAV_W + cx] || mhash(x * 5, y * 3) < .45) continue;
+    const [a, b] = P(x + (mhash(x, y * 2) - .5) * 8, y + (mhash(y, x * 2) - .5) * 8), r = 4 + mhash(x * 7, y) * 9, col = mhash(x, y * 9) < .3 ? '#3a2a1a' : '#5a4430';
+    c.fillStyle = col; for (let dy = -r / 2; dy <= r / 2; dy++) for (let dx = -r; dx <= r; dx++) { const d = Math.hypot(dx / r, dy / (r / 2)); if (d < 1 && ((dx + dy) & 1) === 0 && mhash(a + dx, b + dy) < .75 - d * .6) c.fillRect(R(a) + dx, R(b) + dy, 1, 1); }
+    if (mhash(x * 2, y * 5) < .3) { c.fillStyle = '#4a3828'; for (let k = 0; k < 10; k++) c.fillRect(R(a) - 6 + k, R(b) + 3 + (k >> 2), 1, 1); } }   // a shoe scuff
+  return (GRIME = cv);
+}
 function dirtSpots() {
   const g = navGrid(); if (DIRT_SPOTS && DIRT_NAV === g) return DIRT_SPOTS;
   const L = [], x1 = expandLv() ? 630 : 310;
-  for (let y = 60; y < 312; y += 12) for (let x = 12; x < x1; x += 12) { const cx = Math.floor((x - NAV_X0) / NAV_C), cy = Math.floor(y / NAV_C); if (!g[cy * NAV_W + cx]) L.push([x + (mhash(x, y) - .5) * 6, y + (mhash(y, x) - .5) * 6, Math.floor(mhash(x, y + 7) * 4), mhash(x * 3, y)]); }
-  L.sort((a, b) => a[3] - b[3]); DIRT_NAV = g; return (DIRT_SPOTS = L.slice(0, 40));
+  for (let y = 60; y < 312; y += 12) for (let x = 12; x < x1; x += 12) { const cx = Math.floor((x - NAV_X0) / NAV_C), cy = Math.floor(y / NAV_C); if (!g[cy * NAV_W + cx]) L.push([x + (mhash(x, y) - .5) * 6, y + (mhash(y, x) - .5) * 6, Math.floor(mhash(x, y + 7) * 6), mhash(x * 3, y)]); }
+  L.sort((a, b) => a[3] - b[3]); DIRT_NAV = g; GRIME = null; return (DIRT_SPOTS = L.slice(0, 64));
 }
 const dirtShown = () => Math.round(dirtOf() / 100 * dirtSpots().length);
 let CLEANERS = [];

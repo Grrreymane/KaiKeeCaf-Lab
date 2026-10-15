@@ -150,7 +150,9 @@ function playScene(key) {
   const lines = pick(pool).map(([who, text]) => [who === 'bar' ? (W.staff.wen.hired ? 'wen' : 'lin') : who, text]);
   STORY_Q.push({ key, lines: tonedLines(lines) });
 }
-function stepStory() { if (!DIALOG && STORY_Q.length && !PANEL && PHASE !== 'title' && PHASE !== 'ledger' && !DESK) DIALOG = { ...STORY_Q.shift(), i: 0, t: 0 }; if (DIALOG) DIALOG.t += 1 / 60; }
+let GIFT_PLACE = null;   // a floor gift from a regular: once its scene is over, ask whether to place it now (like buying)
+function stepStory() { if (GIFT_PLACE && !DIALOG && !STORY_Q.length && !PANEL && !DESK && MODE === 'play' && PHASE !== 'title' && PHASE !== 'ledger') { PANEL = { kind: 'placeask', id: GIFT_PLACE, gift: true }; GIFT_PLACE = null; }
+  if (!DIALOG && STORY_Q.length && !PANEL && PHASE !== 'title' && PHASE !== 'ledger' && !DESK) DIALOG = { ...STORY_Q.shift(), i: 0, t: 0 }; if (DIALOG) DIALOG.t += 1 / 60; }
 function advanceDialog() { if (!DIALOG) return; SFX.tap(); DIALOG.i++; DIALOG.t = 0; if (DIALOG.i >= DIALOG.lines.length) DIALOG = null; }
 // a day worked together: affection +1 for everyone on the payroll; crossing a step queues that person's scene for the morning
 function gainAffection() {

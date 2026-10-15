@@ -63,7 +63,8 @@ function drawInfoStrip(c) {   // one line under the sign: weather, today so far,
   const D = W.today; if (!D) return; const st = D.stars.length ? D.stars.reduce((a, b) => a + b, 0) / D.stars.length : 0;
   c.save(); c.globalAlpha = .78; px(c, 0, 35, 290, 15, '#2a1d20'); c.restore();
   const parts = [[wxOf().name, '#bfe0ff'], ['客 ' + D.served, '#fff4dc'], [money$(D.revenue), C.gold], ['★' + (st ? st.toFixed(1) : '-'), '#ffd75e'], ['舒适 ' + comfort(), '#9fe0b8'], ['清洁 ' + Math.round(100 - dirtOf()) + '%', dirtOf() > 50 ? '#ff9a8a' : '#c8f0d8'], ['名气 ' + W.rep.toFixed(1), '#f6c0a0']];
-  let x = 6; c.font = fp(12); for (const [t, col] of parts) { T(c, t, x, 36, col, 'left', null); x += R(c.measureText(t).width) + 10; }
+  c.font = fp(12); const wOf = L_ => L_.reduce((a, [t]) => a + c.measureText(t).width, 0); while (parts.length > 4 && wOf(parts) + 4 * (parts.length - 1) > 282) parts.pop();   // it must stay left of the 研发 button: tighten the gaps, then drop the last items
+  const gap = Math.min(10, (282 - wOf(parts)) / (parts.length - 1)); let x = 6; for (const [t, col] of parts) { T(c, t, R(x), 36, col, 'left', null); x += c.measureText(t).width + gap; }
 }
 function drawHUD(c) {
   const t = rtime;
@@ -75,7 +76,7 @@ function drawHUD(c) {
   c.drawImage(COIN_HK, 8, 10); T(c, money$(W ? W.money : 0), 26, 11, W && W.money < 0 ? '#ff9a8a' : '#fff4dc'); px(c, 82, 8, 1, 18, '#3a2418');
   { const p = W ? (W.pts || 0) : 0, can = W && W.staff && regulars().some(k => lvOf(k) < LV_MAX && p >= LV_COST[lvOf(k) + 1]);   // points chip (tap: staff / upgrades)
     px(c, 204, 7, 54, 20, '#3a2418'); px(c, 205, 8, 52, 18, can && Math.sin(t * 3) > -.3 ? '#7a5a20' : '#4e3222');
-    T(c, '★', 214, 11, C.gold, 'center', null); T(c, String(p), 222, 11, '#fff4dc', 'left', null); T(c, '分', 252, 11, '#d9c49a', 'right', null);
+    T(c, '★', 214, 11, C.gold, 'center', null); { const ps = p >= 10000 ? (p / 1000).toFixed(p >= 100000 ? 0 : 1) + 'k' : String(p); T(c, ps, 222, 11, '#fff4dc', 'left', null); if (ps.length < 4) T(c, '分', 252, 11, '#d9c49a', 'right', null); }   // 4+ digits: no room for 分
     if (W && PHASE !== 'title') button(204, 7, 54, 20, () => clickBar(3)); }
   c.drawImage(ALARM, 88, 7);
   { const tm = clockText().split(':').map(Number), m = tm[0] * 60 + tm[1], cx = 97, cy = 18, ha = (m / 720) * 6.283 - 1.571, ma = (m % 60) / 60 * 6.283 - 1.571;

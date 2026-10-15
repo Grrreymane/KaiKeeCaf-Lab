@@ -315,7 +315,7 @@ function drawGuestsPanel(c) {   // every kind of customer: who comes, how loyal 
 }
 function drawPlaceAsk(c, P_) {   // just bought a floor piece: place it now, or leave it at its default spot
   const it = DECOR_ITEMS[P_.id]; c.save(); c.globalAlpha = .5; px(c, 0, 0, 360, 640, '#1c141c'); c.restore(); button(0, 0, 360, 640, () => {});
-  card(c, 50, 230, 260, 150, PAPER); TS(c, it.name + ' 买咗', 180, 244, 18, INK, 'center');
+  card(c, 50, 230, 260, 150, PAPER); TS(c, it.name + (P_.gift ? ' 收到' : ' 买咗'), 180, 244, 18, INK, 'center');
   T(c, '已经摆喺默认位置（靠墙、唔挡路）', 180, 276, SUB, 'center', null); T(c, '舒适 ' + comfort() + ' · 美观 ' + beauty(), 180, 294, '#2f6e56', 'center', null);
   btn(c, 66, 322, 110, 36, '现在摆放', () => { SFX.tap(); placeNow(P_.id); }, 'gold');
   btn(c, 184, 322, 110, 36, '就放默认位置', () => { SFX.tap(); PANEL = P_.back || null; }, 'cream');
