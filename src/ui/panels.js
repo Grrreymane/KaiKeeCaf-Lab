@@ -86,13 +86,14 @@ function drawShopPanel(c) {   // 荣叔's: raw ingredients in a 2-column grid; o
   btn(c, 14, y - 2, 196, 30, '按今日安排补齐', () => restock(3));
   btn(c, 218, y - 2, 128, 30, '供应商 · 店 Lv' + shopLv(), () => { PANEL = { kind: 'sup', bar: 1 }; SFX.tap(); }, Object.keys(SUPPLIERS).some(k => !(W.sup || {})[k] && shopLv() >= SUPPLIERS[k].lv) ? 'gold' : 'cream'); y += 36;
   const list = ingrInUse();
-  list.forEach((k, i) => {   // sold by the bag
-    const x = 14 + (i % 2) * 168, yy = y + Math.floor(i / 2) * 50, have = W.ing[k] || 0, cost = bagCost(k);
-    card(c, x, yy, 162, 46, '#fffaf0'); drawFit(c, ingIcon(k), x + 4, yy + 4, 44, 36);
-    T(c, INGR[k].name, x + 52, yy + 4, INK, 'left', null); T(c, money$(cost) + '/袋', x + 158, yy + 4, SUB, 'right', null);
-    T(c, '有 ' + have + ' 份', x + 52, yy + 18, have ? '#2f6e56' : '#b8342c', 'left', null);
-    { const u = (W.lastUsed || {})[k] || 0, days = u ? have / u : 0; T(c, '昨用' + u + (u ? ' 够' + (days >= 9.5 ? '9+' : days.toFixed(1)) + '日' : ' · 一袋' + BAG_N[k]), x + 52, yy + 33, u && days < 1 ? '#b8342c' : '#a89480', 'left', null); }
-    btn(c, x + 108, yy + 17, 50, 16, '买一袋', () => buyIngr(k, 1), W.money >= cost ? 'gold' : 'off');
+  const rh = Math.max(50, Math.min(66, Math.floor((BAR_Y - 6 - y) / Math.ceil(list.length / 2))));   // rows grow into the free height
+  list.forEach((k, i) => {   // sold by the portion
+    const x = 14 + (i % 2) * 168, yy = y + Math.floor(i / 2) * rh, have = W.ing[k] || 0, cost = bagCost(k);
+    card(c, x, yy, 162, rh - 4, '#fffaf0'); drawFit(c, ingIcon(k), x + 4, yy + 4, 44, rh - 14);
+    T(c, INGR[k].name, x + 52, yy + 4, INK, 'left', null); T(c, money$(cost) + '/份', x + 158, yy + 6, SUB, 'right', null, 12);
+    T(c, '有 ' + have + ' 份', x + 52, yy + 23, have ? '#2f6e56' : '#b8342c', 'left', null, 12);
+    { const u = (W.lastUsed || {})[k] || 0, days = u ? have / u : 0; T(c, '昨用' + u + (u ? ' · 够' + (days >= 9.5 ? '9+' : days.toFixed(1)) + '天' : ' · 每份' + BAG_N[k]), x + 52, yy + rh - 19, u && days < 1 ? '#b8342c' : '#a89480', 'left', null, 12); }
+    btn(c, x + 106, yy + 21, 52, 20, '进货', () => buyIngr(k, 1), W.money >= cost ? 'gold' : 'off');
   });
 }
 const POST_SHORT = { bake: '烘焙', bar: '水吧', serve: '招待', take: '外卖', clean: '打扫' };
