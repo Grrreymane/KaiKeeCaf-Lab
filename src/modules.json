@@ -16,6 +16,7 @@
   "src/systems/day.js",
   "src/systems/story.js",
   "src/systems/guests.js",
+  "src/art/scenes.js",
   "src/ui/render.js",
   "src/ui/hud.js",
   "src/ui/panels.js",

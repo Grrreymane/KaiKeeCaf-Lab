@@ -79,7 +79,7 @@ const EP_ARCS = [
     [null, '收银台旁边放着一本旧杂志，封面是一个拿着麦克风的年轻歌手。'], ['lin', '（举起杂志）阿少！这个人……这个人跟你一模一样啊！'],
     ['shao', '……是吗。'], ['lin', '「林少恒，十年前退出乐坛，至今下落不明」……少恒？阿少？'], ['shao', '（把杂志轻轻合上）莲姨，那个人已经不唱了。'],
     ['lin', '……（惊）那、那就是说——'], ['shao', '今天的蛋挞出炉了。我去摆。'], ['lin', '（小声）我什么都没看见，什么都没看见……']] },
-  { id: 'shao3', arc: '阿少的心事', part: 3, ok: () => hired('shao') && epSeen('shao2')() && !!wxOf().rain, ci: 19, cname: '咏欣', lines: [
+  { id: 'shao3', arc: '阿少的心事', part: 3, ok: () => hired('shao') && epSeen('shao2')() && !!wxOf().rain, ci: 19, cname: '咏欣', bg: 'rain', lines: [
     [null, '下雨了。咏欣站在门口，没有带伞。'], ['shao', '（递过一把伞）拿去吧。'], ['cust', '那你呢？'], ['shao', '我等雨停。'],
     ['cust', '……阿少，莲姨说你以前是歌手。'], ['shao', '……她说得太快了。'], ['cust', '为什么不唱了？'],
     ['shao', '每天都被很多人看着，看到最后……忘了自己长什么样。'], ['shao', '这里不一样。这里的人只问我，蛋挞还有没有。'],
@@ -98,9 +98,9 @@ const EP_ARCS = [
     ['kun', '……（把蛋挞放进纸袋，又放了一个）'], ['cust', '我只要一个。'], ['kun', '……另一个，是以前欠你的。'],
     ['cust', '（愣住）……你还是这样。四十年了，话还是这么少。'], ['cust', '（咬了一口）味道……一点都没变。'], ['kun', '……嗯。没变。'],
     ['lin', '（躲在柜台后面，捂住嘴）']] },
-  { id: 'jan3', arc: '坤伯与阿珍', part: 3, ok: () => epSeen('jan2', 3)(), lines: [
-    [null, '收工后，荣叔拎着两瓶汽水来找坤伯。'], ['rong', '老坤，四十年前，你攒了三个月的钱买戒指，结果呢？'], ['kun', '……结果那天，饼房接了一张大单。'],
-    ['rong', '你做了一整晚的蛋挞，她就上了去加拿大的飞机。'], ['hero', '坤伯……'], ['kun', '（看着烤炉）没关系。'],
+  { id: 'jan3', arc: '坤伯与阿珍', part: 3, ok: () => epSeen('jan2', 3)(), bg: 'pier', lines: [
+    [null, '周日清晨，西贡码头。荣叔和坤伯并排坐着，鱼竿一动不动。'], ['rong', '老坤，四十年前，你攒了三个月的钱买戒指，结果呢？'], ['kun', '……结果那天，饼房接了一张大单。'],
+    ['rong', '你做了一整晚的蛋挞，她就上了去加拿大的飞机。'], ['kun', '（看着海）……没关系。'],
     ['kun', '现在她回来了，每天能做她爱吃的，就够了。'], ['rong', '……你这个人啊。（拍了拍他的肩）'], ['kun', '明天，帮我留两个最好的。']] },
   // 莲姨的追问 — why the owner opened a cha chaan teng
   { id: 'why1', arc: '为什么开冰室', part: 1, ok: () => W.day >= 5 && hired('wen'), lines: [
@@ -109,7 +109,8 @@ const EP_ARCS = [
   { id: 'why2', arc: '为什么开冰室', part: 2, ok: () => epSeen('why1', 3)() && W.day >= 9, lines: [
     [null, '莲姨在储物间找东西时，翻出一张发黄的旧照片。'], ['lin', '（举着照片）这间店……是这间店！门口站着一个老先生，还有一个年轻的……坤伯？！'],
     ['kun', '……那是我。旁边那个，是何伯。'], ['lin', '何伯？……老板的外公，好像就姓何……'], ['kun', '……你自己问老板吧。'], ['lin', '（盯着照片，好久没说话）']] },
-  { id: 'why3', arc: '为什么开冰室', part: 3, ok: () => epSeen('why2', 2)(), lines: [
+  { id: 'why3', arc: '为什么开冰室', part: 3, ok: () => epSeen('why2', 2)(), bg: 'night', lines: [
+    [null, '打烊后，店里只剩一盏灯。'],
     ['hero', '……莲姨，你找到那张照片了吧。'], ['lin', '嗯。'], ['hero', '那是我外公。这里以前就是他的冰室。'],
     ['hero', '我小时候每天放学都来，外公给我做菠萝油，坤伯偷偷多放牛油。'], ['hero', '后来外公病了，店关了……我一直想，总有一天要把灯重新打开。'],
     ['kun', '……所以我才来的。'], ['lin', '（眼眶红了）傻孩子……这种事怎么不早说呀！'], ['hero', '说出来……好像就很难过嘛。'],
@@ -132,6 +133,34 @@ const EP_ARCS = [
     ['qing', '（趴在柜台上）哎，数学考砸了……'], ['yao', '……哪一题？'], ['qing', '全部。'], ['yao', '（翻开笔记本，背面全是工整的公式）……我教你。'],
     ['qing', '你这本子怎么什么都写？'], ['yao', '……坤伯说要记在手上，可是我手笨，只好先记在本子上。'],
     ['qing', '耀仔你一点都不笨！'], ['yao', '……（耳朵红了）'], ['lin', '（偷看）哎呀呀~']] },
+  // 粉丝风波 — 莲姨 lets slip who 阿少 was; everyone stands in front of him
+  { id: 'fan1', arc: '粉丝风波', part: 1, ok: () => hired('shao') && epSeen('shao2', 2)(), ci: 8, cname: '街坊阿姨', lines: [
+    [null, '早上，街坊阿姨来买菠萝包，和莲姨聊得正起劲。'], ['cust', '莲姨，你们店那个帅哥招待，是不是很面熟啊？'], ['lin', '哎呀，你也觉得？我跟你说哦，他以前是——'],
+    ['lin', '（惊，捂住嘴）……是、是在别的茶餐厅做过啦！'], ['cust', '哦~（眼睛发亮）我懂，我懂~'], ['lin', '（小声）完了完了……'],
+    ['shao', '（从后面走过）莲姨，脸色不太好哦。'], ['lin', '没、没事！今天天气真好啊哈哈！']] },
+  { id: 'fan2', arc: '粉丝风波', part: 2, ok: () => hired('shao') && epSeen('fan1', 1)(), ci: 17, cname: '记者', bg: 'crowd', fx: 'crowd', lines: [
+    [null, '开门不到十分钟，店门口就挤满了人，还有人扛着相机。'], ['cust', '请问林少恒先生是不是在这里工作？！'], ['shao', '……（站在柜台后，没有动）'],
+    ['kun', '（走到门口，双手抱胸）要买蛋挞的排队。不买的，让一让。'], ['wen', '（压低声音打电话）喂，陈律师吗？对，有人在店门口拍照……嗯，麻烦你了。'],
+    ['qing', '（举起一块纸牌）「本店只卖蛋挞，不卖八卦！」'], ['lin', '（挡在阿少前面）都是我不好……今天谁都别想拍他！'],
+    ['shao', '……莲姨。'], ['shao', '（轻声）谢谢大家。不过，让我自己来吧。']] },
+  { id: 'fan3', arc: '粉丝风波', part: 3, ok: () => hired('shao') && epSeen('fan2', 1)(), fx: 'fanend', lines: [
+    ['shao', '（走到门口，对着镜头）林少恒十年前就不唱了。'], ['shao', '现在在这里的，是街记冰室的招待阿少。'], ['shao', '想听歌的话，抱歉。想喝奶茶的话，欢迎。'],
+    [null, '记者们面面相觑，有几个人真的坐下来点了奶茶。'], ['lin', '（眼眶红了）阿少，对不起，都是我多嘴……'], ['shao', '莲姨，你挡在我前面的时候……我很开心。'],
+    ['lin', '（哭）呜……我以后一定管好这张嘴！'], ['kun', '……难。']] },
+  // 对面的金庭 — the restaurant that closed 坤伯's old bakery wants him, then starts a price war
+  { id: 'rival1', arc: '对面的金庭', part: 1, ok: () => W.day >= 10, ci: 23, cname: '金庭经理', lines: [
+    [null, '一位穿西装的男人走进店里，递上一张烫金名片。'], ['cust', '我是对面「金庭」餐厅的经理。坤师傅，久仰。'], ['kun', '……金庭。'],
+    ['cust', '我们想请您来做甜品总监，月薪是这里的三倍。'], ['lin', '（惊）三、三倍？！'], ['kun', '（把名片放回他手里）四十年前，你们开张那年，我的饼房就关了。'],
+    ['cust', '……那是市场。'], ['kun', '这里也是市场。我在这里，挺好的。'], ['cust', '（笑了笑）那我们，市场上见。']] },
+  { id: 'rival2', arc: '对面的金庭', part: 2, ok: () => epSeen('rival1', 2)(), fx: 'pricewar', lines: [
+    [null, '对面金庭挂出了大横幅：「蛋挞买一送一」。'], ['lin', '老板！门口的客人都被吸走了！'], ['hero', '……我们也减价吗？'], ['kun', '不减。'],
+    ['kun', '他们的挞皮是冷冻的，送两个也是冷冻的。'], ['wen', '街坊吃得出来的。我们把茶做好就行。'],
+    ['shao', '……而且，他们店里，没有人会记得你要少甜。'], ['hero', '好！这两天，大家撑住！']] },
+  { id: 'rival3', arc: '对面的金庭', part: 3, ok: () => epSeen('rival2', 2)(), ci: 17, cname: '阿杰', bg: 'night', fx: 'rivalend', lines: [
+    [null, '打烊后，有人敲门。是金庭的年轻甜品师。'], ['cust', '（低着头）坤师傅……我是阿杰，以前在您饼房做学徒的。'], ['kun', '（惊）……阿杰？你长这么高了。'],
+    ['cust', '经理让我做「跟街记一样的蛋挞」，我做了一个月……还是做不出来。'], ['kun', '（沉默了一会儿，拿出一个刚烤好的蛋挞）尝尝。'],
+    ['cust', '（咬了一口）……是这个味道。是小时候的味道。'], ['kun', '牛油要冻，摺三次，每次等十分钟。'], ['kun', '……配方不难。难的是每天都愿意这样做。'],
+    ['cust', '（眼眶红了）谢谢师傅。'], [null, '几天后，金庭的横幅拆了。']] },
 ];
 let EP_BANNER = null;   // { ep, t } — the bar at the top inviting the player to watch
 function stepEpisodes(dt) {
@@ -146,8 +175,12 @@ function stepEpisodes(dt) {
 function playEpisode(ep) {
   EP_BANNER = null; W.eps[ep.id] = W.day;
   const ci = ep.ci != null ? ep.ci : pick(guestPool());   // who's in it: the episode's own customer, or one of today's kinds
-  STORY_Q.push({ key: 'ep', ci, cname: ep.cname, lines: [[null, ep.arc ? '小剧场 · ' + ep.arc + '（' + ep.part + '/' + EP_ARCS.filter(e => e.arc === ep.arc).length + '）' : '小剧场']].concat(ep.lines) });
+  STORY_Q.push({ key: 'ep', ci, cname: ep.cname, bg: ep.bg, lines: [[null, ep.arc ? '小剧场 · ' + ep.arc + '（' + ep.part + '/' + EP_ARCS.filter(e => e.arc === ep.arc).length + '）' : '小剧场']].concat(ep.lines.filter(([w]) => !HIRE[w] || hired(w))) });
   if (ep.fx === 'shao') W.today.shaoSlowUntil = clockOpen + 45;
+  if (ep.fx === 'crowd') { W.today.crowdUntil = clockOpen + 60; dirtAdd(12); notice('门口挤满了人：一阵子客多，店也脏得快'); }   // 粉丝风波
+  if (ep.fx === 'fanend') { W.rep = Math.min(5, W.rep + .2); notice('阿少的事传开了：名气 +0.2'); }
+  if (ep.fx === 'pricewar') { W.rival = { until: W.day + 1 }; notice('对面减价：今明两天客流 -15%'); }   // 金庭
+  if (ep.fx === 'rivalend') { W.rival = null; W.rep = Math.min(5, W.rep + .2); notice('金庭不减价了：名气 +0.2'); }
   if (ep.fx === 'rich' || ep.fx === 'fans') { const amt = ep.fx === 'rich' ? 180 : 80; W.money += amt; W.today.revenue += amt; notice((ep.fx === 'rich' ? '雯姐的朋友' : '阿少的「粉丝」') + '买了 $' + amt); }   // 阿少 distracted for a while: works slower
 }
 

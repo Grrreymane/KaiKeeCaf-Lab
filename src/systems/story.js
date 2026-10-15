@@ -185,9 +185,11 @@ function speakerBust(who, D) {   // whoever is talking: staff / suppliers (their
 }
 function drawDialog(c) {
   const D = DIALOG, [who, text] = D.lines[D.i], hero = who === 'hero', id = hero ? 'hero_' + (W.hero || 'f') : who;
-  c.save(); c.globalAlpha = .5; px(c, 0, 0, 360, 640, '#1c141c'); c.restore();
+  if (D.bg) { drawBackdrop(c, D.bg); c.save(); c.globalAlpha = .12; px(c, 0, 0, 360, 640, '#1c141c'); c.restore(); }   // a story moment with its own picture
+  else { c.save(); c.globalAlpha = .5; px(c, 0, 0, 360, 640, '#1c141c'); c.restore(); }
   button(0, 0, 360, 640, advanceDialog);
-  { const b = speakerBust(who, D); if (b) c.drawImage(b, hero ? 236 : 14, 474 - b.height / 2, b.width / 2, b.height / 2); }   // a customer's own scene (gift, keepsake): their bust, like the staff   // bust stands on the window
+  { const b = speakerBust(who, D), ex = exprOf(text); if (b) { const w = b.width / 2, h = b.height / 2, sx = ex === 'surprise' && D.t < .5 ? R(Math.sin(D.t * 60) * 2) : 0, sy = ex === 'happy' ? -R(Math.abs(Math.sin(rtime * 5)) * 3) : 0, x = (hero ? 236 : 14) + sx, y = 474 - h + sy;   // shake when surprised, hop when happy
+      c.drawImage(b, x, y, w, h); if (ex) drawExpr(c, ex, x, y, w, h); } }   // a customer's own scene (gift, keepsake): their bust, like the staff   // bust stands on the window
   px(c, 5, 465, 350, 118, OUT); px(c, 6, 466, 348, 116, '#fffaf0'); px(c, 6, 466, 348, 2, '#ffffff'); px(c, 6, 578, 348, 4, '#ead9b8');
   const name = who ? (hero ? '店主' : who === 'temp' ? HIRE.temp.name : who === 'cust' ? D.cname || guestKind(D.ci) || '客人' : NAMES[who]) : '';
   if (name) { c.font = sr(14); const w = R(c.measureText(name).width) + 22, x = hero ? 340 - w : 14; px(c, x - 1, 445, w + 2, 22, OUT); px(c, x, 446, w, 20, '#5a3524'); px(c, x, 446, w, 1, '#7a4a32'); TS(c, name, x + w / 2, 448, 14, '#fbe9c0', 'center'); }

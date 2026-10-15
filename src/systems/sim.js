@@ -146,7 +146,7 @@ const reserve = p => ordered(p) + (W.showcase === p ? 6 : 0) + (takeOpen() && PR
 function spawnRate() {
   const tod = clamp(clockOpen / OPEN_LEN, 0, 1), g = (m, w) => Math.exp(-((tod - m) ** 2) / (2 * w * w));
   const curve = .55 + .9 * g(.12, .06) + 1.0 * g(.45, .07) + .7 * g(.7, .06);   // breakfast, lunch, afternoon tea
-  return .3 * curve * (.6 + W.rep * .12) * (W.day === 1 ? .85 : 1) * [1, 1.2, 1.3, 1.4][upLv('sign')] * (1 + .05 * upLv('ads')) * (hasPerk('shao_lure') ? 1.08 : 1) * (1 + beauty() * .015) * (beautyLv() >= 2 ? 1.05 : 1) * (beautyLv() >= 3 ? 1.1 : 1) * wxOf().rate * priceTier().rate * (hasPerk('qing_student') ? 1.06 : 1) * (1 + comfort() * .01) * (1 + .03 * festive()) * dirtSlow() * vipMul();   // comfort brings people in; festive pieces in season too   // a nicer shop draws more people; weather, prices
+  return .3 * curve * (.6 + W.rep * .12) * (W.day === 1 ? .85 : 1) * [1, 1.2, 1.3, 1.4][upLv('sign')] * (1 + .05 * upLv('ads')) * (hasPerk('shao_lure') ? 1.08 : 1) * (1 + beauty() * .015) * (beautyLv() >= 2 ? 1.05 : 1) * (beautyLv() >= 3 ? 1.1 : 1) * wxOf().rate * priceTier().rate * (hasPerk('qing_student') ? 1.06 : 1) * (1 + comfort() * .01) * (1 + .03 * festive()) * dirtSlow() * vipMul() * (W.today && W.today.crowdUntil > clockOpen ? 1.4 : 1) * (W.rival && W.day <= W.rival.until ? .85 : 1);   // comfort brings people in; festive pieces in season too   // a nicer shop draws more people; weather, prices
 }
 function freshLook() { const pool = guestPool(), used = new Set([...CUST, ...DINERS].map(c => c.ci)), free = pool.filter(i => !used.has(i)); return pick(free.length ? free : pool); }   // only the kinds of customer that have started coming
 function spawnCustomer(force) {
