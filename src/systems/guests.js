@@ -215,7 +215,7 @@ function stepEpisodes(dt) {
   if (T.epAt < 0 || clockOpen < T.epAt || T.epDone) return;
   const arc = EP_ARCS.filter(e => !W.eps[e.id] && e.ok()), one = EPISODES.find(e => !W.eps[e.id] && e.ok());   // a story part when one is due (more often than not), otherwise a one-off
   const ep = arc.length && (rng() < .65 || !one) ? arc[0] : one; T.epDone = true; if (!ep) return;
-  EP_BANNER = { ep, t: 0 }; SFX.ding();
+  playEpisode(ep); SFX.ding();   // straight into the scene (the shop pauses while it plays)
 }
 function playEpisode(ep) {
   EP_BANNER = null; W.eps[ep.id] = W.day;

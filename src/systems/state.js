@@ -15,6 +15,7 @@ function newState() {
       T5: { layers: tableLayers(), locked: true },
       T6: { layers: tableLayers(), locked: true },
       T7: { layers: tableLayers(), locked: true, extra: true },
+      T8: { layers: tableLayers(), locked: true, extra: true }, T9: { layers: tableLayers(), locked: true, extra: true }, T10: { layers: tableLayers(), locked: true, extra: true },
     },
     plan: Object.fromEntries(PIDS.map(p => [p, 'on'])),   // daily bake plan: 'pri' first, 'on' normal, 'off' don't make
     staff: { wen: { hired: false, post: 'bar' }, shao: { hired: false, post: 'serve' }, qing: { hired: false, post: 'bar' }, yao: { hired: false, post: 'bake' }, temp: { hired: false, post: 'take' } },
@@ -29,6 +30,7 @@ function loadGame() {
   if (!s || !s.v) return false;
   const d = newState();   // fill fields a newer version added; never wipe the player's save
   for (const k in d) if (s[k] === undefined) s[k] = d[k];
+  for (const id in d.shelves) if (!s.shelves[id]) s.shelves[id] = d.shelves[id];   // display spots added later
   if (!s.ing) { s.ing = Object.fromEntries(Object.keys(INGR).map(k => [k, 0])); for (const p in s.packs || {}) for (const k of RECIPE[p] || []) s.ing[k] += s.packs[p]; }   // old saves: packs -> raw ingredients
   for (const k in s.up || {}) if (s.up[k] === true) s.up[k] = 1; else if (s.up[k] === false) s.up[k] = 0;   // old saves: true/false -> levels
   for (const id in d.shelves) if (!s.shelves[id]) s.shelves[id] = d.shelves[id];   // shelf spots added in later versions

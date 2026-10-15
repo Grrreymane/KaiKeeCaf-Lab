@@ -121,7 +121,7 @@ const hasPerk = id => { if (!W || !W.perks) return false; const k = id.split('_'
 const perkInfo = id => { for (const k in PERKS) for (const lv in PERKS[k]) for (const q of PERKS[k][lv]) if (q[0] === id) return q; return null; };
 const LV_SKILL = { kun: '烘焙', lin: '包装、冲饮', wen: '水吧', shao: '招待、外卖', qing: '冰饮', yao: '烘焙' };
 const lvOf = k => (W.lv && W.lv[k]) || 1;
-const lvSpeed = k => (k === 'temp' ? (HIRE.temp.speed || 1) : k ? 1 - .08 * (lvOf(k) - 1) : 1) * (hasPerk('lin_org') ? .95 : 1) * (k === 'wen' && hasPerk('wen_fast') ? .85 : 1) * (k === 'qing' ? .9 : 1) * (k === 'yao' && hasPerk('yao_fast') ? .85 : 1) * (k === 'shao' && W.today && W.today.shaoSlowUntil > clockOpen ? 1.4 : 1);   // 阿少 distracted (小剧场)   // time multiplier for that person's jobs
+const lvSpeed = k => (k === 'temp' ? (HIRE.temp.speed || 1) : k ? 1 - .08 * (lvOf(k) - 1) : 1) * (hasPerk('lin_org') ? .95 : 1) * (k === 'wen' && hasPerk('wen_fast') ? .85 : 1) * (k === 'qing' ? .9 : 1) * (k === 'yao' && hasPerk('yao_fast') ? .85 : 1) * (k === 'shao' && W.today && W.today.shaoSlowUntil > clockOpen ? 1.4 : 1) * (W && W.xk && (k === 'kun' || k === 'yao' || (W.staff[k] && W.staff[k].post === 'bake')) ? .85 : 1);   // 阿少 distracted (小剧场)   // time multiplier for that person's jobs
 // four seasons of 12 days, then a new year; each season shifts what people want
 const SEASONS = [
   { name: '春', full: '春天', want: {} },
@@ -141,7 +141,7 @@ const WEATHER = {
   snow: { name: '落雪', rate: .86, fridge: .75, table: 1.2, dine: 1.3, snow: true },
   cold: { name: '好冻', rate: .88, fridge: .7, table: 1.25, dine: 1.3 },
 };
-const SEASON_WX = [['sun', 'sun', 'drizzle', 'rain', 'cool'], ['hot', 'hot', 'sun', 'storm', 'rain', 'drizzle'], ['cool', 'cool', 'sun', 'sun', 'drizzle'], ['cold', 'cold', 'snow', 'snow', 'sun', 'drizzle']];
+const SEASON_WX = [['sun', 'sun', 'sun', 'cool', 'cool', 'sun', 'drizzle', 'rain'], ['hot', 'hot', 'sun', 'sun', 'hot', 'sun', 'storm', 'drizzle'], ['cool', 'cool', 'sun', 'sun', 'cool', 'sun', 'drizzle'], ['cold', 'cold', 'sun', 'cold', 'sun', 'snow']];   // about one wet day in four or five
 const wxOf = () => WEATHER[(W && W.today && W.today.wx) || 'sun'] || WEATHER.sun;
 const PRICE_TIERS = [{ name: '亲民', mult: .85, rate: 1.15, desc: '平啲，多人嚟' }, { name: '标准', mult: 1, rate: 1, desc: '街坊价' }, { name: '精品', mult: 1.25, rate: .85, desc: '贵啲，人少啲' }];
 const STOCK_TIERS = [{ name: '少量', desc: '卖到差唔多先补，剩货少' }, { name: '标准', desc: '照平时' }, { name: '多备', desc: '厨房多备一盘，唔怕卖晒，但隔夜剩货多' }];
@@ -163,6 +163,10 @@ const EXPAND = [
   { name: '加卡座', cost: 1200, desc: '隔壁再多两组卡座' },
   { name: '再加卡座', cost: 1600, desc: '再多两组卡座' },
   { name: '坐满隔壁', cost: 2200, desc: '隔壁坐满八组卡座' },
+];
+const ROOMS = [   // [flag, name, cost, what it does]
+  ['xk', '扩建厨房', 2000, '加烤炉和备料台：烘焙快一成半'],
+  ['xf', '扩建前台', 1800, '多一个收银口：结账快两成半'],
 ];
 const NEXT_BOOTHS = [[344, 196], [344, 144], [420, 196], [420, 144], [496, 196], [496, 144], [572, 196], [572, 144]];   // booth X, y0 next door, in the order they open
 const expandLv = () => (W && W.expand) || 0;
@@ -192,8 +196,8 @@ const showcaseOk = p => unlocked(p) && (PRODUCTS[p].where === 'table' || PRODUCT
 const TAGS = { hurry: { name: '赶时间' }, chill: { name: '坐耐' } };
 const wantOf = p => PRODUCTS[p].want * (seasonOf(W.day).want[p] || 1) * (PRODUCTS[p].where === 'fridge' && hasPerk('wen_sign') ? 1.3 : 1) * (wxOf()[PRODUCTS[p].where] || 1) * promoWant(p) * (W && W.showcase === p && W.stock && W.stock[p] > 0 ? 1.4 : 1);   // the signature showcase item
 const OPEN_LEN = 180, SEASON_DAYS = 12, MONTH_DAYS = 4, PARENTS_DAY = 6;   // business 09:00-19:00 in 3 minutes; spring = 3 months of 4 days
-const SHELF_IDS = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
-const EXTRA_SHELF = { T7: 800 };   // extra display spot bought in 装修: in front of the door (the only free place on the way to the till)
+const SHELF_IDS = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10'];
+const EXTRA_SHELF = { T7: 800, T8: 1200, T9: 1500, T10: 1800 }, EXTRA_NEED = { T8: 1, T9: 1, T10: 1 };   // T8-T10 stand next door: open it up first   // extra display spot bought in 装修: in front of the door (the only free place on the way to the till)
 // decor shop: better shelves (more per layer + nicer), wallpapers, booth styles. Beauty brings more customers.
 const SHELF_TIERS = [{ name: '云石双层架', cap: 6, beauty: 0 }, { name: '柚木铜边架', cost: 350, cap: 8, beauty: 2 }, { name: '玻璃展示柜', cost: 800, cap: 10, beauty: 4 }];
 const WALLS = {
@@ -300,7 +304,7 @@ function beauty() {
   if (W && W.showcase && W.stock && W.stock[W.showcase] > 0) b += 2;   // a full showcase looks good
   return b;
 }
-const SHELF_NO = { T1: 1, T3: 2, T4: 3, T5: 4, T6: 5, T2: 6, T7: 7 };
+const SHELF_NO = { T1: 1, T3: 2, T4: 3, T5: 4, T6: 5, T2: 6, T7: 7, T8: 8, T9: 9, T10: 10 };
 const LAYER_NAME = ['上层', '下层'];
 // customers drawn from these looks (6 / 7 are mum and dad: kept for the parents' visit)
 const CUST_POOL = [0, 1, 2, 3, 4, 5, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23];

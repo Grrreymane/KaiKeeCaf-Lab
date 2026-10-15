@@ -135,7 +135,7 @@ function glassFridge(Pj, x0, y0, tier = 0, rot = 0) {
   if (rot) Object.assign(o, { x0: cx - d / 2, x1: cx + d / 2, y0: cy - w / 2, y1: cy + w / 2 });
   return o;
 }
-const SHELF_POS = { T1: [88, 76], T2: [184, 76], T3: [88, 144], T4: [184, 144], T5: [88, 212], T6: [184, 212], T7: [82, 250] };
+const SHELF_POS = { T1: [88, 76], T2: [184, 76], T3: [88, 144], T4: [184, 144], T5: [88, 212], T6: [184, 212], T7: [82, 250], T8: [384, 84], T9: [470, 84], T10: [556, 84] };   // T8-T10: next door, in front of its back wall
 const isFridge = id => W && W.shelves && W.shelves[id] ? !!W.shelves[id].fridge : id === 'T2';
 function shelfObj(id) {   // the shelf as the player has it: tier + facing
   const d = (W && W.decor) || { tier: {}, rot: {} }, t = d.tier[id] || 0, r = d.rot[id] || 0, [x, y] = SHELF_POS[id];
@@ -452,7 +452,7 @@ function buildStatics() {
   // 冰室卡座：靠左墙两组，绿皮高背长凳 + 云石台（台上留着奶茶、布丁）
   const booth = (X, y0) => { const objs = boothParts(X, y0).map(add); BOOTHS.push({ X, y0, objs, table: objs[1] }); return objs; };
   const BO1 = booth(268, 136), BO2 = booth(268, 192);
-  for (const id of ['T5', 'T6', 'T7']) TABLES[id] = add(shelfObj(id));
+  for (const id of ['T5', 'T6', 'T7', 'T8', 'T9', 'T10']) TABLES[id] = add(shelfObj(id));
   // 门口外卖窗：对着街的玻璃柜，一盘盘蛋挞，立一块「外卖」牌
   const twBase = makeObj(P, { x0: 162, x1: 222, y0: 300, y1: 314 }, 46, [
     { g: (g, Q) => { bx(g, Q, 162, 300, 0, 60, 14, 16, C.woodL, C.wood, C.woodD, 2); woodGrain(g, Q, 165, 219, 1, 15, 314, 19); bx(g, Q, 162, 300, 16, 60, 14, 2, '#d99a5c', '#b8743c', '#93582c', 2); } },
@@ -486,7 +486,7 @@ function buildStatics() {
   const plant = (x, y, kind, pot) => makeObj(P, { x0: x - 7, x1: x + 7, y0: y - 7, y1: y + 7 }, 50, [{ g: (g, Q) => { const [a, b] = Q(x, y); drawPlant(g, a, b, kind, pot); } }]);
   const PL1 = add(plant(10, 38, 'monstera', 'cream')), PL2 = add(plant(304, 262, 'monstera', 'charcoal'));
   // movable furniture groups (placement mode): id, name, objects, seated people that move along
-  FURN.push(['T1', '货架', [TABLES.T1]], ['T2', '冷柜', [TABLES.T2]], ['T3', '货架', [TABLES.T3]], ['T4', '货架', [TABLES.T4]], ['T5', '货架', [TABLES.T5]], ['T6', '货架', [TABLES.T6]], ['T7', '货架', [TABLES.T7]],
+  FURN.push(['T1', '货架', [TABLES.T1]], ['T2', '冷柜', [TABLES.T2]], ['T3', '货架', [TABLES.T3]], ['T4', '货架', [TABLES.T4]], ['T5', '货架', [TABLES.T5]], ['T6', '货架', [TABLES.T6]], ['T7', '货架', [TABLES.T7]], ['T8', '货架', [TABLES.T8]], ['T9', '货架', [TABLES.T9]], ['T10', '货架', [TABLES.T10]],
     ['B1', '卡座', BO1], ['B2', '卡座', BO2], ['P1', '盆栽', [PL1]], ['P2', '盆栽', [PL2]]);
   // 前面的矮墙（窗台）、门口；右边和隔壁之间的矮墙，中间封木板贴「招租」
   add(makeObj(P, { x0: 0, x1: 252, y0: 316, y1: 320 }, 12, [{ g: (g, Q) => { bx(g, Q, 0, 316, 0, 252, 4, 8, C.brickL, C.brick, C.brickD); bx(g, Q, 0, 316, 8, 252, 4, 3, '#c8eefc', '#9fdcf4', '#9fdcf4'); } }]));
@@ -691,6 +691,18 @@ function applyExtraShelves() {   // extra spots not bought yet: no object in the
   for (const id in EXTRA_SHELF) { const st = W.shelves[id], o = TABLES[id]; if (!st || !o) continue; const hide = st.locked, i = STATICS.indexOf(o), g = o.grp, gi = MOV.indexOf(g);
     if (hide && i >= 0) STATICS.splice(i, 1); else if (!hide && i < 0) STATICS.push(o);
     if (g) { if (hide && gi >= 0) MOV.splice(gi, 1); else if (!hide && gi < 0) MOV.push(g); } }
+}
+const ROOM_OBJ = {};
+function applyRooms() {   // the bigger kitchen (oven + prep table) and the longer front counter (second till), next door
+  if (!ROOM_OBJ.xk) ROOM_OBJ.xk = makeObj(P, { x0: 328, x1: 392, y0: 4, y1: 26 }, 64, [{ g: (g, Q) => {
+    bx(g, Q, 328, 4, 0, 64, 22, 30, C.steel, C.steelS, C.steelD); bx(g, Q, 332, 6, 30, 26, 18, 28, C.steel, C.steelS, C.steelD, 2);
+    g.quad(Q(334, 24, 36), Q(356, 24, 36), Q(356, 24, 52), Q(334, 24, 52), C.dark); g.quad(Q(336, 24, 39), Q(354, 24, 39), Q(354, 24, 44), Q(336, 24, 44), '#ff9a3c');
+    bx(g, Q, 364, 8, 30, 24, 14, 2, '#efcf98', '#ddb27a', '#c99a5e'); for (let i = 0; i < 3; i++) { const [a, b] = Q(368 + i * 7, 14, 32); g.ell(a, b - 2, 4, 2.6, '#f2c96a'); } } }]);
+  if (!ROOM_OBJ.xf) ROOM_OBJ.xf = makeObj(P, { x0: 324, x1: 388, y0: 30, y1: 46 }, 52, [{ g: (g, Q) => {
+    bx(g, Q, 324, 30, 0, 64, 16, 30, C.cabL, C.cab, C.cabD); bx(g, Q, 322, 29, 30, 68, 18, 4, '#d99a5c', '#b8743c', '#93582c');
+    bx(g, Q, 330, 34, 34, 16, 10, 9, '#f2ead2', '#dccfab', '#c2b48c'); bx(g, Q, 331, 34, 43, 8, 3, 5, '#2f6a50', '#2f6a50', '#24533e');
+    bx(g, Q, 356, 35, 34, 22, 8, 6, '#c9cdd0', '#aab0b3', '#90969a', 1); } }]);
+  for (const f of ['xk', 'xf']) { const o = ROOM_OBJ[f], on = !!(W && W[f] && expandLv()), i = STATICS.indexOf(o); if (on && i < 0) STATICS.push(o); else if (!on && i >= 0) STATICS.splice(i, 1); }
 }
 function applyExpand() {   // match the room to W.expand: partition + shutter out, windows in, booths next door
   const lv = expandLv();

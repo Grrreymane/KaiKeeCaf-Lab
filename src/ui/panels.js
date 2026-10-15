@@ -70,7 +70,7 @@ function drawShelfPanel(c, P_) {
   if (W.tut === 2) { if (sel !== 1) c.drawImage(HAND, 300, y - 42 + R(Math.abs(Math.sin(gtime * 4)) * -4)); else c.drawImage(HAND, 14 + (tw + 6) + 60, y + 50 + R(Math.abs(Math.sin(gtime * 4)) * -4)); }
 }
 function drawStockPanel(c) {
-  const ids = ['T1', 'T3', 'T4', 'T5', 'T6', 'T2', 'T7'].filter(id => !(W.shelves[id].extra && W.shelves[id].locked));
+  const ids = ['T1', 'T3', 'T4', 'T5', 'T6', 'T2', 'T7', 'T8', 'T9', 'T10'].filter(id => !(W.shelves[id].extra && W.shelves[id].locked));
   let y = sheet(c, '摆货', money$(W.money), Math.min(292, BAR_Y - 44 - ids.length * 40));
   ids.forEach((id, i) => {
     const st = W.shelves[id], yy = y + i * 40;
@@ -211,29 +211,31 @@ function drawDecorPanel(c, P_) {   // 装修: better shelves, wallpaper, booth s
     const n = expandLv();
     TS(c, '隔壁堂食区', 22, y, 16, INK); T(c, '卡座 ' + BOOTHS.length + ' 组 · 座位 ' + SEATS.length + ' 个', 336, y + 2, '#2f6e56', 'right', null);
     EXPAND.forEach((E, i) => {
-      const yy = y + 28 + i * 58, done = i < n, next = i === n, early = E.day && W.day < E.day;
-      card(c, 14, yy, 332, 52, done ? '#e6f2ea' : next ? '#fff3d6' : '#ece2cf');
-      TS(c, E.name, 22, yy + 6, 14, done ? '#2f6e56' : INK); T(c, E.desc, 22, yy + 28, SUB, 'left', null);
-      if (done) T(c, '已完成', 336, yy + 18, '#2f6e56', 'right', null);
-      else if (!next) T(c, '先做上一步', 336, yy + 18, '#b0a08c', 'right', null);
-      else if (early) T(c, '第 ' + E.day + ' 天开放', 336, yy + 18, SUB, 'right', null);
-      else btn(c, 226, yy + 12, 112, 28, money$(E.cost), () => buyExpand(), W.money >= E.cost ? 'gold' : 'off');
+      const yy = y + 26 + i * 50, done = i < n, next = i === n, early = E.day && W.day < E.day;
+      card(c, 14, yy, 332, 46, done ? '#e6f2ea' : next ? '#fff3d6' : '#ece2cf');
+      TS(c, E.name, 22, yy + 4, 14, done ? '#2f6e56' : INK); T(c, E.desc, 22, yy + 25, SUB, 'left', null, 12);
+      if (done) T(c, '已完成', 336, yy + 15, '#2f6e56', 'right', null);
+      else if (!next) T(c, '先做上一步', 336, yy + 15, '#b0a08c', 'right', null);
+      else if (early) T(c, '第 ' + E.day + ' 天开放', 336, yy + 15, SUB, 'right', null);
+      else btn(c, 226, yy + 9, 112, 28, money$(E.cost), () => buyExpand(), W.money >= E.cost ? 'gold' : 'off');
     });
-    T(c, '卡座多咗记得多派人做招待', 180, y + 28 + 4 * 58 + 4, SUB, 'center', null);
+    ROOMS.forEach(([f, name, cost, desc], i) => { const yy = y + 26 + 4 * 50 + i * 50, done = !!W[f];   // the kitchen and the front counter grow too
+      card(c, 14, yy, 332, 46, done ? '#e6f2ea' : n ? '#fff3d6' : '#ece2cf'); TS(c, name, 22, yy + 4, 14, done ? '#2f6e56' : INK); T(c, desc, 22, yy + 25, SUB, 'left', null, 12);
+      if (done) T(c, '已完成', 336, yy + 15, '#2f6e56', 'right', null); else if (!n) T(c, '先打通隔壁', 336, yy + 15, '#b0a08c', 'right', null); else btn(c, 226, yy + 9, 112, 28, money$(cost), () => buyRoom(i), W.money >= cost ? 'gold' : 'off'); });
     return;
   }
   if (tab === 'shelf') {
     SHELF_IDS.forEach((id, i) => {   // one compact row per spot; extra spots can be bought here (as a shelf or a fridge)
-      const yy = y + i * 35, t = W.decor.tier[id] || 0, nx = SHELF_TIERS[t + 1], st = W.shelves[id], locked = st.locked;
-      card(c, 14, yy, 332, 32, st.extra && locked ? '#ece2cf' : '#fffaf0');
-      if (st.extra && locked) { TS(c, '加买位 ' + SHELF_NO[id], 22, yy + 7, 13, SUB); const cost = EXTRA_SHELF[id], ok = W.money >= cost ? 'gold' : 'off';
+      const rh = Math.min(35, Math.floor((BAR_Y - 6 - y) / SHELF_IDS.length)), yy = y + i * rh, t = W.decor.tier[id] || 0, nx = SHELF_TIERS[t + 1], st = W.shelves[id], locked = st.locked;
+      card(c, 14, yy, 332, rh - 3, st.extra && locked ? '#ece2cf' : '#fffaf0');
+      if (st.extra && locked) { TS(c, '加买位 ' + SHELF_NO[id], 22, yy + 6, 13, SUB); const cost = EXTRA_SHELF[id], ok = W.money >= cost ? 'gold' : 'off'; if (expandLv() < (EXTRA_NEED[id] || 0)) { T(c, '打通隔壁后可买（放隔壁）', 336, yy + 8, '#b0a08c', 'right', null, 12); return; }
         btn(c, 150, yy + 4, 92, 24, '货架 ' + money$(cost), () => buyExtraShelf(id, false), ok); btn(c, 246, yy + 4, 92, 24, '冷柜 ' + money$(cost), () => buyExtraShelf(id, true), ok); return; }
       TS(c, shelfTitle(id), 22, yy + 7, 13, INK); T(c, SHELF_TIERS[t].name + ' ' + st.layers.map(L => L.cap).join('/'), 96, yy + 9, SUB, 'left', null);
       if (locked) T(c, '未开张', 336, yy + 9, '#b0a08c', 'right', null);
       else if (nx) btn(c, 214, yy + 4, 124, 24, '换' + nx.name + ' ' + money$(nx.cost), () => buyShelfTier(id), W.money >= nx.cost ? 'gold' : 'off');
       else T(c, '已是最好', 336, yy + 9, '#c99428', 'right', null);
     });
-    T(c, '在「摆放」里点一下货架可以转 90°', 180, y + SHELF_IDS.length * 35 + 2, SUB, 'center', null);
+
     return;
   }
   const list = tab === 'wall' ? WALLS : BOOTH_STYLES, own = tab === 'wall' ? W.decor.walls : W.decor.booths, cur = W.decor[tab];

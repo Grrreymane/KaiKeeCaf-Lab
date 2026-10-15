@@ -1910,7 +1910,7 @@ const hasPerk = id => { if (!W || !W.perks) return false; const k = id.split('_'
 const perkInfo = id => { for (const k in PERKS) for (const lv in PERKS[k]) for (const q of PERKS[k][lv]) if (q[0] === id) return q; return null; };
 const LV_SKILL = { kun: '烘焙', lin: '包装、冲饮', wen: '水吧', shao: '招待、外卖', qing: '冰饮', yao: '烘焙' };
 const lvOf = k => (W.lv && W.lv[k]) || 1;
-const lvSpeed = k => (k === 'temp' ? (HIRE.temp.speed || 1) : k ? 1 - .08 * (lvOf(k) - 1) : 1) * (hasPerk('lin_org') ? .95 : 1) * (k === 'wen' && hasPerk('wen_fast') ? .85 : 1) * (k === 'qing' ? .9 : 1) * (k === 'yao' && hasPerk('yao_fast') ? .85 : 1) * (k === 'shao' && W.today && W.today.shaoSlowUntil > clockOpen ? 1.4 : 1);   // 阿少 distracted (小剧场)   // time multiplier for that person's jobs
+const lvSpeed = k => (k === 'temp' ? (HIRE.temp.speed || 1) : k ? 1 - .08 * (lvOf(k) - 1) : 1) * (hasPerk('lin_org') ? .95 : 1) * (k === 'wen' && hasPerk('wen_fast') ? .85 : 1) * (k === 'qing' ? .9 : 1) * (k === 'yao' && hasPerk('yao_fast') ? .85 : 1) * (k === 'shao' && W.today && W.today.shaoSlowUntil > clockOpen ? 1.4 : 1) * (W && W.xk && (k === 'kun' || k === 'yao' || (W.staff[k] && W.staff[k].post === 'bake')) ? .85 : 1);   // 阿少 distracted (小剧场)   // time multiplier for that person's jobs
 // four seasons of 12 days, then a new year; each season shifts what people want
 const SEASONS = [
   { name: '春', full: '春天', want: {} },
@@ -1930,7 +1930,7 @@ const WEATHER = {
   snow: { name: '落雪', rate: .86, fridge: .75, table: 1.2, dine: 1.3, snow: true },
   cold: { name: '好冻', rate: .88, fridge: .7, table: 1.25, dine: 1.3 },
 };
-const SEASON_WX = [['sun', 'sun', 'drizzle', 'rain', 'cool'], ['hot', 'hot', 'sun', 'storm', 'rain', 'drizzle'], ['cool', 'cool', 'sun', 'sun', 'drizzle'], ['cold', 'cold', 'snow', 'snow', 'sun', 'drizzle']];
+const SEASON_WX = [['sun', 'sun', 'sun', 'cool', 'cool', 'sun', 'drizzle', 'rain'], ['hot', 'hot', 'sun', 'sun', 'hot', 'sun', 'storm', 'drizzle'], ['cool', 'cool', 'sun', 'sun', 'cool', 'sun', 'drizzle'], ['cold', 'cold', 'sun', 'cold', 'sun', 'snow']];   // about one wet day in four or five
 const wxOf = () => WEATHER[(W && W.today && W.today.wx) || 'sun'] || WEATHER.sun;
 const PRICE_TIERS = [{ name: '亲民', mult: .85, rate: 1.15, desc: '平啲，多人嚟' }, { name: '标准', mult: 1, rate: 1, desc: '街坊价' }, { name: '精品', mult: 1.25, rate: .85, desc: '贵啲，人少啲' }];
 const STOCK_TIERS = [{ name: '少量', desc: '卖到差唔多先补，剩货少' }, { name: '标准', desc: '照平时' }, { name: '多备', desc: '厨房多备一盘，唔怕卖晒，但隔夜剩货多' }];
@@ -1952,6 +1952,10 @@ const EXPAND = [
   { name: '加卡座', cost: 1200, desc: '隔壁再多两组卡座' },
   { name: '再加卡座', cost: 1600, desc: '再多两组卡座' },
   { name: '坐满隔壁', cost: 2200, desc: '隔壁坐满八组卡座' },
+];
+const ROOMS = [   // [flag, name, cost, what it does]
+  ['xk', '扩建厨房', 2000, '加烤炉和备料台：烘焙快一成半'],
+  ['xf', '扩建前台', 1800, '多一个收银口：结账快两成半'],
 ];
 const NEXT_BOOTHS = [[344, 196], [344, 144], [420, 196], [420, 144], [496, 196], [496, 144], [572, 196], [572, 144]];   // booth X, y0 next door, in the order they open
 const expandLv = () => (W && W.expand) || 0;
@@ -1981,8 +1985,8 @@ const showcaseOk = p => unlocked(p) && (PRODUCTS[p].where === 'table' || PRODUCT
 const TAGS = { hurry: { name: '赶时间' }, chill: { name: '坐耐' } };
 const wantOf = p => PRODUCTS[p].want * (seasonOf(W.day).want[p] || 1) * (PRODUCTS[p].where === 'fridge' && hasPerk('wen_sign') ? 1.3 : 1) * (wxOf()[PRODUCTS[p].where] || 1) * promoWant(p) * (W && W.showcase === p && W.stock && W.stock[p] > 0 ? 1.4 : 1);   // the signature showcase item
 const OPEN_LEN = 180, SEASON_DAYS = 12, MONTH_DAYS = 4, PARENTS_DAY = 6;   // business 09:00-19:00 in 3 minutes; spring = 3 months of 4 days
-const SHELF_IDS = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
-const EXTRA_SHELF = { T7: 800 };   // extra display spot bought in 装修: in front of the door (the only free place on the way to the till)
+const SHELF_IDS = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10'];
+const EXTRA_SHELF = { T7: 800, T8: 1200, T9: 1500, T10: 1800 }, EXTRA_NEED = { T8: 1, T9: 1, T10: 1 };   // T8-T10 stand next door: open it up first   // extra display spot bought in 装修: in front of the door (the only free place on the way to the till)
 // decor shop: better shelves (more per layer + nicer), wallpapers, booth styles. Beauty brings more customers.
 const SHELF_TIERS = [{ name: '云石双层架', cap: 6, beauty: 0 }, { name: '柚木铜边架', cost: 350, cap: 8, beauty: 2 }, { name: '玻璃展示柜', cost: 800, cap: 10, beauty: 4 }];
 const WALLS = {
@@ -2089,7 +2093,7 @@ function beauty() {
   if (W && W.showcase && W.stock && W.stock[W.showcase] > 0) b += 2;   // a full showcase looks good
   return b;
 }
-const SHELF_NO = { T1: 1, T3: 2, T4: 3, T5: 4, T6: 5, T2: 6, T7: 7 };
+const SHELF_NO = { T1: 1, T3: 2, T4: 3, T5: 4, T6: 5, T2: 6, T7: 7, T8: 8, T9: 9, T10: 10 };
 const LAYER_NAME = ['上层', '下层'];
 // customers drawn from these looks (6 / 7 are mum and dad: kept for the parents' visit)
 const CUST_POOL = [0, 1, 2, 3, 4, 5, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23];
@@ -2141,6 +2145,7 @@ function newState() {
       T5: { layers: tableLayers(), locked: true },
       T6: { layers: tableLayers(), locked: true },
       T7: { layers: tableLayers(), locked: true, extra: true },
+      T8: { layers: tableLayers(), locked: true, extra: true }, T9: { layers: tableLayers(), locked: true, extra: true }, T10: { layers: tableLayers(), locked: true, extra: true },
     },
     plan: Object.fromEntries(PIDS.map(p => [p, 'on'])),   // daily bake plan: 'pri' first, 'on' normal, 'off' don't make
     staff: { wen: { hired: false, post: 'bar' }, shao: { hired: false, post: 'serve' }, qing: { hired: false, post: 'bar' }, yao: { hired: false, post: 'bake' }, temp: { hired: false, post: 'take' } },
@@ -2155,6 +2160,7 @@ function loadGame() {
   if (!s || !s.v) return false;
   const d = newState();   // fill fields a newer version added; never wipe the player's save
   for (const k in d) if (s[k] === undefined) s[k] = d[k];
+  for (const id in d.shelves) if (!s.shelves[id]) s.shelves[id] = d.shelves[id];   // display spots added later
   if (!s.ing) { s.ing = Object.fromEntries(Object.keys(INGR).map(k => [k, 0])); for (const p in s.packs || {}) for (const k of RECIPE[p] || []) s.ing[k] += s.packs[p]; }   // old saves: packs -> raw ingredients
   for (const k in s.up || {}) if (s.up[k] === true) s.up[k] = 1; else if (s.up[k] === false) s.up[k] = 0;   // old saves: true/false -> levels
   for (const id in d.shelves) if (!s.shelves[id]) s.shelves[id] = d.shelves[id];   // shelf spots added in later versions
@@ -2435,7 +2441,7 @@ function glassFridge(Pj, x0, y0, tier = 0, rot = 0) {
   if (rot) Object.assign(o, { x0: cx - d / 2, x1: cx + d / 2, y0: cy - w / 2, y1: cy + w / 2 });
   return o;
 }
-const SHELF_POS = { T1: [88, 76], T2: [184, 76], T3: [88, 144], T4: [184, 144], T5: [88, 212], T6: [184, 212], T7: [82, 250] };
+const SHELF_POS = { T1: [88, 76], T2: [184, 76], T3: [88, 144], T4: [184, 144], T5: [88, 212], T6: [184, 212], T7: [82, 250], T8: [384, 84], T9: [470, 84], T10: [556, 84] };   // T8-T10: next door, in front of its back wall
 const isFridge = id => W && W.shelves && W.shelves[id] ? !!W.shelves[id].fridge : id === 'T2';
 function shelfObj(id) {   // the shelf as the player has it: tier + facing
   const d = (W && W.decor) || { tier: {}, rot: {} }, t = d.tier[id] || 0, r = d.rot[id] || 0, [x, y] = SHELF_POS[id];
@@ -2752,7 +2758,7 @@ function buildStatics() {
   // 冰室卡座：靠左墙两组，绿皮高背长凳 + 云石台（台上留着奶茶、布丁）
   const booth = (X, y0) => { const objs = boothParts(X, y0).map(add); BOOTHS.push({ X, y0, objs, table: objs[1] }); return objs; };
   const BO1 = booth(268, 136), BO2 = booth(268, 192);
-  for (const id of ['T5', 'T6', 'T7']) TABLES[id] = add(shelfObj(id));
+  for (const id of ['T5', 'T6', 'T7', 'T8', 'T9', 'T10']) TABLES[id] = add(shelfObj(id));
   // 门口外卖窗：对着街的玻璃柜，一盘盘蛋挞，立一块「外卖」牌
   const twBase = makeObj(P, { x0: 162, x1: 222, y0: 300, y1: 314 }, 46, [
     { g: (g, Q) => { bx(g, Q, 162, 300, 0, 60, 14, 16, C.woodL, C.wood, C.woodD, 2); woodGrain(g, Q, 165, 219, 1, 15, 314, 19); bx(g, Q, 162, 300, 16, 60, 14, 2, '#d99a5c', '#b8743c', '#93582c', 2); } },
@@ -2786,7 +2792,7 @@ function buildStatics() {
   const plant = (x, y, kind, pot) => makeObj(P, { x0: x - 7, x1: x + 7, y0: y - 7, y1: y + 7 }, 50, [{ g: (g, Q) => { const [a, b] = Q(x, y); drawPlant(g, a, b, kind, pot); } }]);
   const PL1 = add(plant(10, 38, 'monstera', 'cream')), PL2 = add(plant(304, 262, 'monstera', 'charcoal'));
   // movable furniture groups (placement mode): id, name, objects, seated people that move along
-  FURN.push(['T1', '货架', [TABLES.T1]], ['T2', '冷柜', [TABLES.T2]], ['T3', '货架', [TABLES.T3]], ['T4', '货架', [TABLES.T4]], ['T5', '货架', [TABLES.T5]], ['T6', '货架', [TABLES.T6]], ['T7', '货架', [TABLES.T7]],
+  FURN.push(['T1', '货架', [TABLES.T1]], ['T2', '冷柜', [TABLES.T2]], ['T3', '货架', [TABLES.T3]], ['T4', '货架', [TABLES.T4]], ['T5', '货架', [TABLES.T5]], ['T6', '货架', [TABLES.T6]], ['T7', '货架', [TABLES.T7]], ['T8', '货架', [TABLES.T8]], ['T9', '货架', [TABLES.T9]], ['T10', '货架', [TABLES.T10]],
     ['B1', '卡座', BO1], ['B2', '卡座', BO2], ['P1', '盆栽', [PL1]], ['P2', '盆栽', [PL2]]);
   // 前面的矮墙（窗台）、门口；右边和隔壁之间的矮墙，中间封木板贴「招租」
   add(makeObj(P, { x0: 0, x1: 252, y0: 316, y1: 320 }, 12, [{ g: (g, Q) => { bx(g, Q, 0, 316, 0, 252, 4, 8, C.brickL, C.brick, C.brickD); bx(g, Q, 0, 316, 8, 252, 4, 3, '#c8eefc', '#9fdcf4', '#9fdcf4'); } }]));
@@ -2992,6 +2998,18 @@ function applyExtraShelves() {   // extra spots not bought yet: no object in the
     if (hide && i >= 0) STATICS.splice(i, 1); else if (!hide && i < 0) STATICS.push(o);
     if (g) { if (hide && gi >= 0) MOV.splice(gi, 1); else if (!hide && gi < 0) MOV.push(g); } }
 }
+const ROOM_OBJ = {};
+function applyRooms() {   // the bigger kitchen (oven + prep table) and the longer front counter (second till), next door
+  if (!ROOM_OBJ.xk) ROOM_OBJ.xk = makeObj(P, { x0: 328, x1: 392, y0: 4, y1: 26 }, 64, [{ g: (g, Q) => {
+    bx(g, Q, 328, 4, 0, 64, 22, 30, C.steel, C.steelS, C.steelD); bx(g, Q, 332, 6, 30, 26, 18, 28, C.steel, C.steelS, C.steelD, 2);
+    g.quad(Q(334, 24, 36), Q(356, 24, 36), Q(356, 24, 52), Q(334, 24, 52), C.dark); g.quad(Q(336, 24, 39), Q(354, 24, 39), Q(354, 24, 44), Q(336, 24, 44), '#ff9a3c');
+    bx(g, Q, 364, 8, 30, 24, 14, 2, '#efcf98', '#ddb27a', '#c99a5e'); for (let i = 0; i < 3; i++) { const [a, b] = Q(368 + i * 7, 14, 32); g.ell(a, b - 2, 4, 2.6, '#f2c96a'); } } }]);
+  if (!ROOM_OBJ.xf) ROOM_OBJ.xf = makeObj(P, { x0: 324, x1: 388, y0: 30, y1: 46 }, 52, [{ g: (g, Q) => {
+    bx(g, Q, 324, 30, 0, 64, 16, 30, C.cabL, C.cab, C.cabD); bx(g, Q, 322, 29, 30, 68, 18, 4, '#d99a5c', '#b8743c', '#93582c');
+    bx(g, Q, 330, 34, 34, 16, 10, 9, '#f2ead2', '#dccfab', '#c2b48c'); bx(g, Q, 331, 34, 43, 8, 3, 5, '#2f6a50', '#2f6a50', '#24533e');
+    bx(g, Q, 356, 35, 34, 22, 8, 6, '#c9cdd0', '#aab0b3', '#90969a', 1); } }]);
+  for (const f of ['xk', 'xf']) { const o = ROOM_OBJ[f], on = !!(W && W[f] && expandLv()), i = STATICS.indexOf(o); if (on && i < 0) STATICS.push(o); else if (!on && i >= 0) STATICS.splice(i, 1); }
+}
 function applyExpand() {   // match the room to W.expand: partition + shutter out, windows in, booths next door
   const lv = expandLv();
   if (!NEXT_HIDE.length) NEXT_HIDE.push(...STATICS.filter(o => (o.x0 === 316 && o.x1 === 320 && o.y1 <= 316) || (o.x0 === 314 && o.x1 === 321) || (o.x0 === 324 && o.x1 === 640)));
@@ -3088,7 +3106,7 @@ function applyDecor() {   // after loading / buying: wallpaper, booth style, she
   const d = W.decor;
   const bgKey = d.wall + ':' + expandLv() + ':' + upLv('ac') + ':' + Object.keys(DECOR_ITEMS).filter(id => DECOR_ITEMS[id].cat === 'wall' && hasItem(id)).join() + ':' + keepList('w').join() + ':' + JSON.stringify(W.wallSlot || {}) + ':' + PIDS.filter(p => unlocked(p)).map(p => p + priceOf(p)).join();
   if (BG && BG_WALL !== bgKey) { drawBackground(BG.getContext('2d')); BG_WALL = bgKey; }
-  applyExpand(); applyExtraShelves(); applyItems(); applyKeepsakes();
+  applyExpand(); applyRooms(); applyExtraShelves(); applyItems(); applyKeepsakes();
   W.sets = W.sets || {}; for (const S of DECOR_SETS) if (setDone(S) && !W.sets[S[0]]) { W.sets[S[0]] = W.day; if (PHASE !== 'title') notice('搭配完成「' + S[0] + '」舒适 +' + S[2]); }
   if (BOOTH_DONE !== d.booth) { restyleBooths(); BOOTH_DONE = d.booth; }
   for (const id of SHELF_IDS) { if (TABLES[id]._key !== ((d.tier[id] || 0) + ':' + (d.rot[id] || 0) + ':' + (isFridge(id) ? 1 : 0))) rebuildShelf(id); shelfCaps(id); }
@@ -3221,7 +3239,7 @@ function addOn(c, id) {
       const [a, b] = whereIs(c); POPS.push({ x: a, y: b - 64, t: 0, text: '顺手加购', small: true }); return; }
   }
 }
-function checkoutTime(c, packer) { const n = Object.values(c.got).reduce((a, b) => a + b, 0); return (1.6 + .4 * n) * [1, .6, .5, .4][upLv('till')] * (hasPerk('lin_pack') ? .8 : 1) * (packer ? .7 : 1); }   // Lin packing alongside = 30% quicker
+function checkoutTime(c, packer) { const n = Object.values(c.got).reduce((a, b) => a + b, 0); return (1.6 + .4 * n) * [1, .6, .5, .4][upLv('till')] * (hasPerk('lin_pack') ? .8 : 1) * (packer ? .7 : 1) * (W.xf ? .75 : 1); }   // Lin packing alongside = 30% quicker
 function comboBonus(got) { let b = 0; for (const k of COMBOS) if (got[k.a] && got[k.b]) { b += k.bonus * Math.min(got[k.a], got[k.b]) * (promoOn('combo') ? 2 : 1); W.today.combos++; } return b; }
 function earn(amt, x, y, text) { W.money += amt; W.today.revenue += amt; W.pts = (W.pts || 0) + 1; W.today.pts = (W.today.pts || 0) + 1; /* every sale is also a point */ POPS.push({ x, y, t: 0, text: text || '+$' + amt }); SFX.coin(); }
 function finishPay(c) {
@@ -3739,7 +3757,7 @@ function buyUpgrade(k) {
   W.money -= L[1]; W.up[k] = n + 1; if (k === 'ac' || k === 'music') applyDecor(); W.today.upCost += L[1]; SFX.buy(); if (!n) playScene('up_' + k); else NOTICE = { text: L[0] + ' 装好了！' + L[2], t: 0 }; checkAch(); saveGame(); return true;
 }
 function buyExtraShelf(id, fridge) {
-  const st = W.shelves[id], cost = EXTRA_SHELF[id]; if (!st || !st.locked || W.money < cost || PHASE === 'open' || PHASE === 'closing') { SFX.deny(); return false; }
+  const st = W.shelves[id], cost = EXTRA_SHELF[id]; if (!st || !st.locked || W.money < cost || PHASE === 'open' || PHASE === 'closing' || expandLv() < (EXTRA_NEED[id] || 0)) { SFX.deny(); if (expandLv() < (EXTRA_NEED[id] || 0)) NOTICE = { text: '先打通隔壁', t: 0 }; return false; }
   W.money -= cost; W.today.upCost += cost; st.locked = false; st.fridge = !!fridge; applyDecor(); computeStops(); redoShadows(); RINGS.clear(); SFX.ding(); saveGame(); return true;
 }
 function setShelfKind(id, fridge) {   // a display spot is a shelf (baked goods) or a glass fridge (drinks / desserts); switching clears what's on it
@@ -3804,6 +3822,10 @@ function buyItem(id) {
 function placeNow(id) {   // placement mode with this piece picked out and the view on it
   const g = MOV.find(m => m.id === 'I_' + id), pos = (W.itemPos || {})[id]; PANEL = null; MODE = 'edit'; EDIT.sel = g || null; EDIT.msg = DECOR_ITEMS[id].name + '：拖去想放嘅位置，放好撳「摆放」完成';
   if (pos) camX = clamp(R(P(pos[0], pos[1])[0]) - 360, 0, CAM_MAX);
+}
+function buyRoom(i) {   // 扩建厨房 / 扩建前台
+  const [f, name, cost] = ROOMS[i]; if (W[f] || !expandLv() || W.money < cost || PHASE === 'open' || PHASE === 'closing') { SFX.deny(); if (!expandLv()) NOTICE = { text: '先打通隔壁', t: 0 }; return false; }
+  W.money -= cost; W.today.upCost += cost; W[f] = true; applyDecor(); SFX.ding(); notice(name + '完成！'); saveGame(); return true;
 }
 function buyExpand() {
   const n = expandLv(), E = EXPAND[n]; if (!E || W.money < E.cost || (E.day && W.day < E.day) || PHASE === 'open' || PHASE === 'closing') { SFX.deny(); if (PHASE === 'open' || PHASE === 'closing') NOTICE = { text: '打烊先扩建', t: 0 }; return false; }
@@ -4054,8 +4076,8 @@ function drawDialog(c) {
   const shown = L(text).slice(0, Math.floor(D.t * 40) + 1);   // typewriter: the whole line in the chosen language first, then typed out
   wrapText(c, shown, 316).slice(0, 4).forEach((l, i) => T(c, l, 22, 480 + i * 22, who ? '#3a2a2e' : '#7a6250', 'left', null));
   if (Math.sin(gtime * 6) > 0) T(c, '▼', 338, 560, '#b8342c', 'center', null);
-  px(c, 296, 42, 56, 24, OUT); px(c, 297, 43, 54, 22, '#4a3a48'); T(c, '跳过', 324, 48, '#fbe9c0', 'center', null);
-  button(292, 38, 64, 32, () => { DIALOG = null; STORY_Q.length = 0; SFX.tap(); });
+  if (D.key !== 'ep') { px(c, 296, 42, 56, 24, OUT); px(c, 297, 43, 54, 22, '#4a3a48'); T(c, '跳过', 324, 48, '#fbe9c0', 'center', null);
+  button(292, 38, 64, 32, () => { DIALOG = null; STORY_Q.length = 0; SFX.tap(); }); }   // 小剧场 cannot be skipped
 }
 // while the shop is open, someone not busy now and then says one of their lines (a bubble over their head)
 const MURMUR_AT = { kun: [250, 22], lin: [84, 23], hero: [50, 24], wen: [156, 25], shao: [180, 293], qing: [136, 25], yao: [226, 22] }, MURMUR_WHO = {};
@@ -4287,7 +4309,7 @@ function stepEpisodes(dt) {
   if (T.epAt < 0 || clockOpen < T.epAt || T.epDone) return;
   const arc = EP_ARCS.filter(e => !W.eps[e.id] && e.ok()), one = EPISODES.find(e => !W.eps[e.id] && e.ok());   // a story part when one is due (more often than not), otherwise a one-off
   const ep = arc.length && (rng() < .65 || !one) ? arc[0] : one; T.epDone = true; if (!ep) return;
-  EP_BANNER = { ep, t: 0 }; SFX.ding();
+  playEpisode(ep); SFX.ding();   // straight into the scene (the shop pauses while it plays)
 }
 function playEpisode(ep) {
   EP_BANNER = null; W.eps[ep.id] = W.day;
@@ -5093,7 +5115,7 @@ function drawShelfPanel(c, P_) {
   if (W.tut === 2) { if (sel !== 1) c.drawImage(HAND, 300, y - 42 + R(Math.abs(Math.sin(gtime * 4)) * -4)); else c.drawImage(HAND, 14 + (tw + 6) + 60, y + 50 + R(Math.abs(Math.sin(gtime * 4)) * -4)); }
 }
 function drawStockPanel(c) {
-  const ids = ['T1', 'T3', 'T4', 'T5', 'T6', 'T2', 'T7'].filter(id => !(W.shelves[id].extra && W.shelves[id].locked));
+  const ids = ['T1', 'T3', 'T4', 'T5', 'T6', 'T2', 'T7', 'T8', 'T9', 'T10'].filter(id => !(W.shelves[id].extra && W.shelves[id].locked));
   let y = sheet(c, '摆货', money$(W.money), Math.min(292, BAR_Y - 44 - ids.length * 40));
   ids.forEach((id, i) => {
     const st = W.shelves[id], yy = y + i * 40;
@@ -5234,29 +5256,31 @@ function drawDecorPanel(c, P_) {   // 装修: better shelves, wallpaper, booth s
     const n = expandLv();
     TS(c, '隔壁堂食区', 22, y, 16, INK); T(c, '卡座 ' + BOOTHS.length + ' 组 · 座位 ' + SEATS.length + ' 个', 336, y + 2, '#2f6e56', 'right', null);
     EXPAND.forEach((E, i) => {
-      const yy = y + 28 + i * 58, done = i < n, next = i === n, early = E.day && W.day < E.day;
-      card(c, 14, yy, 332, 52, done ? '#e6f2ea' : next ? '#fff3d6' : '#ece2cf');
-      TS(c, E.name, 22, yy + 6, 14, done ? '#2f6e56' : INK); T(c, E.desc, 22, yy + 28, SUB, 'left', null);
-      if (done) T(c, '已完成', 336, yy + 18, '#2f6e56', 'right', null);
-      else if (!next) T(c, '先做上一步', 336, yy + 18, '#b0a08c', 'right', null);
-      else if (early) T(c, '第 ' + E.day + ' 天开放', 336, yy + 18, SUB, 'right', null);
-      else btn(c, 226, yy + 12, 112, 28, money$(E.cost), () => buyExpand(), W.money >= E.cost ? 'gold' : 'off');
+      const yy = y + 26 + i * 50, done = i < n, next = i === n, early = E.day && W.day < E.day;
+      card(c, 14, yy, 332, 46, done ? '#e6f2ea' : next ? '#fff3d6' : '#ece2cf');
+      TS(c, E.name, 22, yy + 4, 14, done ? '#2f6e56' : INK); T(c, E.desc, 22, yy + 25, SUB, 'left', null, 12);
+      if (done) T(c, '已完成', 336, yy + 15, '#2f6e56', 'right', null);
+      else if (!next) T(c, '先做上一步', 336, yy + 15, '#b0a08c', 'right', null);
+      else if (early) T(c, '第 ' + E.day + ' 天开放', 336, yy + 15, SUB, 'right', null);
+      else btn(c, 226, yy + 9, 112, 28, money$(E.cost), () => buyExpand(), W.money >= E.cost ? 'gold' : 'off');
     });
-    T(c, '卡座多咗记得多派人做招待', 180, y + 28 + 4 * 58 + 4, SUB, 'center', null);
+    ROOMS.forEach(([f, name, cost, desc], i) => { const yy = y + 26 + 4 * 50 + i * 50, done = !!W[f];   // the kitchen and the front counter grow too
+      card(c, 14, yy, 332, 46, done ? '#e6f2ea' : n ? '#fff3d6' : '#ece2cf'); TS(c, name, 22, yy + 4, 14, done ? '#2f6e56' : INK); T(c, desc, 22, yy + 25, SUB, 'left', null, 12);
+      if (done) T(c, '已完成', 336, yy + 15, '#2f6e56', 'right', null); else if (!n) T(c, '先打通隔壁', 336, yy + 15, '#b0a08c', 'right', null); else btn(c, 226, yy + 9, 112, 28, money$(cost), () => buyRoom(i), W.money >= cost ? 'gold' : 'off'); });
     return;
   }
   if (tab === 'shelf') {
     SHELF_IDS.forEach((id, i) => {   // one compact row per spot; extra spots can be bought here (as a shelf or a fridge)
-      const yy = y + i * 35, t = W.decor.tier[id] || 0, nx = SHELF_TIERS[t + 1], st = W.shelves[id], locked = st.locked;
-      card(c, 14, yy, 332, 32, st.extra && locked ? '#ece2cf' : '#fffaf0');
-      if (st.extra && locked) { TS(c, '加买位 ' + SHELF_NO[id], 22, yy + 7, 13, SUB); const cost = EXTRA_SHELF[id], ok = W.money >= cost ? 'gold' : 'off';
+      const rh = Math.min(35, Math.floor((BAR_Y - 6 - y) / SHELF_IDS.length)), yy = y + i * rh, t = W.decor.tier[id] || 0, nx = SHELF_TIERS[t + 1], st = W.shelves[id], locked = st.locked;
+      card(c, 14, yy, 332, rh - 3, st.extra && locked ? '#ece2cf' : '#fffaf0');
+      if (st.extra && locked) { TS(c, '加买位 ' + SHELF_NO[id], 22, yy + 6, 13, SUB); const cost = EXTRA_SHELF[id], ok = W.money >= cost ? 'gold' : 'off'; if (expandLv() < (EXTRA_NEED[id] || 0)) { T(c, '打通隔壁后可买（放隔壁）', 336, yy + 8, '#b0a08c', 'right', null, 12); return; }
         btn(c, 150, yy + 4, 92, 24, '货架 ' + money$(cost), () => buyExtraShelf(id, false), ok); btn(c, 246, yy + 4, 92, 24, '冷柜 ' + money$(cost), () => buyExtraShelf(id, true), ok); return; }
       TS(c, shelfTitle(id), 22, yy + 7, 13, INK); T(c, SHELF_TIERS[t].name + ' ' + st.layers.map(L => L.cap).join('/'), 96, yy + 9, SUB, 'left', null);
       if (locked) T(c, '未开张', 336, yy + 9, '#b0a08c', 'right', null);
       else if (nx) btn(c, 214, yy + 4, 124, 24, '换' + nx.name + ' ' + money$(nx.cost), () => buyShelfTier(id), W.money >= nx.cost ? 'gold' : 'off');
       else T(c, '已是最好', 336, yy + 9, '#c99428', 'right', null);
     });
-    T(c, '在「摆放」里点一下货架可以转 90°', 180, y + SHELF_IDS.length * 35 + 2, SUB, 'center', null);
+
     return;
   }
   const list = tab === 'wall' ? WALLS : BOOTH_STYLES, own = tab === 'wall' ? W.decor.walls : W.decor.booths, cur = W.decor[tab];
@@ -5843,7 +5867,7 @@ function landed(k) {
 }
 const EGG1 = () => cache('egg1', () => { const g = new Grid(34, 42); dsk(g, 17, 21, 14, 18, ['#d8c4a0', '#e8d6b4', '#f4e6cc', '#fff6e6']); return finish(g); });
 // 40 cm stainless mixing bowl, top view: bright rolled rim, inner wall (shadowed top-left, lit bottom-right), brushed base
-const BOWL_R = 160, BX = 360, BY = 712;
+const BOWL_R = 148, BX = 360, BY = 712;
 const BOWL = () => cache('bowl', () => {   // stainless mixing bowl from above: lit rim, shaded inner wall, flat bottom with turning rings
   const r = BOWL_R / 2, s0 = r * 2 + 4, g = new Grid(s0, s0), c0 = s0 / 2;
   g.ell(c0, c0, r, r, (x, y) => {
@@ -5863,16 +5887,16 @@ function mould(kind, fill, R0, stage) {
   return cache(key, () => {
     const r = VR[kind], s = r * 2 + 8, g = new Grid(s, s), c0 = s / 2, baked = stage === 'baked';
     if (kind === 'tin') {   // fluted tin, pastry shell, filling spreads from the centre; baked = caramel spots
-      g.ell(c0, c0, r + 2, r + 2, (x, y) => { const a = Math.atan2(y + .5 - c0, x + .5 - c0), d = Math.hypot(x + .5 - c0, y + .5 - c0); return d > r + 1 + Math.sin(a * 14) ? null : dramp(['#a8adb2', '#c9cdd0', '#e4e8eb', '#ffffff'], dlit(x, y, c0 - 8, c0 - 8, r, r)); });
-      g.ell(c0, c0, r - 2, r - 2, (x, y) => dramp(baked ? ['#a8601a', '#c8803a', '#e6a14a', '#f7c06a'] : ['#c8a06a', '#dcba84', '#ecd2a0', '#f8e6c4'], dlit(x, y, c0 - 6, c0 - 6, r, r)));
-      g.ell(c0, c0, r - 7, r - 7, (x, y) => dramp(baked ? ['#9a5a1a', '#b8722e'] : ['#d4b07a', '#e0c08c'], dlit(x, y, c0 + 4, c0 + 4, r, r) * -1));
-      if (lv) { const rr = (r - 7) * Math.min(1, .35 + .65 * lv / 10); g.ell(c0, c0, rr, rr, (x, y) => { if (baked && hsh(x, y) > .9) return shade(R0.baked, -40); return dramp(dtone(baked ? R0.baked : R0.fill, 4), dlit(x, y, c0 - 5, c0 - 5, rr, rr)); }); if (!baked) g.set(R(c0 - rr * .4), R(c0 - rr * .4), '#ffffff'); }
+      g.ell(c0, c0, r + 2, r + 2, (x, y) => { const a = Math.atan2(y + .5 - c0, x + .5 - c0), d = Math.hypot(x + .5 - c0, y + .5 - c0); return d > r + .5 + Math.sin(a * 14) * .8 ? null : dramp(['#a8adb2', '#c9cdd0', '#e4e8eb', '#ffffff'], dlit(x, y, c0 - 8, c0 - 8, r, r)); });
+      g.ell(c0, c0, r, r, (x, y) => dramp(baked ? ['#a8601a', '#c8803a', '#e6a14a', '#f7c06a'] : ['#c8a06a', '#dcba84', '#ecd2a0', '#f8e6c4'], dlit(x, y, c0 - 6, c0 - 6, r, r)));
+      g.ell(c0, c0, r - 4, r - 4, (x, y) => dramp(baked ? ['#9a5a1a', '#b8722e'] : ['#d4b07a', '#e0c08c'], dlit(x, y, c0 + 4, c0 + 4, r, r) * -1));
+      if (lv) { const rr = (r - 4) * Math.min(1, .35 + .65 * lv / 10); g.ell(c0, c0, rr, rr, (x, y) => { if (baked && hsh(x, y) > .9) return shade(R0.baked, -40); return dramp(dtone(baked ? R0.baked : R0.fill, 4), dlit(x, y, c0 - 5, c0 - 5, rr, rr)); }); if (!baked) g.set(R(c0 - rr * .4), R(c0 - rr * .4), '#ffffff'); }
       return finish(g);
     }
     if (kind === 'cup') {   // glass from above: rim ring, pale bottom, filling spreads; full = mango dice + pearls
       g.ell(c0, c0, r, r, (x, y) => dramp(['#b8d4dc', '#d8ecf0', '#f4fbfc'], dlit(x, y, c0 - 8, c0 - 8, r, r)));
-      g.ell(c0, c0, r - 3, r - 3, '#eef6f8');
-      if (lv) { const rr = (r - 3) * Math.min(1, .3 + .7 * lv / 10); g.ell(c0, c0, rr, rr, (x, y) => dramp(dtone(R0.fill, 4), dlit(x, y, c0 - 5, c0 - 5, rr, rr))); }
+      g.ell(c0, c0, r - 2, r - 2, '#eef6f8');
+      if (lv) { const rr = (r - 2) * Math.min(1, .3 + .7 * lv / 10); g.ell(c0, c0, rr, rr, (x, y) => dramp(dtone(R0.fill, 4), dlit(x, y, c0 - 5, c0 - 5, rr, rr))); }
       if (lv >= 10 && R0.top === 'lemon') { for (const [dx, dy] of [[-6, -4], [5, 3]]) { g.ell(c0 + dx, c0 + dy, 5, 5, '#ffe24a'); g.ell(c0 + dx, c0 + dy, 3.6, 3.6, '#fff6a8'); for (let a = 0; a < 6.28; a += 1.05) g.set(R(c0 + dx + Math.cos(a) * 2.4), R(c0 + dy + Math.sin(a) * 2.4), '#ffe24a'); } }
       else if (lv >= 10 && R0.top === 'ice') { for (const [dx, dy] of [[-7, -5], [3, -6], [-2, 4], [6, 3]]) { g.rect(c0 + dx, c0 + dy, 6, 6, '#e8f8fa'); g.rect(c0 + dx, c0 + dy, 6, 1, '#ffffff'); } }
       else if (lv >= 10) { for (let i = 0; i < 6; i++) { const a = i * 1.1 + .3, x = c0 + Math.cos(a) * 9, y = c0 + Math.sin(a) * 9; g.rect(R(x) - 3, R(y) - 3, 6, 6, '#ff9a1a'); g.rect(R(x) - 3, R(y) - 3, 6, 1, '#ffd060'); } for (let i = 0; i < 10; i++) { const x = c0 - 14 + hsh(i, 7) * 28, y = c0 - 14 + hsh(i, 8) * 28; if (Math.hypot(x - c0, y - c0) < r - 5) g.ell(x, y, 1.6, 1.6, '#f4f8fa'); } }
@@ -5883,8 +5907,8 @@ function mould(kind, fill, R0, stage) {
     if (kind === 'bowl') {   // blue-rim dessert bowl, red beans on top when full
       g.ell(c0, c0, r, r, (x, y) => dramp(['#c3ccd8', '#e2e8ef', '#f6f9fc', '#ffffff'], dlit(x, y, c0 - 10, c0 - 10, r, r)));
       for (let t = 0; t < 6.28; t += .02) { g.set(R(c0 + Math.cos(t) * (r - 2)), R(c0 + Math.sin(t) * (r - 2)), '#3a78d0'); g.set(R(c0 + Math.cos(t) * (r - 3)), R(c0 + Math.sin(t) * (r - 3)), '#2d6cc4'); }
-      g.ell(c0, c0, r - 9, r - 9, (x, y) => dramp(['#d8dde6', '#eef1f6'], dlit(x, y, c0 + 6, c0 + 6, r, r) * -1));
-      if (lv) { const rr = (r - 9) * Math.min(1, .3 + .7 * lv / 10); g.ell(c0, c0, rr, rr, (x, y) => dramp(dtone(R0.fill, 4), dlit(x, y, c0 - 5, c0 - 5, rr, rr))); }
+      g.ell(c0, c0, r - 5, r - 5, (x, y) => dramp(['#d8dde6', '#eef1f6'], dlit(x, y, c0 + 6, c0 + 6, r, r) * -1));
+      if (lv) { const rr = (r - 5) * Math.min(1, .3 + .7 * lv / 10); g.ell(c0, c0, rr, rr, (x, y) => dramp(dtone(R0.fill, 4), dlit(x, y, c0 - 5, c0 - 5, rr, rr))); }
       if (lv >= 10) for (let i = 0; i < 9; i++) { const a = hsh(i, 11) * 6.28, d = hsh(i, 12) * 12, x = c0 + Math.cos(a) * d, y = c0 + Math.sin(a) * d; g.ell(x, y, 3, 2.2, '#8a2424'); g.set(R(x) - 1, R(y) - 1, '#c8443a'); }
       if (baked) g.ell(c0 - 8, c0 - 8, 6, 2, '#ffffff');
       return finish(g);

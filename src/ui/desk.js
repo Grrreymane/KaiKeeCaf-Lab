@@ -310,7 +310,7 @@ function landed(k) {
 }
 const EGG1 = () => cache('egg1', () => { const g = new Grid(34, 42); dsk(g, 17, 21, 14, 18, ['#d8c4a0', '#e8d6b4', '#f4e6cc', '#fff6e6']); return finish(g); });
 // 40 cm stainless mixing bowl, top view: bright rolled rim, inner wall (shadowed top-left, lit bottom-right), brushed base
-const BOWL_R = 160, BX = 360, BY = 712;
+const BOWL_R = 148, BX = 360, BY = 712;
 const BOWL = () => cache('bowl', () => {   // stainless mixing bowl from above: lit rim, shaded inner wall, flat bottom with turning rings
   const r = BOWL_R / 2, s0 = r * 2 + 4, g = new Grid(s0, s0), c0 = s0 / 2;
   g.ell(c0, c0, r, r, (x, y) => {
@@ -330,16 +330,16 @@ function mould(kind, fill, R0, stage) {
   return cache(key, () => {
     const r = VR[kind], s = r * 2 + 8, g = new Grid(s, s), c0 = s / 2, baked = stage === 'baked';
     if (kind === 'tin') {   // fluted tin, pastry shell, filling spreads from the centre; baked = caramel spots
-      g.ell(c0, c0, r + 2, r + 2, (x, y) => { const a = Math.atan2(y + .5 - c0, x + .5 - c0), d = Math.hypot(x + .5 - c0, y + .5 - c0); return d > r + 1 + Math.sin(a * 14) ? null : dramp(['#a8adb2', '#c9cdd0', '#e4e8eb', '#ffffff'], dlit(x, y, c0 - 8, c0 - 8, r, r)); });
-      g.ell(c0, c0, r - 2, r - 2, (x, y) => dramp(baked ? ['#a8601a', '#c8803a', '#e6a14a', '#f7c06a'] : ['#c8a06a', '#dcba84', '#ecd2a0', '#f8e6c4'], dlit(x, y, c0 - 6, c0 - 6, r, r)));
-      g.ell(c0, c0, r - 7, r - 7, (x, y) => dramp(baked ? ['#9a5a1a', '#b8722e'] : ['#d4b07a', '#e0c08c'], dlit(x, y, c0 + 4, c0 + 4, r, r) * -1));
-      if (lv) { const rr = (r - 7) * Math.min(1, .35 + .65 * lv / 10); g.ell(c0, c0, rr, rr, (x, y) => { if (baked && hsh(x, y) > .9) return shade(R0.baked, -40); return dramp(dtone(baked ? R0.baked : R0.fill, 4), dlit(x, y, c0 - 5, c0 - 5, rr, rr)); }); if (!baked) g.set(R(c0 - rr * .4), R(c0 - rr * .4), '#ffffff'); }
+      g.ell(c0, c0, r + 2, r + 2, (x, y) => { const a = Math.atan2(y + .5 - c0, x + .5 - c0), d = Math.hypot(x + .5 - c0, y + .5 - c0); return d > r + .5 + Math.sin(a * 14) * .8 ? null : dramp(['#a8adb2', '#c9cdd0', '#e4e8eb', '#ffffff'], dlit(x, y, c0 - 8, c0 - 8, r, r)); });
+      g.ell(c0, c0, r, r, (x, y) => dramp(baked ? ['#a8601a', '#c8803a', '#e6a14a', '#f7c06a'] : ['#c8a06a', '#dcba84', '#ecd2a0', '#f8e6c4'], dlit(x, y, c0 - 6, c0 - 6, r, r)));
+      g.ell(c0, c0, r - 4, r - 4, (x, y) => dramp(baked ? ['#9a5a1a', '#b8722e'] : ['#d4b07a', '#e0c08c'], dlit(x, y, c0 + 4, c0 + 4, r, r) * -1));
+      if (lv) { const rr = (r - 4) * Math.min(1, .35 + .65 * lv / 10); g.ell(c0, c0, rr, rr, (x, y) => { if (baked && hsh(x, y) > .9) return shade(R0.baked, -40); return dramp(dtone(baked ? R0.baked : R0.fill, 4), dlit(x, y, c0 - 5, c0 - 5, rr, rr)); }); if (!baked) g.set(R(c0 - rr * .4), R(c0 - rr * .4), '#ffffff'); }
       return finish(g);
     }
     if (kind === 'cup') {   // glass from above: rim ring, pale bottom, filling spreads; full = mango dice + pearls
       g.ell(c0, c0, r, r, (x, y) => dramp(['#b8d4dc', '#d8ecf0', '#f4fbfc'], dlit(x, y, c0 - 8, c0 - 8, r, r)));
-      g.ell(c0, c0, r - 3, r - 3, '#eef6f8');
-      if (lv) { const rr = (r - 3) * Math.min(1, .3 + .7 * lv / 10); g.ell(c0, c0, rr, rr, (x, y) => dramp(dtone(R0.fill, 4), dlit(x, y, c0 - 5, c0 - 5, rr, rr))); }
+      g.ell(c0, c0, r - 2, r - 2, '#eef6f8');
+      if (lv) { const rr = (r - 2) * Math.min(1, .3 + .7 * lv / 10); g.ell(c0, c0, rr, rr, (x, y) => dramp(dtone(R0.fill, 4), dlit(x, y, c0 - 5, c0 - 5, rr, rr))); }
       if (lv >= 10 && R0.top === 'lemon') { for (const [dx, dy] of [[-6, -4], [5, 3]]) { g.ell(c0 + dx, c0 + dy, 5, 5, '#ffe24a'); g.ell(c0 + dx, c0 + dy, 3.6, 3.6, '#fff6a8'); for (let a = 0; a < 6.28; a += 1.05) g.set(R(c0 + dx + Math.cos(a) * 2.4), R(c0 + dy + Math.sin(a) * 2.4), '#ffe24a'); } }
       else if (lv >= 10 && R0.top === 'ice') { for (const [dx, dy] of [[-7, -5], [3, -6], [-2, 4], [6, 3]]) { g.rect(c0 + dx, c0 + dy, 6, 6, '#e8f8fa'); g.rect(c0 + dx, c0 + dy, 6, 1, '#ffffff'); } }
       else if (lv >= 10) { for (let i = 0; i < 6; i++) { const a = i * 1.1 + .3, x = c0 + Math.cos(a) * 9, y = c0 + Math.sin(a) * 9; g.rect(R(x) - 3, R(y) - 3, 6, 6, '#ff9a1a'); g.rect(R(x) - 3, R(y) - 3, 6, 1, '#ffd060'); } for (let i = 0; i < 10; i++) { const x = c0 - 14 + hsh(i, 7) * 28, y = c0 - 14 + hsh(i, 8) * 28; if (Math.hypot(x - c0, y - c0) < r - 5) g.ell(x, y, 1.6, 1.6, '#f4f8fa'); } }
@@ -350,8 +350,8 @@ function mould(kind, fill, R0, stage) {
     if (kind === 'bowl') {   // blue-rim dessert bowl, red beans on top when full
       g.ell(c0, c0, r, r, (x, y) => dramp(['#c3ccd8', '#e2e8ef', '#f6f9fc', '#ffffff'], dlit(x, y, c0 - 10, c0 - 10, r, r)));
       for (let t = 0; t < 6.28; t += .02) { g.set(R(c0 + Math.cos(t) * (r - 2)), R(c0 + Math.sin(t) * (r - 2)), '#3a78d0'); g.set(R(c0 + Math.cos(t) * (r - 3)), R(c0 + Math.sin(t) * (r - 3)), '#2d6cc4'); }
-      g.ell(c0, c0, r - 9, r - 9, (x, y) => dramp(['#d8dde6', '#eef1f6'], dlit(x, y, c0 + 6, c0 + 6, r, r) * -1));
-      if (lv) { const rr = (r - 9) * Math.min(1, .3 + .7 * lv / 10); g.ell(c0, c0, rr, rr, (x, y) => dramp(dtone(R0.fill, 4), dlit(x, y, c0 - 5, c0 - 5, rr, rr))); }
+      g.ell(c0, c0, r - 5, r - 5, (x, y) => dramp(['#d8dde6', '#eef1f6'], dlit(x, y, c0 + 6, c0 + 6, r, r) * -1));
+      if (lv) { const rr = (r - 5) * Math.min(1, .3 + .7 * lv / 10); g.ell(c0, c0, rr, rr, (x, y) => dramp(dtone(R0.fill, 4), dlit(x, y, c0 - 5, c0 - 5, rr, rr))); }
       if (lv >= 10) for (let i = 0; i < 9; i++) { const a = hsh(i, 11) * 6.28, d = hsh(i, 12) * 12, x = c0 + Math.cos(a) * d, y = c0 + Math.sin(a) * d; g.ell(x, y, 3, 2.2, '#8a2424'); g.set(R(x) - 1, R(y) - 1, '#c8443a'); }
       if (baked) g.ell(c0 - 8, c0 - 8, 6, 2, '#ffffff');
       return finish(g);

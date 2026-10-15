@@ -139,7 +139,7 @@ function buyUpgrade(k) {
   W.money -= L[1]; W.up[k] = n + 1; if (k === 'ac' || k === 'music') applyDecor(); W.today.upCost += L[1]; SFX.buy(); if (!n) playScene('up_' + k); else NOTICE = { text: L[0] + ' 装好了！' + L[2], t: 0 }; checkAch(); saveGame(); return true;
 }
 function buyExtraShelf(id, fridge) {
-  const st = W.shelves[id], cost = EXTRA_SHELF[id]; if (!st || !st.locked || W.money < cost || PHASE === 'open' || PHASE === 'closing') { SFX.deny(); return false; }
+  const st = W.shelves[id], cost = EXTRA_SHELF[id]; if (!st || !st.locked || W.money < cost || PHASE === 'open' || PHASE === 'closing' || expandLv() < (EXTRA_NEED[id] || 0)) { SFX.deny(); if (expandLv() < (EXTRA_NEED[id] || 0)) NOTICE = { text: '先打通隔壁', t: 0 }; return false; }
   W.money -= cost; W.today.upCost += cost; st.locked = false; st.fridge = !!fridge; applyDecor(); computeStops(); redoShadows(); RINGS.clear(); SFX.ding(); saveGame(); return true;
 }
 function setShelfKind(id, fridge) {   // a display spot is a shelf (baked goods) or a glass fridge (drinks / desserts); switching clears what's on it
@@ -204,6 +204,10 @@ function buyItem(id) {
 function placeNow(id) {   // placement mode with this piece picked out and the view on it
   const g = MOV.find(m => m.id === 'I_' + id), pos = (W.itemPos || {})[id]; PANEL = null; MODE = 'edit'; EDIT.sel = g || null; EDIT.msg = DECOR_ITEMS[id].name + '：拖去想放嘅位置，放好撳「摆放」完成';
   if (pos) camX = clamp(R(P(pos[0], pos[1])[0]) - 360, 0, CAM_MAX);
+}
+function buyRoom(i) {   // 扩建厨房 / 扩建前台
+  const [f, name, cost] = ROOMS[i]; if (W[f] || !expandLv() || W.money < cost || PHASE === 'open' || PHASE === 'closing') { SFX.deny(); if (!expandLv()) NOTICE = { text: '先打通隔壁', t: 0 }; return false; }
+  W.money -= cost; W.today.upCost += cost; W[f] = true; applyDecor(); SFX.ding(); notice(name + '完成！'); saveGame(); return true;
 }
 function buyExpand() {
   const n = expandLv(), E = EXPAND[n]; if (!E || W.money < E.cost || (E.day && W.day < E.day) || PHASE === 'open' || PHASE === 'closing') { SFX.deny(); if (PHASE === 'open' || PHASE === 'closing') NOTICE = { text: '打烊先扩建', t: 0 }; return false; }

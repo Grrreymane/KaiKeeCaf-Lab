@@ -75,7 +75,7 @@ function applyDecor() {   // after loading / buying: wallpaper, booth style, she
   const d = W.decor;
   const bgKey = d.wall + ':' + expandLv() + ':' + upLv('ac') + ':' + Object.keys(DECOR_ITEMS).filter(id => DECOR_ITEMS[id].cat === 'wall' && hasItem(id)).join() + ':' + keepList('w').join() + ':' + JSON.stringify(W.wallSlot || {}) + ':' + PIDS.filter(p => unlocked(p)).map(p => p + priceOf(p)).join();
   if (BG && BG_WALL !== bgKey) { drawBackground(BG.getContext('2d')); BG_WALL = bgKey; }
-  applyExpand(); applyExtraShelves(); applyItems(); applyKeepsakes();
+  applyExpand(); applyRooms(); applyExtraShelves(); applyItems(); applyKeepsakes();
   W.sets = W.sets || {}; for (const S of DECOR_SETS) if (setDone(S) && !W.sets[S[0]]) { W.sets[S[0]] = W.day; if (PHASE !== 'title') notice('搭配完成「' + S[0] + '」舒适 +' + S[2]); }
   if (BOOTH_DONE !== d.booth) { restyleBooths(); BOOTH_DONE = d.booth; }
   for (const id of SHELF_IDS) { if (TABLES[id]._key !== ((d.tier[id] || 0) + ':' + (d.rot[id] || 0) + ':' + (isFridge(id) ? 1 : 0))) rebuildShelf(id); shelfCaps(id); }
@@ -208,7 +208,7 @@ function addOn(c, id) {
       const [a, b] = whereIs(c); POPS.push({ x: a, y: b - 64, t: 0, text: '顺手加购', small: true }); return; }
   }
 }
-function checkoutTime(c, packer) { const n = Object.values(c.got).reduce((a, b) => a + b, 0); return (1.6 + .4 * n) * [1, .6, .5, .4][upLv('till')] * (hasPerk('lin_pack') ? .8 : 1) * (packer ? .7 : 1); }   // Lin packing alongside = 30% quicker
+function checkoutTime(c, packer) { const n = Object.values(c.got).reduce((a, b) => a + b, 0); return (1.6 + .4 * n) * [1, .6, .5, .4][upLv('till')] * (hasPerk('lin_pack') ? .8 : 1) * (packer ? .7 : 1) * (W.xf ? .75 : 1); }   // Lin packing alongside = 30% quicker
 function comboBonus(got) { let b = 0; for (const k of COMBOS) if (got[k.a] && got[k.b]) { b += k.bonus * Math.min(got[k.a], got[k.b]) * (promoOn('combo') ? 2 : 1); W.today.combos++; } return b; }
 function earn(amt, x, y, text) { W.money += amt; W.today.revenue += amt; W.pts = (W.pts || 0) + 1; W.today.pts = (W.today.pts || 0) + 1; /* every sale is also a point */ POPS.push({ x, y, t: 0, text: text || '+$' + amt }); SFX.coin(); }
 function finishPay(c) {
