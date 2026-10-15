@@ -194,11 +194,12 @@ function buyItem(id) {
   let pos = null; if (it.cat !== 'wall') { pos = findItemSpot(); if (!pos) { SFX.deny(); NOTICE = { text: '店里冇位摆喇', t: 0 }; return false; } }
   W.money -= it.cost; W.today.upCost += it.cost; (W.items = W.items || {})[id] = true; if (pos) (W.itemPos = W.itemPos || {})[id] = pos;
   applyDecor(); SFX.buy(); NOTICE = { text: it.name + (pos ? ' 买咗 · 拖去想放嘅位置' : ' 挂好喇') + ' · 舒适 ' + comfort(), t: 0 }; checkAch(); saveGame();
-  if (pos) {   // a floor piece goes straight into placement mode, picked out, with the view on it
-    const g = MOV.find(m => m.id === 'I_' + id); PANEL = null; MODE = 'edit'; EDIT.sel = g || null; EDIT.msg = it.name + '：拖去想放嘅位置，放好撳「摆放」完成';
-    camX = clamp(R(P(pos[0], pos[1])[0]) - 360, 0, CAM_MAX);
-  }
+  if (pos) PANEL = { kind: 'placeask', id, back: PANEL, bar: 6 };   // a floor piece sits at its default spot; the player chooses to place it now or leave it there
   return true;
+}
+function placeNow(id) {   // placement mode with this piece picked out and the view on it
+  const g = MOV.find(m => m.id === 'I_' + id), pos = (W.itemPos || {})[id]; PANEL = null; MODE = 'edit'; EDIT.sel = g || null; EDIT.msg = DECOR_ITEMS[id].name + '：拖去想放嘅位置，放好撳「摆放」完成';
+  if (pos) camX = clamp(R(P(pos[0], pos[1])[0]) - 360, 0, CAM_MAX);
 }
 function buyExpand() {
   const n = expandLv(), E = EXPAND[n]; if (!E || W.money < E.cost || (E.day && W.day < E.day) || PHASE === 'open' || PHASE === 'closing') { SFX.deny(); if (PHASE === 'open' || PHASE === 'closing') NOTICE = { text: '打烊先扩建', t: 0 }; return false; }

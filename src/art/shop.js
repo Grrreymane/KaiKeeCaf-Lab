@@ -428,19 +428,19 @@ function buildStatics() {
   const BO1 = booth(268, 136), BO2 = booth(268, 192);
   for (const id of ['T5', 'T6', 'T7']) TABLES[id] = add(shelfObj(id));
   // 门口外卖窗：对着街的玻璃柜，一盘盘蛋挞，立一块「外卖」牌
-  const twBase = makeObj(P, { x0: 150, x1: 232, y0: 300, y1: 314 }, 46, [
-    { g: (g, Q) => { bx(g, Q, 150, 300, 0, 82, 14, 16, C.woodL, C.wood, C.woodD, 2); woodGrain(g, Q, 153, 229, 1, 15, 314, 19); bx(g, Q, 150, 300, 16, 82, 14, 2, '#d99a5c', '#b8743c', '#93582c', 2); } },
+  const twBase = makeObj(P, { x0: 162, x1: 222, y0: 300, y1: 314 }, 46, [
+    { g: (g, Q) => { bx(g, Q, 162, 300, 0, 60, 14, 16, C.woodL, C.wood, C.woodD, 2); woodGrain(g, Q, 165, 219, 1, 15, 314, 19); bx(g, Q, 162, 300, 16, 60, 14, 2, '#d99a5c', '#b8743c', '#93582c', 2); } },
   ]);
-  const twOpen = makeObj(P, { x0: 150, x1: 232, y0: 300, y1: 314 }, 46, [
-    { g: (g, Q) => { g.quad(Q(151, 314, 18), Q(231, 314, 18), Q(231, 314, 30), Q(151, 314, 30), '#c9f0f2'); g.quad(Q(151, 301, 30), Q(231, 301, 30), Q(231, 314, 30), Q(151, 314, 30), '#e2fafb'); g.quad(Q(231, 301, 18), Q(231, 314, 18), Q(231, 314, 30), Q(231, 301, 30), '#a9dde3'); }, plain: true, alpha: .3 },
-    { g: (g, Q) => { g.seg(Q(151, 314, 30), Q(231, 314, 30), '#ffffff'); g.seg(Q(231, 301, 30), Q(231, 314, 30), '#ffffff'); g.seg(Q(231, 314, 18), Q(231, 314, 30), '#ffffff'); }, plain: true, alpha: .8 },
+  const twOpen = makeObj(P, { x0: 162, x1: 222, y0: 300, y1: 314 }, 46, [
+    { g: (g, Q) => { g.quad(Q(163, 314, 18), Q(221, 314, 18), Q(221, 314, 30), Q(163, 314, 30), '#c9f0f2'); g.quad(Q(163, 301, 30), Q(221, 301, 30), Q(221, 314, 30), Q(163, 314, 30), '#e2fafb'); g.quad(Q(221, 301, 18), Q(221, 314, 18), Q(221, 314, 30), Q(221, 301, 30), '#a9dde3'); }, plain: true, alpha: .3 },
+    { g: (g, Q) => { g.seg(Q(163, 314, 30), Q(221, 314, 30), '#ffffff'); g.seg(Q(221, 301, 30), Q(221, 314, 30), '#ffffff'); g.seg(Q(221, 314, 18), Q(221, 314, 30), '#ffffff'); }, plain: true, alpha: .8 },
     { g: (g, Q) => { for (const x of [178, 204]) bx(g, Q, x, 306, 30, 1, 1, 6, C.brass, C.brass, C.brassD, 0); g.quad(Q(174, 307, 34), Q(208, 307, 34), Q(208, 307, 46), Q(174, 307, 46), '#b8483c'); } },
     { d: (c, Q) => { const tc = mk(68, 24), x = tc.getContext('2d'); x.font = sr(16); x.fillStyle = '#ffe9a8'; x.textAlign = 'center'; x.textBaseline = 'top'; x.fillText('外  卖', 34, 3); const [sx, sy] = Q(174, 307, 46); for (let i = 0; i < 68; i++) c.drawImage(tc, i, 0, 1, 24, R(sx) + i, R(sy + i / 2), 1, 24); } },
   ]);
-  const twShut = makeObj(P, { x0: 150, x1: 232, y0: 300, y1: 314 }, 46, [
-    { g: (g, Q) => { bx(g, Q, 150, 300, 0, 82, 14, 16, C.woodL, C.wood, C.woodD, 2); woodGrain(g, Q, 153, 229, 1, 15, 314, 19); bx(g, Q, 150, 300, 16, 82, 14, 2, '#d99a5c', '#b8743c', '#93582c', 2); } },
-    { g: (g, Q) => { g.quad(Q(151, 314, 18), Q(231, 314, 18), Q(231, 314, 30), Q(151, 314, 30), '#c9f0f2'); g.quad(Q(151, 301, 30), Q(231, 301, 30), Q(231, 314, 30), Q(151, 314, 30), '#e2fafb'); g.quad(Q(231, 301, 18), Q(231, 314, 18), Q(231, 314, 30), Q(231, 301, 30), '#a9dde3'); }, plain: true, alpha: .3 },
-    { g: (g, Q) => { g.seg(Q(151, 314, 30), Q(231, 314, 30), '#ffffff'); g.seg(Q(231, 301, 30), Q(231, 314, 30), '#ffffff'); g.seg(Q(231, 314, 18), Q(231, 314, 30), '#ffffff'); }, plain: true, alpha: .8 },
+  const twShut = makeObj(P, { x0: 162, x1: 222, y0: 300, y1: 314 }, 46, [
+    { g: (g, Q) => { bx(g, Q, 162, 300, 0, 60, 14, 16, C.woodL, C.wood, C.woodD, 2); woodGrain(g, Q, 165, 219, 1, 15, 314, 19); bx(g, Q, 162, 300, 16, 60, 14, 2, '#d99a5c', '#b8743c', '#93582c', 2); } },
+    { g: (g, Q) => { g.quad(Q(163, 314, 18), Q(221, 314, 18), Q(221, 314, 30), Q(163, 314, 30), '#c9f0f2'); g.quad(Q(163, 301, 30), Q(221, 301, 30), Q(221, 314, 30), Q(163, 314, 30), '#e2fafb'); g.quad(Q(221, 301, 18), Q(221, 314, 18), Q(221, 314, 30), Q(221, 301, 30), '#a9dde3'); }, plain: true, alpha: .3 },
+    { g: (g, Q) => { g.seg(Q(163, 314, 30), Q(221, 314, 30), '#ffffff'); g.seg(Q(221, 301, 30), Q(221, 314, 30), '#ffffff'); g.seg(Q(221, 314, 18), Q(221, 314, 30), '#ffffff'); }, plain: true, alpha: .8 },
     { g: (g, Q) => { for (const x of [178, 204]) bx(g, Q, x, 306, 30, 1, 1, 6, C.brass, C.brass, C.brassD, 0); g.quad(Q(174, 307, 34), Q(208, 307, 34), Q(208, 307, 46), Q(174, 307, 46), '#7a6a5a'); } },
     { d: (c, Q) => { const tc = mk(68, 24), x = tc.getContext('2d'); x.font = sr(16); x.fillStyle = '#ffe9a8'; x.textAlign = 'center'; x.textBaseline = 'top'; x.fillText('暂  停', 34, 3); const [sx, sy] = Q(174, 307, 46); for (let i = 0; i < 68; i++) c.drawImage(tc, i, 0, 1, 24, R(sx) + i, R(sy + i / 2), 1, 24); } },
   ]);
@@ -448,7 +448,7 @@ function buildStatics() {
     if (!this.open) { c.drawImage(twShut.cv, this.sx, this.sy); return; }
     c.drawImage(twBase.cv, this.sx, this.sy);
     if (W && W.stock) { const have = PIDS.filter(p => PRODUCTS[p].where === 'table' && W.stock[p] - ordered(p) > 0 && W.plan[p] !== 'off'); let slot = 0;
-      for (let round = 0; round < 8 && slot < 8 && have.length; round++) for (const p of have) { if (slot >= 8) break; if (W.stock[p] - ordered(p) > round) { putB(c, PRODUCTS[p].img, P(159 + (slot % 4) * 19, slot < 4 ? 304 : 310, 18)); slot++; } } }
+      for (let round = 0; round < 8 && slot < 6 && have.length; round++) for (const p of have) { if (slot >= 6) break; if (W.stock[p] - ordered(p) > round) { putB(c, PRODUCTS[p].img, P(170 + (slot % 3) * 18, slot < 3 ? 304 : 310, 18)); slot++; } } }
     c.drawImage(twOpen.cv, this.sx, this.sy);
   } });
   // tray stand by the entrance: customers pick up a bakery tray here
@@ -478,8 +478,8 @@ function buildStatics() {
     { g: (g, Q) => { for (let t = xa + 6; t < xb - 10; t += 34) { g.quad(Q(t, 318, 13), Q(t + 7, 318, 13), Q(t + 17, 318, 60), Q(t + 10, 318, 60), '#ffffff'); g.quad(Q(t + 10, 318, 13), Q(t + 12, 318, 13), Q(t + 22, 318, 60), Q(t + 20, 318, 60), '#ffffff'); } }, plain: true, alpha: .2 },
     { g: (g, Q) => { for (const x of posts) bx(g, Q, x, 316.5, 11, 1.6, 3, 51, ...FR, 0); bx(g, Q, xa, 316.5, 60, xb - xa, 3, 3, ...FR, 0); } },
   ]));
-  pane(0, 150, [0, 36, 72, 108, 148.4]); pane(232, 252, [232, 250.4]); pane(304, 320, [304, 318.4]);
-  add(makeObj(P, { x0: 150, x1: 232, y0: 316, y1: 320 }, 66, [{ g: (g, Q) => bx(g, Q, 150, 316.5, 60, 82, 3, 3, ...FR, 0) }]));   // 外卖窗上沿（窗开着）
+  pane(0, 162, [0, 36, 72, 108, 144, 160.4]); pane(222, 252, [222, 250.4]);   // the takeaway window between them is 60 wide pane(304, 320, [304, 318.4]);
+  add(makeObj(P, { x0: 162, x1: 222, y0: 316, y1: 320 }, 66, [{ g: (g, Q) => bx(g, Q, 162, 316.5, 60, 60, 3, 3, ...FR, 0) }]));   // 外卖窗上沿（窗开着）
   add(makeObj(P, { x0: 252, x1: 253.6, y0: 316, y1: 320 }, 70, [{ g: (g, Q) => bx(g, Q, 252, 316.5, 0, 1.6, 3, 66, ...FR, 0) }]));   // 门框：左右门柱、门楣分开排序
   add(makeObj(P, { x0: 302.4, x1: 304, y0: 316, y1: 320 }, 70, [{ g: (g, Q) => bx(g, Q, 302.4, 316.5, 0, 1.6, 3, 66, ...FR, 0) }]));
   Object.assign(add(makeObj(P, { x0: 252, x1: 304, y0: 316, y1: 320 }, 70, [{ g: (g, Q) => bx(g, Q, 252, 316.5, 64, 52, 3, 4, ...FR, 0) }])), { x0: -9999, x1: 9999, y0: 318, y1: 318 });   // 门楣：人在门外（y>313）就画在门楣前面

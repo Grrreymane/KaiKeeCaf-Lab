@@ -1,5 +1,6 @@
 [
   "src/core/base.js",
+  "src/core/lang.js",
   "src/art/palette.js",
   "src/art/food.js",
   "src/art/chars.js",

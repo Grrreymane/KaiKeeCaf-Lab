@@ -260,6 +260,13 @@ function drawPlanPanel(c) {
     [['pri', '主打'], ['on', '照常'], ['off', '不做']].forEach(([v, lab], k) => btn(c, 192 + k * 51, yy + (rh - Math.min(24, rh)) / 2, 47, Math.min(24, rh), lab, () => setPlan(p, v), W.plan[p] === v ? (v === 'off' ? 'red' : 'gold') : 'cream'));
   });
 }
+function drawPlaceAsk(c, P_) {   // just bought a floor piece: place it now, or leave it at its default spot
+  const it = DECOR_ITEMS[P_.id]; c.save(); c.globalAlpha = .5; px(c, 0, 0, 360, 640, '#1c141c'); c.restore(); button(0, 0, 360, 640, () => {});
+  card(c, 50, 230, 260, 150, PAPER); TS(c, it.name + ' 买咗', 180, 244, 18, INK, 'center');
+  T(c, '已经摆喺默认位置（靠墙、唔挡路）', 180, 276, SUB, 'center', null); T(c, '舒适 ' + comfort() + ' · 美观 ' + beauty(), 180, 294, '#2f6e56', 'center', null);
+  btn(c, 66, 322, 110, 36, '现在摆放', () => { SFX.tap(); placeNow(P_.id); }, 'gold');
+  btn(c, 184, 322, 110, 36, '就放默认位置', () => { SFX.tap(); PANEL = P_.back || null; }, 'cream');
+}
 function drawSupPanel(c) {   // shop level + suppliers you can sign with
   let y = sheet(c, '供应商', money$(W.money), 200);
   const lv = shopLv(), nx = SHOP_LV[lv], served = (W.total && W.total.served) || 0;
@@ -335,7 +342,8 @@ function drawBookPanel(c) {   // the books: today's numbers in a two-column tabl
 }
 function drawPause(c) {
   c.save(); c.globalAlpha = .55; px(c, 0, 0, 360, 640, '#1c141c'); c.restore(); button(0, 0, 360, 640, () => {});
-  card(c, 70, 200, 220, 210, PAPER); TS(c, '暂停', 180, 214, 20, INK, 'center');
+  card(c, 70, 200, 220, 250, PAPER); TS(c, '暂停', 180, 214, 20, INK, 'center');
+  btn(c, 100, 400, 160, 34, LANG === 'yue' ? '語言：粵語（繁）' : '语言：普通话', () => setLang(LANG === 'yue' ? 'cmn' : 'yue'), 'cream');
   btn(c, 100, 254, 160, 34, '继续', () => { PANEL = null; });
   btn(c, 100, 298, 160, 34, MUTED ? '声音：关' : '声音：开', () => setMuted(!MUTED), 'cream');
   btn(c, 100, 352, 160, 34, CONFIRM ? '真的从头开始？' : '从头开始', () => { if (CONFIRM) { CONFIRM = 0; PANEL = null; startGame(true); } else CONFIRM = 1; }, CONFIRM ? 'red' : 'cream');
@@ -378,6 +386,7 @@ function drawTitle(c) {
   else { T(c, '谁来开店？', 180, 324, '#fbe9c0', 'center'); c.drawImage(STAFF_HD.hero_f.SE[0], 96, 346, 30, 61); c.drawImage(STAFF_HD.hero_m.SE[0], 234, 346, 30, 61);
     btn(c, 70, 414, 100, 36, '女店主', () => { audioUnlock(); startGame(true, 'f'); }); btn(c, 190, 414, 100, 36, '男店主', () => { audioUnlock(); startGame(true, 'm'); }); }
   T(c, 'v1.0 春 · 十二天', 180, 600, '#bba890', 'center', null);
+  btn(c, 250, 560, 96, 26, LANG === 'yue' ? '粵語 → 普通话' : '普通话 → 粵語', () => setLang(LANG === 'yue' ? 'cmn' : 'yue'), 'cream');   // language
 }
 function drawPanels(c) {
   if (DESK) { drawDesk(c); if (DIALOG) drawDialog(c); return; }
@@ -394,6 +403,7 @@ function drawPanels(c) {
   else if (PANEL.kind === 'ach') drawAchPanel(c);
   else if (PANEL.kind === 'perk') drawPerkPanel(c, PANEL);
   else if (PANEL.kind === 'sup') drawSupPanel(c);
+  else if (PANEL.kind === 'placeask') drawPlaceAsk(c, PANEL);
   else if (PANEL.kind === 'book') drawBookPanel(c);
   else if (PANEL.kind === 'plan') drawPlanPanel(c);
 }

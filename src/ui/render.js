@@ -42,7 +42,7 @@ function staffList() {
   for (const k in HIRE) { const s = W && W.staff[k]; if (!s || !s.hired) continue;
     if (s.post === 'bar') { const i = postsOf('bar').indexOf(k); L.push({ id: k, ch: STAFF_HD[k], x: i ? 136 : 156, y: 25, face: 'SW', z: PLAT, job: i ? JOB.bar2 : JOB.bar }); }
     if (s.post === 'bake') { const i = postsOf('bake').indexOf(k); L.push({ id: k, ch: STAFF_HD[k], x: i ? 206 : 226, y: 22, face: 'SW', z: PLAT, job: i ? JOB.kun3 : JOB.kun2 }); }
-    if (s.post === 'take') { const i = postsOf('take').indexOf(k); L.push({ id: k, ch: STAFF_HD[k], x: i ? 214 : 191, y: 293, face: 'SW', z: 0 }); } }
+    if (s.post === 'take') { const i = postsOf('take').indexOf(k); L.push({ id: k, ch: STAFF_HD[k], x: i ? 204 : 180, y: 293, face: 'SW', z: 0 }); } }
   return L;
 }
 const seatImg = (ch, front) => front ? (ch._sf || (ch._sf = flipC(ch.seatSE))) : (ch._sb || (ch._sb = flipC(ch.seatNW)));

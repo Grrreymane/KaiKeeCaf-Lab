@@ -1,7 +1,7 @@
 // ==== input: tap buttons, tap shelves, drag to pan, placement mode (drag furniture, snapped, red when it blocks)
 const WALK_GAP = 12, EDIT = { pick: null, msg: '', bad: false, sel: null };
 // fixed floor furniture the movable pieces must keep clear of (window bar, stools, counter + bake counter, takeaway)
-const HARD = [{ x0: 246, x1: 256, y0: 267, y1: 281 }, { x0: 205, x1: 301, y0: 29, y1: 47 }, { x0: 0, x1: 16, y0: 56, y1: 160 }, { x0: 22, x1: 32, y0: 71, y1: 153 }, { x0: 38, x1: 200, y0: 29, y1: 47 }, { x0: 150, x1: 232, y0: 300, y1: 314 }];
+const HARD = [{ x0: 246, x1: 256, y0: 267, y1: 281 }, { x0: 205, x1: 301, y0: 29, y1: 47 }, { x0: 0, x1: 16, y0: 56, y1: 160 }, { x0: 22, x1: 32, y0: 71, y1: 153 }, { x0: 38, x1: 200, y0: 29, y1: 47 }, { x0: 162, x1: 222, y0: 300, y1: 314 }];
 const near = (a, b, gap) => a.x0 < b.x1 + gap && b.x0 < a.x1 + gap && a.y0 < b.y1 + gap && b.y0 < a.y1 + gap;
 function segHit(a, p, q, m) { const x0 = Math.min(p[0], q[0]) - m, x1 = Math.max(p[0], q[0]) + m, y0 = Math.min(p[1], q[1]) - m, y1 = Math.max(p[1], q[1]) + m; return a.x0 < x1 && x0 < a.x1 && a.y0 < y1 && y0 < a.y1; }
 function canPlace(g) {

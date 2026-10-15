@@ -482,7 +482,7 @@ WALKERS = [
   { ch: GUEST_HD[12], y: 348, dir: 1, v: 26, x: -60 }, { ch: GUEST_HD[10], y: 326, dir: -1, v: 14, x: 520 }, { ch: PART_HD[7], y: 326, dir: -1, v: 30, x: 300 },
   { ch: GUEST_HD[15], y: 348, dir: 1, v: 32, x: 120 }, { ch: GUEST_HD[1], y: 326, dir: -1, v: 26, x: 800 }, { ch: GUEST_HD[14], y: 348, dir: 1, v: 28, x: 360 },
 ].map(w => ({ ...w, dist: 0 }));
-const TW_X = 191;   // takeaway window, seen from the pavement
+const TW_X = 192;   // takeaway window, seen from the pavement
 const takeKeep = p => takeOpen() && PRODUCTS[p].where === 'table' && W.plan[p] !== 'off' ? (W.plan[p] === 'pri' ? 4 : 2) : 0;   // pieces the kitchen keeps for the takeaway window's glass case
 function takeStock() { return PIDS.filter(p => W.stock[p] - ordered(p) > 0 && W.plan[p] !== 'off'); }
 function stepWalkers(dt) {

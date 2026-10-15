@@ -180,7 +180,7 @@ function drawDialog(c) {
   button(292, 38, 64, 32, () => { DIALOG = null; STORY_Q.length = 0; SFX.tap(); });
 }
 // while the shop is open, someone not busy now and then says one of their lines (a bubble over their head)
-const MURMUR_AT = { kun: [250, 22], lin: [84, 23], hero: [50, 24], wen: [156, 25], shao: [191, 293], qing: [136, 25], yao: [226, 22] }, MURMUR_WHO = {};
+const MURMUR_AT = { kun: [250, 22], lin: [84, 23], hero: [50, 24], wen: [156, 25], shao: [180, 293], qing: [136, 25], yao: [226, 22] }, MURMUR_WHO = {};
 let murmurT = 18;
 function stepMurmur(dt) {
   if (!isOpenPhase() || (murmurT -= dt) > 0) return; murmurT = 22 + rng() * 22;
