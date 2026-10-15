@@ -173,7 +173,7 @@ function drawDialog(c) {
   px(c, 5, 465, 350, 118, OUT); px(c, 6, 466, 348, 116, '#fffaf0'); px(c, 6, 466, 348, 2, '#ffffff'); px(c, 6, 578, 348, 4, '#ead9b8');
   const name = who ? (hero ? '店主' : who === 'temp' ? HIRE.temp.name : NAMES[who]) : '';
   if (name) { c.font = sr(14); const w = R(c.measureText(name).width) + 22, x = hero ? 340 - w : 14; px(c, x - 1, 445, w + 2, 22, OUT); px(c, x, 446, w, 20, '#5a3524'); px(c, x, 446, w, 1, '#7a4a32'); TS(c, name, x + w / 2, 448, 14, '#fbe9c0', 'center'); }
-  const shown = text.slice(0, Math.floor(D.t * 40) + 1);   // typewriter
+  const shown = L(text).slice(0, Math.floor(D.t * 40) + 1);   // typewriter: the whole line in the chosen language first, then typed out
   wrapText(c, shown, 316).slice(0, 4).forEach((l, i) => T(c, l, 22, 480 + i * 22, who ? '#3a2a2e' : '#7a6250', 'left', null));
   if (Math.sin(gtime * 6) > 0) T(c, '▼', 338, 560, '#b8342c', 'center', null);
   px(c, 296, 42, 56, 24, OUT); px(c, 297, 43, 54, 22, '#4a3a48'); T(c, '跳过', 324, 48, '#fbe9c0', 'center', null);

@@ -1,7 +1,7 @@
 // ==== day: phases (title -> prep -> open -> closing -> ledger -> prep ...), books, news, month / season ends
 let PHASE = 'title', clockOpen = 0, LEDGER = null, NOTICES = [], NOTICE = null;
 function startGame(fresh, hero) {
-  if (fresh || !loadGame()) { W = newState(); wipeSave(); if (hero) W.hero = hero; playScene('intro'); W.tour = 0; }   // the tour starts once the opening talk is over
+  if (fresh || !loadGame()) { W = newState(); wipeSave(); if (hero) W.hero = hero; playScene('intro'); W.toured = {}; W.tourStep = 0; }   // the day's tour starts once the opening talk is over
   bindShelves(); initSeats(); applyDecor(); applyFurniture(); RINGS.clear(); MODE = 'play'; camX = LM; PANEL = null; startDay(); saveGame();
 }
 function applyFurniture() {   // saved placement offsets -> objects (relative to where they are now, so nothing stacks)

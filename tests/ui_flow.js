@@ -6,7 +6,7 @@ render(CTX);
 const start = BTNS.find(b => b.y === 414 && b.x === 70); ok(start, 'title offers 女店主 / 男店主'); tap(start.x + 5, start.y + 5);
 ok(W.hero === 'f', 'owner picked'); frame(2); ok(DIALOG && DIALOG.key === 'intro' && DIALOG.lines.some(l => l[0] === 'kun'), 'opening scene plays'); const skip = BTNS.find(b => b.x === 292); tap(skip.x + 5, skip.y + 5); ok(!DIALOG, 'skip closes the scene');
 ok(PHASE === 'prep' && W.day === 1, 'start -> day 1 prep');
-ok(tourOn() && W.tour === 0, 'first-day tour shows after the opening talk'); for (let i = 0; i < TOUR.length; i++) tap(180, 200); ok(!tourOn() && W.tour === TOUR.length, 'tapping through the tour ends it');
+ok(tourOn() && tourKey() === 1, 'day-1 tour shows after the opening talk'); for (let i = 0; i < TOUR_DAYS[1].length; i++) tap(180, 200); ok(!tourOn() && W.toured[1], 'tapping through the day-1 tour ends it'); W.tourOff = true;
 ok(HINT && HINT.shelf === 'T4', 'tutorial points at T4');
 openPanel({ kind: 'shelf', id: 'T4', sel: 0 }); ok(W.tut === 1, 'opening T4 advances the tutorial');
 render(CTX); { const t = BTNS.filter(b => b.w === 104 && b.h === 76)[0]; tap(t.x + 5, t.y + 5); } ok(W.shelves.T4.layers[0].p === 'tart', 'tap tart tile -> upper = tart');

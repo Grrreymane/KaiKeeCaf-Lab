@@ -136,34 +136,55 @@ function drawHUD(c) {
 // 研发 button, top right under the board: grey with a lock during the day, gold after closing (on the books screen)
 // ---------------------------------------------------------------- first-day tour: the screen dims, one thing at a time is lit,
 // a bouncing arrow points at it with a line of text. Tap to go on; 跳过 ends it. Runs once, on a new game, after the opening talk.
-const TOUR = [
-  { text: '欢迎嚟到街记冰室！跟住箭咀，睇下点开始。' },
-  { text: '① 点亮着嘅货架，摆上点心', rect: () => { const o = SHELF.T4 && SHELF.T4.obj; return o ? [(o.sx - camX) / K + 6, o.sy / K + 6, o.cv.width / K - 12, o.cv.height / K - 16] : [120, 260, 120, 60]; } },
-  { text: '② 原料唔够，就嚟「进货」', rect: () => [5 + 59, BAR_Y + 6, 55, 44] },
-  { text: '③「员工」：请人、派岗位、定今日主打', rect: () => [5 + 2 * 59, BAR_Y + 6, 55, 44] },
-  { text: '④「装修」：买摆设、扩建，店靓客多', rect: () => [5 + 3 * 59, BAR_Y + 6, 55, 44] },
-  { text: '⑤ 准备好，就撳「开门营业」', rect: () => [250, 544, 100, 32] },
-  { text: '⑥ 收工后喺呢度研发新品', rect: () => [296, 40, 58, 24] },
-];
-const tourOn = () => W && W.tour !== undefined && W.tour < TOUR.length && PHASE === 'prep' && MODE === 'play' && !DIALOG && !STORY_Q.length && !PANEL && !DESK;
+// a few features each morning, the most important first (the screen dims, one thing lit, a bouncing arrow and a line of text).
+// TOUR_DAYS[day] = steps; 'dirt' runs once the first morning the shop is noticeably dirty. Tap to go on, 跳过 ends that day's set.
+const wrect = o => o ? [(o.sx - camX) / K + 4, o.sy / K + 4, o.cv.width / K - 8, o.cv.height / K - 10] : null;
+const wbox = (x0, y0, x1, y1, z) => { const pts = [[x0, y0, 0], [x1, y0, 0], [x1, y1, 0], [x0, y1, 0], [x0, y0, z], [x1, y0, z], [x1, y1, z], [x0, y1, z]].map(q => P(...q)), xs = pts.map(q => q[0]), ys = pts.map(q => q[1]); const a = (Math.min(...xs) - camX) / K, b = Math.min(...ys) / K; return [a - 2, b - 2, (Math.max(...xs) - Math.min(...xs)) / K + 4, (Math.max(...ys) - Math.min(...ys)) / K + 4]; };   // a box in the shop -> screen rect
+const barRect = j => [5 + j * 59, BAR_Y + 6, 55, 44];   // bottom bar: 0 摆货 1 进货 2 员工 3 装修 4 账本 5 摆放
+const TOUR_DAYS = {
+  1: [{ text: '欢迎来到街记冰室！跟着箭头，看看怎么开始。' },
+      { text: '① 点亮着的货架，摆上点心', cam: [211, 160], rect: () => wrect(SHELF.T4 && SHELF.T4.obj) },
+      { text: '② 摆好了，就按「开门营业」', rect: () => [250, 544, 100, 32] }],
+  2: [{ text: '原料不够做了，就来「进货」', rect: () => barRect(1) },
+      { text: '有人来应征：「员工」里请人、派岗位', rect: () => barRect(2) }],
+  3: [{ text: '收工后或开门前，在这里研发新品（每天一款）', rect: () => [296, 40, 58, 24] },
+      { text: '「账本」：看收支，买升级（收银机、烤炉…）', rect: () => barRect(4) }],
+  4: [{ text: '「员工」→ 今日安排：主打、价钱、备货、促销', rect: () => barRect(2) },
+      { text: '卡座：派人做「招待」，客人坐下吃，有茶位和小费', cam: [290, 180], rect: () => { const B = BOOTHS[0], g = B.table.grp; return wbox(B.X + g.dx, B.y0 + g.dy, B.X + g.dx + 46, B.y0 + g.dy + 40, 30); } }],
+  5: [{ text: '「装修」：摆设、墙纸、卡座，舒适和美观越高客人越多', rect: () => barRect(3) },
+      { text: '「摆放」：拖动家具，换个位置或转 90°', rect: () => barRect(5) }],
+  6: [{ text: '外卖窗：派人站窗口，街上的路人也会买', cam: [192, 307], rect: () => wbox(162, 300, 222, 314, 46) }],
+  8: [{ text: '前台玻璃柜是招牌柜：员工 → 今日安排 → 换招牌', cam: [148, 38], rect: () => wbox(96, 30, 200, 46, 50) }],
+  10: [{ text: '有钱了可以扩建：装修 → 扩建，打通隔壁', rect: () => barRect(3) }],
+  13: [{ text: '天气和季节会改变客人想买的东西，看这一栏', rect: () => [0, 48, 290, 15] },
+       { text: '暑假有学生来打工，可以一次签 6 天', rect: () => barRect(2) }],
+  dirt: [{ text: '店里脏了客人会变少：员工里派人「打扫」，或买垃圾桶', rect: () => [0, 48, 290, 15] }],
+};
+const tourKey = () => { if (!W) return null; W.toured = W.toured || {}; if (TOUR_DAYS[W.day] && !W.toured[W.day]) return W.day; if (!W.toured.dirt && dirtOf() > 25) return 'dirt'; return null; };
+const tourOn = () => W && !W.tourOff && PHASE === 'prep' && MODE === 'play' && !DIALOG && !STORY_Q.length && !PANEL && !DESK && tourKey() !== null;
 function drawTour(c) {
-  const st = TOUR[W.tour], r = st.rect ? st.rect() : null, t = gtime, next = () => { W.tour++; SFX.tap(); if (W.tour >= TOUR.length) saveGame(); };
+  const key = tourKey(), steps = TOUR_DAYS[key], i = Math.min(W.tourStep || 0, steps.length - 1), st = steps[i], t = gtime;
+  if (st.cam) { const want = clamp(R(P(st.cam[0], st.cam[1])[0]) - 360, 0, CAM_MAX); camX += (want - camX) * .2; }   // bring a target in the shop into view
+  const r = st.rect ? st.rect() : null;
+  const done = () => { W.toured[key] = true; W.tourStep = 0; saveGame(); }, next = () => { SFX.tap(); if (i + 1 >= steps.length) done(); else W.tourStep = i + 1; };
   c.save(); c.globalAlpha = .55; c.fillStyle = '#1c141c';
   if (r) { const [x, y, w, h] = r; c.fillRect(0, 0, 360, y); c.fillRect(0, y + h, 360, 640 - y - h); c.fillRect(0, y, x, h); c.fillRect(x + w, y, 360 - x - w, h); } else c.fillRect(0, 0, 360, 640);
   c.restore();
   button(0, 0, 360, 640, next);
   let cy = 280;
   if (r) {
-    const [x, y, w, h] = r, a = Math.sin(t * 5) > 0 ? 1 : 0, glow = Math.sin(t * 4) > -.3 ? C.gold : '#fff4dc';
+    const [x, y, w, h] = r, glow = Math.sin(t * 4) > -.3 ? C.gold : '#fff4dc';
     px(c, x - 2, y - 2, w + 4, 2, glow); px(c, x - 2, y + h, w + 4, 2, glow); px(c, x - 2, y, 2, h, glow); px(c, x + w, y, 2, h, glow);
     const ax = R(x + w / 2), down = y > 320, bounce = R(Math.abs(Math.sin(t * 4)) * 6);   // the arrow: above the target pointing down, or below pointing up
-    if (down) { const ty = y - 8 - bounce; px(c, ax - 4, ty - 26, 8, 16, OUT); px(c, ax - 3, ty - 25, 6, 15, C.gold); for (let i = 0; i < 9; i++) { px(c, ax - 9 + i, ty - 11 + i, 18 - 2 * i, 1, i ? C.gold : OUT); px(c, ax - 10 + i, ty - 11 + i, 1, 1, OUT); px(c, ax + 9 - i, ty - 11 + i, 1, 1, OUT); } cy = ty - 80; }
-    else { const ty = y + h + 8 + bounce; for (let i = 0; i < 9; i++) { px(c, ax - i, ty + i, 2 * i, 1, C.gold); px(c, ax - i - 1, ty + i, 1, 1, OUT); px(c, ax + i, ty + i, 1, 1, OUT); } px(c, ax - 4, ty + 9, 8, 16, OUT); px(c, ax - 3, ty + 9, 6, 15, C.gold); cy = ty + 34; }
+    if (down) { const ty = y - 8 - bounce; px(c, ax - 4, ty - 26, 8, 16, OUT); px(c, ax - 3, ty - 25, 6, 15, C.gold); for (let k = 0; k < 9; k++) { px(c, ax - 9 + k, ty - 11 + k, 18 - 2 * k, 1, k ? C.gold : OUT); px(c, ax - 10 + k, ty - 11 + k, 1, 1, OUT); px(c, ax + 9 - k, ty - 11 + k, 1, 1, OUT); } cy = ty - 80; }
+    else { const ty = y + h + 8 + bounce; for (let k = 0; k < 9; k++) { px(c, ax - k, ty + k, 2 * k, 1, C.gold); px(c, ax - k - 1, ty + k, 1, 1, OUT); px(c, ax + k, ty + k, 1, 1, OUT); } px(c, ax - 4, ty + 9, 8, 16, OUT); px(c, ax - 3, ty + 9, 6, 15, C.gold); cy = ty + 34; }
   }
   cy = clamp(cy, 70, 470);
-  card(c, 30, cy, 300, 58, PAPER); T(c, st.text, 180, cy + 10, INK, 'center', null);
-  T(c, (W.tour + 1) + '/' + TOUR.length + ' · 撳任何地方继续', 180, cy + 34, SUB, 'center', null);
-  btn(c, 270, cy + 64, 60, 22, '跳过', () => { W.tour = TOUR.length; SFX.tap(); saveGame(); }, 'cream');
+  const txt = L(st.text), cut = txt.length > 22 ? Math.max(txt.lastIndexOf('：', 22), txt.lastIndexOf('，', 22)) + 1 || 22 : 0, lines = cut ? [txt.slice(0, cut), txt.slice(cut)] : [txt];   // up to two lines
+  card(c, 20, cy, 320, 44 + lines.length * 16, PAPER); lines.forEach((l, k) => T(c, l, 180, cy + 10 + k * 16, INK, 'center', null));
+  T(c, (key === 'dirt' ? '提示' : '第 ' + key + ' 天') + ' · ' + (i + 1) + '/' + steps.length + ' · 点任意地方继续', 180, cy + 18 + lines.length * 16, SUB, 'center', null); cy += lines.length * 16 - 16;
+  btn(c, 200, cy + 64, 60, 22, '跳过', () => { SFX.tap(); done(); }, 'cream');
+  btn(c, 266, cy + 64, 74, 22, '不再提示', () => { SFX.tap(); W.tourOff = true; saveGame(); }, 'cream');
 }
 function drawDeskButton(c) {
   if (!W || PHASE === 'title') return;

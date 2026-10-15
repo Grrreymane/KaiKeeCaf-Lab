@@ -34,6 +34,7 @@ function loadGame() {
   for (const id in d.shelves) if (!s.shelves[id]) s.shelves[id] = d.shelves[id];   // shelf spots added in later versions
   for (const k of ['ing', 'stock', 'plan', 'up', 'staff', 'lv']) for (const q in d[k]) if (s[k][q] === undefined) s[k][q] = d[k][q];
   for (const id of SHELF_IDS) if (!s.shelves[id]) s.shelves[id] = d.shelves[id];
+  if (!s.toured) s.toured = { 1: true, 2: true, 3: true, 4: true, 5: true };   // saves from before the daily tour: skip the basics
   s.today = freshDay(); s.v = 2;
   W = s; return true;
 }

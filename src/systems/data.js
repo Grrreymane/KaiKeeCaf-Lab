@@ -304,5 +304,5 @@ const PERSONA = {
   '西装金融男': { likes: { tea: 3, tart: 2, mango: 2, yuen: 3, lemontea: 2 }, extra: 1, want: ['{p}，fast，我有个call', 'Bro，{p}俾我两个'], happy: ['Deal！'], miss: ['冇{p}？Market都冇咁差'] },
 };
 const personaOf = ci => PERSONA[GUEST_DEF[ci] && GUEST_DEF[ci].name] || { likes: {}, want: ['{p}唔该'], happy: ['好味！'], miss: ['冇{p}…'] };
-const sayP = (lines, p) => pick(lines).split('{p}').join(p ? PRODUCTS[p].name : '');
+const sayP = (lines, p) => L(pick(lines)).split('{p}').join(p ? PRODUCTS[p].name : '');   // translate the template before the item name goes in
 const monthOf = d => Math.floor((d - 1) / MONTH_DAYS) % 12 + 1, dayInMonth = d => (d - 1) % MONTH_DAYS + 1;
