@@ -220,7 +220,7 @@ function finishPay(c) {
   const [x, y] = P1(48, 36, 62); earn(amt, x, y, '+$' + amt + (bonus ? ' 套餐' : ''));
   { const tip = c.tag === 'hurry' ? (c.wait < 4 ? 2 : 0) : c.wait < 2 && rng() < .2 ? 1 : 0;   // tips follow how long they waited
     if (tip) { earn(tip, x, y - 14, '小费 +$' + tip); W.today.tips = (W.today.tips || 0) + tip; W.today.quick++; if (c.tag === 'hurry') say(c, '快手！唔该晒', false); } }
-  if (c.vip) { earn(200, x, y - 14, '利是 +$200'); say(c, '好叻呀！我哋好开心', false); W.seen.parents = true; playScene('parents'); }
+  if (c.vip) { earn(200, x, y - 14, '红包 +$200'); say(c, '好叻呀！我哋好开心', false); W.seen.parents = true; playScene('parents'); }
   // a free window stool: some sit down and eat (self service, they leave on their own)
   const free = STOOLS.filter(y => !CUST.some(o => o.stool === y));
   if (free.length && rng() < .4) { c.stool = pick(free); c.eatT = 9 + rng() * 5; c.eatP = Object.keys(c.got)[0]; }
@@ -248,7 +248,7 @@ function fanOf(ci, st) {   // happy visits by this kind of customer add up; at G
   if (it) { let pos = null; if (it.cat !== 'wall') pos = findItemSpot(); if (it.cat === 'wall' || pos) { (W.items = W.items || {})[id] = true; if (pos) { (W.itemPos = W.itemPos || {})[id] = pos; GIFT_PLACE = id; } applyDecor(); } }
   else W.money += 100;
   STORY_Q.push({ key: 'gift', ci, lines: [[null, '一位' + kind + '熟客走到收银台。'], ...(GIFT_THANKS[kind] || [['cust', '常来光顾，你们招呼得很好。这个送给你！']]).filter(([w]) => !HIRE[w] || W.staff[w].hired), [null, it ? '收到「' + it.name + '」' + (it.cat === 'wall' ? '，已经挂好了。' : '，摆在店里了（「摆放」里可以移动）。') : '收到一封红包：$100']] });
-  NOTICES.push('熟客送礼：' + (it ? it.name : '利是 $100')); SFX.ding();
+  NOTICES.push('熟客送礼：' + (it ? it.name : '红包 $100')); SFX.ding();
 }
 function gripe(k) { W.today.gripes[k] = (W.today.gripes[k] || 0) + 1; LAST_GRIPE = { k, t: 0 }; }
 function stepCustomers(dt) {
