@@ -249,6 +249,9 @@ function drawPlanPanel(c) {
   y += 26;
   T(c, '促销', 16, y + 5, SUB, 'left', null); PROMOS.forEach((q, k) => btn(c, 52 + k * 74, y, 70, 22, q.name, () => setPromo(q.id), W.today.promo === q.id ? 'gold' : 'cream'));
   y += 30;
+  { const sp = W.showcase && unlocked(W.showcase) ? W.showcase : null;   // the signature showcase on the counter
+    T(c, '招牌柜', 16, y + 5, SUB, 'left', null); if (sp) { half(c, PRODUCTS[sp].img, 70, y + 11); T(c, PRODUCTS[sp].name + ' · 多四成人买', 84, y + 5, '#b8483c', 'left', null); }
+    btn(c, 270, y, 76, 22, '换招牌', () => { PANEL = { kind: 'showcase', back: PANEL, bar: 3 }; SFX.tap(); }, 'cream'); y += 28; }
   { const q = PROMOS.find(q => q.id === W.today.promo) || PROMOS[0], tip = q.cost ? q.name + '：' + q.desc + ' · ' + money$(q.cost) : '主打的先做、多做；不做的就不做。'; T(c, tip, 16, y, q.cost ? '#b8483c' : SUB, 'left', null); } y += 16;
   const list = PIDS.filter(unlocked), h = Math.min(44, Math.floor((BAR_Y - 8 - y) / list.length));
   list.forEach((p, i) => {
@@ -259,6 +262,15 @@ function drawPlanPanel(c) {
       T(c, (W.today.sold[p] || 0) + '/' + last, 124, ty, SUB, 'left', null); T(c, '存' + (shelfHave(p) + (W.stock[p] || 0)), 146, ty, '#8a6a4a', 'left', null); T(c, speedTag(p)[0], 176, ty, speedTag(p)[1], 'left', null); }
     [['pri', '主打'], ['on', '照常'], ['off', '不做']].forEach(([v, lab], k) => btn(c, 192 + k * 51, yy + (rh - Math.min(24, rh)) / 2, 47, Math.min(24, rh), lab, () => setPlan(p, v), W.plan[p] === v ? (v === 'off' ? 'red' : 'gold') : 'cream'));
   });
+}
+function drawShowcasePick(c, P_) {   // which item goes in the counter glass case today
+  let y = sheet(c, '招牌展示柜', '每日一样 · 多四成人买 · 美观 +2', 200);
+  const L = PIDS.filter(showcaseOk), per = 4, tw = 78;
+  L.forEach((p, i) => { const x = 14 + (i % per) * (tw + 5), yy = y + Math.floor(i / per) * 64, on = W.showcase === p;
+    card(c, x, yy, tw, 58, on ? '#ffe9b0' : '#fffaf0'); full(c, PRODUCTS[p].img, x + tw / 2, yy + 20); T(c, PRODUCTS[p].name, x + tw / 2, yy + 38, INK, 'center', null);
+    if (PRODUCTS[p].cake) T(c, '蛋糕', x + tw - 4, yy + 3, '#b8483c', 'right', null);
+    button(x, yy, tw, 58, () => { W.showcase = p; SFX.tap(); PANEL = P_.back || null; saveGame(); }); });
+  { const yb = y + Math.ceil(L.length / per) * 64 + 4; T(c, '招牌货放喺前台玻璃柜（由厨房拎）', 180, yb, SUB, 'center', null); T(c, '客人埋单时有机会顺手买一件', 180, yb + 16, SUB, 'center', null); }
 }
 function drawPlaceAsk(c, P_) {   // just bought a floor piece: place it now, or leave it at its default spot
   const it = DECOR_ITEMS[P_.id]; c.save(); c.globalAlpha = .5; px(c, 0, 0, 360, 640, '#1c141c'); c.restore(); button(0, 0, 360, 640, () => {});
@@ -404,6 +416,7 @@ function drawPanels(c) {
   else if (PANEL.kind === 'perk') drawPerkPanel(c, PANEL);
   else if (PANEL.kind === 'sup') drawSupPanel(c);
   else if (PANEL.kind === 'placeask') drawPlaceAsk(c, PANEL);
+  else if (PANEL.kind === 'showcase') drawShowcasePick(c, PANEL);
   else if (PANEL.kind === 'book') drawBookPanel(c);
   else if (PANEL.kind === 'plan') drawPlanPanel(c);
 }

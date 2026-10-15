@@ -6,6 +6,7 @@ render(CTX);
 const start = BTNS.find(b => b.y === 414 && b.x === 70); ok(start, 'title offers 女店主 / 男店主'); tap(start.x + 5, start.y + 5);
 ok(W.hero === 'f', 'owner picked'); frame(2); ok(DIALOG && DIALOG.key === 'intro' && DIALOG.lines.some(l => l[0] === 'kun'), 'opening scene plays'); const skip = BTNS.find(b => b.x === 292); tap(skip.x + 5, skip.y + 5); ok(!DIALOG, 'skip closes the scene');
 ok(PHASE === 'prep' && W.day === 1, 'start -> day 1 prep');
+ok(tourOn() && W.tour === 0, 'first-day tour shows after the opening talk'); for (let i = 0; i < TOUR.length; i++) tap(180, 200); ok(!tourOn() && W.tour === TOUR.length, 'tapping through the tour ends it');
 ok(HINT && HINT.shelf === 'T4', 'tutorial points at T4');
 openPanel({ kind: 'shelf', id: 'T4', sel: 0 }); ok(W.tut === 1, 'opening T4 advances the tutorial');
 render(CTX); { const t = BTNS.filter(b => b.w === 104 && b.h === 76)[0]; tap(t.x + 5, t.y + 5); } ok(W.shelves.T4.layers[0].p === 'tart', 'tap tart tile -> upper = tart');
@@ -113,3 +114,7 @@ ok(HIRE.temp.name && STAFF_HD.temp, "today's part-timer: " + HIRE.temp.name); { 
   const fk = GUEST_DEF[0].name; W.fans = {}; W.gifted = {}; for (let i = 0; i < GIFT_AT; i++) fanOf(0, 5); ok(W.gifted[fk], 'a happy regular kind brings a gift'); STORY_Q.length = 0; DIALOG = null;
   ok(POST_MAX.bake === 2, 'two people can work the bake post');
   ok(TEMP_TALK['米米'] && TEMP_TALK['退休浩叔'], 'every part-timer has their own joining scene'); }
+// signature showcase + Hong Kong cakes
+{ ok(PRODUCTS.papercake && PRODUCTS.swissroll && PRODUCTS.mangopancake && RECIPES.papercake && FLOWS.swissroll, 'three Hong Kong cakes with recipes and steps');
+  W.known.papercake = true; W.showcase = 'papercake'; W.stock.papercake = 0; const w0 = wantOf('papercake'); W.stock.papercake = 6; ok(wantOf('papercake') > w0, 'a stocked signature item sells to more people');
+  ok(showcaseOk('papercake') && showcaseOk('tart') && !showcaseOk('tea'), 'cakes and bakes can go in the case, drinks cannot'); W.showcase = 'tart'; }

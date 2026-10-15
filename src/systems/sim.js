@@ -139,7 +139,7 @@ const queueLen = () => CUST.filter(c => c.s > DIST[PAY - 1] - 40 && c.s <= DIST[
 const ordered = p => ORDERS.filter(o => o.p === p).length;
 const takeOpen = () => !!(TAKEAWAY && TAKEAWAY.open);
 // how many pieces of p the kitchen should keep on hand beyond the shelves: dine-in orders + a takeaway reserve
-const reserve = p => ordered(p) + (takeOpen() && PRODUCTS[p].where === 'table' && W.plan[p] !== 'off' ? (W.plan[p] === 'pri' ? 8 : 4) : 0) + (WAITER && W.plan[p] !== 'off' && PRODUCTS[p].where === 'fridge' ? 3 : 0);
+const reserve = p => ordered(p) + (W.showcase === p ? 6 : 0) + (takeOpen() && PRODUCTS[p].where === 'table' && W.plan[p] !== 'off' ? (W.plan[p] === 'pri' ? 8 : 4) : 0) + (WAITER && W.plan[p] !== 'off' && PRODUCTS[p].where === 'fridge' ? 3 : 0);
 
 // ---------------------------------------------------------------- spawning
 function spawnRate() {
@@ -211,6 +211,8 @@ function checkoutTime(c, packer) { const n = Object.values(c.got).reduce((a, b) 
 function comboBonus(got) { let b = 0; for (const k of COMBOS) if (got[k.a] && got[k.b]) { b += k.bonus * Math.min(got[k.a], got[k.b]) * (promoOn('combo') ? 2 : 1); W.today.combos++; } return b; }
 function earn(amt, x, y, text) { W.money += amt; W.today.revenue += amt; W.pts = (W.pts || 0) + 1; W.today.pts = (W.today.pts || 0) + 1; /* every sale is also a point */ POPS.push({ x, y, t: 0, text: text || '+$' + amt }); SFX.coin(); }
 function finishPay(c) {
+  { const sp = W.showcase, [im, bud] = wealthOf(c.ci); if (sp && unlocked(sp) && W.stock[sp] - ordered(sp) > 0 && priceOf(sp) <= im && rng() < .2 && Object.keys(c.got).reduce((a, q) => a + c.got[q] * priceOf(q), 0) + priceOf(sp) <= bud) {   // eyes the signature case at the till and takes one
+    W.stock[sp]--; c.got[sp] = (c.got[sp] || 0) + 1; W.today.showcase = (W.today.showcase || 0) + 1; if (rng() < .5) say(c, '再要件' + PRODUCTS[sp].name + '！', false); } }
   let amt = 0; for (const p in c.got) { amt += c.got[p] * priceOf(p); W.today.sold[p] += c.got[p]; }
   const bonus = comboBonus(c.got); amt += bonus;
   c.paid = true; c.spent = amt; W.today.served++; dirtAdd(.45);   // crumbs, a dropped napkin

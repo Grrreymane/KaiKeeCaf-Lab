@@ -316,7 +316,12 @@ function drawBackground(c) {
 
 // ============================================================ 店里和街上的东西
 const STATICS = [], STAFF = [], TABLES = {}, FURN = [], BOOTHS = [], STOOLS = [76, 100, 124, 148], NEXT_FRONT = [], NEXT_HIDE = [];
-let WINBAR = null, TAKEAWAY = null;
+let WINBAR = null, TAKEAWAY = null, SHOWCASE = null;
+function drawShowcase(c) {   // lower shelf + upper shelf, up to 10 pieces of the day's signature item; a small 招牌 card when it's set
+  if (!W || !W.showcase || !PRODUCTS[W.showcase] || !unlocked(W.showcase)) return;
+  const p = W.showcase, n = Math.min(10, Math.max(0, (W.stock[p] || 0) - ordered(p))), img = PRODUCTS[p].img;
+  for (let i = 0; i < n; i++) putB(c, img, P(i < 5 ? 108 + i * 19.5 : 110 + (i - 5) * 19.5, i < 5 ? 41 : 39, i < 5 ? 21 : 35));
+}
 // 木纹：正面（y = yF）上弯弯的深色纹 + 每 step 一道板缝
 function woodGrain(g, Q, xa, xb, z0, z1, yF, step) {
   for (let x = xa; x < xb; x += .5) for (let z = z0; z < z1; z += .5) {
@@ -400,9 +405,10 @@ function buildStatics() {
       bx(g, Q, 96, 30, 0, 104, 16, 18, C.cabL, C.cab, C.cabD);
       bx(g, Q, 96, 30, 18, 104, 16, 3, '#d99a5c', '#b8743c', '#93582c');
     } },
-    { d: (c, Q) => { for (let i = 0; i < 5; i++) putB(c, FOOD_L.tart, Q(108 + i * 19.5, 41, 21)); } },
     { g: (g, Q) => bx(g, Q, 96, 30, 34, 104, 16, 1, '#dff6f8', '#bfe6ea', '#a9dbe0'), plain: true, alpha: .75 },
-    { d: (c, Q) => { for (let i = 0; i < 5; i++) putB(c, FOOD_L.pudding, Q(110 + i * 19.5, 39, 35)); } },
+  ]));
+  SHOWCASE = STATICS[STATICS.length - 1]; SHOWCASE.after = drawShowcase;   // the case's two glass shelves: the day's signature item, from the kitchen
+  add(makeObj(P, { x0: 96, x1: 200, y0: 30, y1: 46.5 }, 52, [
     { g: (g, Q) => { g.quad(Q(96, 46, 21), Q(200, 46, 21), Q(200, 46, 50), Q(96, 46, 50), '#c9f0f2'); g.quad(Q(200, 30, 21), Q(200, 46, 21), Q(200, 46, 50), Q(200, 30, 50), '#a9dde3'); g.quad(Q(96, 30, 50), Q(200, 30, 50), Q(200, 46, 50), Q(96, 46, 50), '#e2fafb'); }, plain: true, alpha: .28 },
     { g: (g, Q) => { for (const t of [112, 160]) { g.quad(Q(t, 46, 22), Q(t + 9, 46, 22), Q(t + 19, 46, 49), Q(t + 10, 46, 49), '#ffffff'); g.quad(Q(t + 13, 46, 22), Q(t + 15, 46, 22), Q(t + 25, 46, 49), Q(t + 23, 46, 49), '#ffffff'); } }, plain: true, alpha: .22 },
     { g: (g, Q) => { g.seg(Q(96, 46, 50), Q(200, 46, 50), '#ffffff'); g.seg(Q(200, 46, 21), Q(200, 46, 50), '#ffffff'); g.seg(Q(200, 30, 50), Q(200, 46, 50), '#ffffff'); g.seg(Q(96, 30, 50), Q(200, 30, 50), '#ffffff'); g.seg(Q(96, 46, 21), Q(96, 46, 50), '#ffffff'); for (let t = 110; t < 196; t += 34) { g.seg(Q(t, 46, 26), Q(t + 8, 46, 44), '#ffffff'); g.seg(Q(t + 3, 46, 26), Q(t + 11, 46, 44), '#ffffff'); } }, plain: true, alpha: .7 },

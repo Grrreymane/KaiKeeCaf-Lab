@@ -29,6 +29,9 @@ const RECIPES = {
   eggwaf: { verb: '倒浆入格', fill: '#ffd06a', baked: '#f2a82e', heat: 'oven', vessel: 'tin', need: ['flour', 'egg', 'evap'], tip: '鸡蛋仔一格格，趁热最脆' },
   redice: { verb: '装杯', fill: '#8a2a24', baked: '#a03a2a', heat: 'fridge', vessel: 'cup', top: 'ice', need: ['redbean', 'evap', 'sugar'], tip: '红豆冰：红豆、冰、淡奶，三层分明' },
   smoothie: { verb: '倒入杯', fill: '#ffb52e', baked: '#ffc24a', heat: 'fridge', vessel: 'cup', top: 'mango', need: ['mango', 'milk', 'sugar'], tip: '冰沙要用冻芒果先够绵' },
+  papercake: { verb: '倒入纸杯', fill: '#ffd880', baked: '#e0a440', heat: 'oven', vessel: 'tin', need: ['flour', 'egg', 'sugar'], tip: '纸包蛋糕系戚风底，蛋白要打企' },
+  swissroll: { verb: '倒入烤盘', fill: '#ffd880', baked: '#e8b050', heat: 'oven', vessel: 'tin', need: ['flour', 'egg', 'milk'], tip: '瑞士卷趁暖卷，先唔会裂' },
+  mangopancake: { verb: '包班戟', fill: '#fbf6ec', baked: '#ffffff', heat: 'fridge', vessel: 'disc', need: ['flour', 'mango', 'milk'], tip: '班戟皮要薄，煎到唔使反面' },
   yuen: { verb: '撞奶茶', fill: '#8a5228', baked: '#7a4620', heat: 'fridge', vessel: 'cup', top: 'ice', need: ['tealeaf', 'coffee', 'evap'], tip: '鸳鸯 = 七分奶茶加三分咖啡' },
 };
 // ---------------------------------------------------------------- the real process, recipe by recipe; every step has its own tip
@@ -102,6 +105,29 @@ const FLOWS = {
     { type: 'add', ks: ['sugar'], tip: '糖要趁热落先溶' },
     { type: 'fill', tip: '先落冰再倒茶' },
     { type: 'oven', tip: '冻柠茶一定要够冻' },
+  ],
+  papercake: [
+    { type: 'add', ks: ['egg', 'sugar'], tip: '蛋白蛋黄分开，蛋白加糖打到企身' },
+    { type: 'mix', tip: '打到提起打蛋器有个尖角' },
+    { type: 'weigh', k: 'flour', g: 120, tip: '低筋面粉，过筛先唔会起粒' },
+    { type: 'sift', tip: '分三次拌入，手势要轻' },
+    { type: 'fill', tip: '倒入纸杯八成满，留位发起' },
+    { type: 'oven', tip: '焗二十五分钟，出炉即刻倒转放凉' },
+  ],
+  swissroll: [
+    { type: 'add', ks: ['egg', 'milk'], tip: '蛋同牛奶先拌匀' },
+    { type: 'weigh', k: 'flour', g: 100, tip: '面粉少啲，蛋糕先卷得起' },
+    { type: 'mix', tip: '拌到冇粉粒，唔好打出筋' },
+    { type: 'fill', tip: '倒入大烤盘，刮平' },
+    { type: 'oven', tip: '焗十二分钟，趁暖抹忌廉卷起' },
+  ],
+  mangopancake: [
+    { type: 'add', ks: ['flour', 'milk'], tip: '班戟浆：面粉加牛奶，要好稀' },
+    { type: 'mix', tip: '拌到冇粒，过筛一次' },
+    { type: 'stove', label: '煎班戟皮', col: '#fbf6ec', tip: '细火，一面熟就得，唔使反' },
+    { type: 'dice', tip: '芒果切大粒' },
+    { type: 'fill', tip: '放忌廉同芒果，四边摺埋' },
+    { type: 'oven', tip: '雪一个钟，皮先定型' },
   ],
   malai: [
     { type: 'add', ks: ['egg', 'sugar'], tip: '鸡蛋要室温，打起先快' },

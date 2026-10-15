@@ -134,6 +134,37 @@ function drawHUD(c) {
   }
 }
 // 研发 button, top right under the board: grey with a lock during the day, gold after closing (on the books screen)
+// ---------------------------------------------------------------- first-day tour: the screen dims, one thing at a time is lit,
+// a bouncing arrow points at it with a line of text. Tap to go on; 跳过 ends it. Runs once, on a new game, after the opening talk.
+const TOUR = [
+  { text: '欢迎嚟到街记冰室！跟住箭咀，睇下点开始。' },
+  { text: '① 点亮着嘅货架，摆上点心', rect: () => { const o = SHELF.T4 && SHELF.T4.obj; return o ? [(o.sx - camX) / K + 6, o.sy / K + 6, o.cv.width / K - 12, o.cv.height / K - 16] : [120, 260, 120, 60]; } },
+  { text: '② 原料唔够，就嚟「进货」', rect: () => [5 + 59, BAR_Y + 6, 55, 44] },
+  { text: '③「员工」：请人、派岗位、定今日主打', rect: () => [5 + 2 * 59, BAR_Y + 6, 55, 44] },
+  { text: '④「装修」：买摆设、扩建，店靓客多', rect: () => [5 + 3 * 59, BAR_Y + 6, 55, 44] },
+  { text: '⑤ 准备好，就撳「开门营业」', rect: () => [250, 544, 100, 32] },
+  { text: '⑥ 收工后喺呢度研发新品', rect: () => [296, 40, 58, 24] },
+];
+const tourOn = () => W && W.tour !== undefined && W.tour < TOUR.length && PHASE === 'prep' && MODE === 'play' && !DIALOG && !STORY_Q.length && !PANEL && !DESK;
+function drawTour(c) {
+  const st = TOUR[W.tour], r = st.rect ? st.rect() : null, t = gtime, next = () => { W.tour++; SFX.tap(); if (W.tour >= TOUR.length) saveGame(); };
+  c.save(); c.globalAlpha = .55; c.fillStyle = '#1c141c';
+  if (r) { const [x, y, w, h] = r; c.fillRect(0, 0, 360, y); c.fillRect(0, y + h, 360, 640 - y - h); c.fillRect(0, y, x, h); c.fillRect(x + w, y, 360 - x - w, h); } else c.fillRect(0, 0, 360, 640);
+  c.restore();
+  button(0, 0, 360, 640, next);
+  let cy = 280;
+  if (r) {
+    const [x, y, w, h] = r, a = Math.sin(t * 5) > 0 ? 1 : 0, glow = Math.sin(t * 4) > -.3 ? C.gold : '#fff4dc';
+    px(c, x - 2, y - 2, w + 4, 2, glow); px(c, x - 2, y + h, w + 4, 2, glow); px(c, x - 2, y, 2, h, glow); px(c, x + w, y, 2, h, glow);
+    const ax = R(x + w / 2), down = y > 320, bounce = R(Math.abs(Math.sin(t * 4)) * 6);   // the arrow: above the target pointing down, or below pointing up
+    if (down) { const ty = y - 8 - bounce; px(c, ax - 4, ty - 26, 8, 16, OUT); px(c, ax - 3, ty - 25, 6, 15, C.gold); for (let i = 0; i < 9; i++) { px(c, ax - 9 + i, ty - 11 + i, 18 - 2 * i, 1, i ? C.gold : OUT); px(c, ax - 10 + i, ty - 11 + i, 1, 1, OUT); px(c, ax + 9 - i, ty - 11 + i, 1, 1, OUT); } cy = ty - 80; }
+    else { const ty = y + h + 8 + bounce; for (let i = 0; i < 9; i++) { px(c, ax - i, ty + i, 2 * i, 1, C.gold); px(c, ax - i - 1, ty + i, 1, 1, OUT); px(c, ax + i, ty + i, 1, 1, OUT); } px(c, ax - 4, ty + 9, 8, 16, OUT); px(c, ax - 3, ty + 9, 6, 15, C.gold); cy = ty + 34; }
+  }
+  cy = clamp(cy, 70, 470);
+  card(c, 30, cy, 300, 58, PAPER); T(c, st.text, 180, cy + 10, INK, 'center', null);
+  T(c, (W.tour + 1) + '/' + TOUR.length + ' · 撳任何地方继续', 180, cy + 34, SUB, 'center', null);
+  btn(c, 270, cy + 64, 60, 22, '跳过', () => { W.tour = TOUR.length; SFX.tap(); saveGame(); }, 'cream');
+}
 function drawDeskButton(c) {
   if (!W || PHASE === 'title') return;
   const on = canResearch(), n = on ? researchable().length : 0, x = 296, y = 40, t = gtime;

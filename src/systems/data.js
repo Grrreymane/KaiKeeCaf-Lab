@@ -17,6 +17,10 @@ const PRODUCTS = {
   yuen: { name: '鸳鸯', price: 18, img: FOOD_L.yuen, bake: 5, where: 'fridge', want: .26, day: 11 },
   // summer cold drinks (v1.21)
   redice: { name: '红豆冰', price: 16, img: FOOD_L.redice, bake: 5, where: 'fridge', want: .3, day: 13 },
+  // Hong Kong bakery cakes (v1.34): baked by Kun / made at the bar, the showcase's best sellers
+  papercake: { name: '纸包蛋糕', price: 12, img: FOOD_L.papercake, bake: 13, where: 'table', want: .28, day: 17, cake: true },
+  swissroll: { name: '瑞士卷', price: 15, img: FOOD_L.swissroll, bake: 16, where: 'table', want: .24, day: 19, cake: true },
+  mangopancake: { name: '芒果班戟', price: 18, img: FOOD_L.mangopancake, bake: 10, where: 'fridge', want: .26, day: 21, cake: true },
   smoothie: { name: '芒果冰沙', price: 20, img: FOOD_L.smoothie, bake: 6, where: 'fridge', want: .26, day: 15 },
 };
 const PIDS = Object.keys(PRODUCTS);
@@ -37,7 +41,7 @@ const bagCost = k => Math.round(INGR[k].cost * BAG_N[k] * .9 * (hasPerk('lin_buy
 const unitCost = p => RECIPE[p].reduce((a, k) => a + bagCost(k) / BAG_N[k], 0) / BATCH;   // ingredient cost of one piece
 const RECIPE = { tart: ['flour', 'butter', 'egg'], bun: ['flour', 'butter', 'sugar'], coco: ['flour', 'butter', 'coconut'], wife: ['flour', 'melon', 'sesame'],
   tea: ['tealeaf', 'evap'], pudding: ['redbean', 'milk', 'egg'], mango: ['mango', 'sago', 'coconutmilk'],
-  cockbun: ['flour', 'butter', 'coconut'], lemontea: ['tealeaf', 'lemon', 'sugar'], malai: ['flour', 'egg', 'sugar'], dpn: ['milk', 'egg', 'sugar'], eggwaf: ['flour', 'egg', 'evap'], yuen: ['tealeaf', 'coffee', 'evap'], redice: ['redbean', 'evap', 'sugar'], smoothie: ['mango', 'milk', 'sugar'] };
+  cockbun: ['flour', 'butter', 'coconut'], lemontea: ['tealeaf', 'lemon', 'sugar'], malai: ['flour', 'egg', 'sugar'], dpn: ['milk', 'egg', 'sugar'], eggwaf: ['flour', 'egg', 'evap'], yuen: ['tealeaf', 'coffee', 'evap'], redice: ['redbean', 'evap', 'sugar'], smoothie: ['mango', 'milk', 'sugar'], papercake: ['flour', 'egg', 'sugar'], swissroll: ['flour', 'egg', 'milk'], mangopancake: ['flour', 'mango', 'milk'] };
 const batchCost = p => RECIPE[p].reduce((a, k) => a + INGR[k].cost, 0);
 const batchesOf = p => Math.min(...RECIPE[p].map(k => W.ing[k] || 0));   // how many batches the pantry allows
 const useIngr = p => { for (const k of RECIPE[p]) { W.ing[k]--; if (W.today && W.today.used) W.today.used[k] = (W.today.used[k] || 0) + 1; } };
@@ -169,8 +173,10 @@ const wealthOf = ci => WEALTH[GUEST_DEF[ci] && GUEST_DEF[ci].name] || [24, 60];
 const wealthStars = ci => { const m = wealthOf(ci)[1]; return m < 25 ? 1 : m < 45 ? 2 : m < 70 ? 3 : m < 100 ? 4 : 5; };
 // gifts: when one kind of customer has been happy here often enough, one of them brings the owner something for the shop
 const GIFT_AT = 8;
+// signature showcase (the glass case on the front counter): one item a day, shown from kitchen stock
+const showcaseOk = p => unlocked(p) && (PRODUCTS[p].where === 'table' || PRODUCTS[p].cake);
 const TAGS = { hurry: { name: '赶时间' }, chill: { name: '坐耐' } };
-const wantOf = p => PRODUCTS[p].want * (seasonOf(W.day).want[p] || 1) * (PRODUCTS[p].where === 'fridge' && hasPerk('wen_sign') ? 1.3 : 1) * (wxOf()[PRODUCTS[p].where] || 1) * promoWant(p);
+const wantOf = p => PRODUCTS[p].want * (seasonOf(W.day).want[p] || 1) * (PRODUCTS[p].where === 'fridge' && hasPerk('wen_sign') ? 1.3 : 1) * (wxOf()[PRODUCTS[p].where] || 1) * promoWant(p) * (W && W.showcase === p && W.stock && W.stock[p] > 0 ? 1.4 : 1);   // the signature showcase item
 const OPEN_LEN = 180, SEASON_DAYS = 12, MONTH_DAYS = 4, PARENTS_DAY = 6;   // business 07:00-19:00 in 3 minutes; spring = 3 months of 4 days
 const SHELF_IDS = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
 const EXTRA_SHELF = { T7: 800 };   // extra display spot bought in 装修: in front of the door (the only free place on the way to the till)
@@ -264,6 +270,7 @@ function beauty() {
   const d = (W && W.decor) || {}; let b = ((WALLS[d.wall] || WALLS.mint).beauty) + ((BOOTH_STYLES[d.booth] || BOOTH_STYLES.green).beauty) + 2 * upLv('music') + (hasPerk('qing_menu') ? 3 : 0);
   for (const id of SHELF_IDS) if (W.shelves[id] && !W.shelves[id].locked) b += SHELF_TIERS[(d.tier || {})[id] || 0].beauty;
   for (const id in DECOR_ITEMS) if (hasItem(id)) b += DECOR_ITEMS[id].beauty;
+  if (W && W.showcase && W.stock && W.stock[W.showcase] > 0) b += 2;   // a full showcase looks good
   return b;
 }
 const SHELF_NO = { T1: 1, T3: 2, T4: 3, T5: 4, T6: 5, T2: 6, T7: 7 };

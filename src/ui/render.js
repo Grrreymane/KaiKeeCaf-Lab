@@ -275,5 +275,6 @@ function render(c) {
   if (PHASE !== 'title') { c.save(); c.translate(-camX / K, 0); drawWorldText(c); c.restore(); }
   drawHUD(c);
   drawPanels(c);
+  if (tourOn()) drawTour(c);   // first-day tour on top of everything
   c.restore();
 }

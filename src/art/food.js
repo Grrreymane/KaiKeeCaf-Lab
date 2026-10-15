@@ -176,5 +176,30 @@ const FOOD_L = (function () {
     for (let y = cy + 2; y < cy + 16; y++) g.set(cx - 7, y, '#ffffff');
     return finish(g);
   }
-  return { redice: redice(), smoothie: smoothie(), mango: mango(), tart: tart(egg), coco: tart(coconut), bun: bun(), wife: wife(), pudding: pudding(), tea: tea(), cockbun: cockbun(), malai: malai(), eggwaf: eggwaf(), dpn: dpn(), lemontea: lemontea(), yuen: yuen() };
+  // 纸包蛋糕：高身金黄蛋糕，包住一圈有摺纹嘅啡色烘焙纸
+  function papercake() {
+    const g = new Grid(28, 30), cx = 14;
+    for (let t = 0; t < 12; t++) g.ell(cx, 25 - t, 9.6 - t * .05, 3.6, (x, y) => ((x + t) % 3 === 0 ? '#b07a3e' : '#d8a868'));   // the pleated paper
+    for (let t = 0; t < 10; t++) g.ell(cx, 13 - t, 9.2 - t * t * .05, 3.6, (x, y) => ramp(['#e0a440', '#f2c060', '#ffd880', '#fff0b0'], lit(x, y, cx - 3, 6, 9, 9)));   // the domed sponge
+    g.ell(cx, 4, 6, 2.4, (x, y) => ramp(['#c8803a', '#e0a050', '#f0b860'], lit(x, y, cx - 2, 3, 6, 2.4))); g.set(cx - 3, 3, '#fff0c8');
+    return finish(g);
+  }
+  // 瑞士卷：一片卷蛋糕，见到奶油螺旋
+  function swissroll() {
+    const g = new Grid(30, 26), cx = 15, cy = 12;
+    g.ell(cx + 2, cy + 3, 11, 9, '#c8803a');   // the side of the slice
+    g.ell(cx, cy, 11, 9, (x, y) => { const d = Math.hypot(x + .5 - cx, (y + .5 - cy) * 1.2), a = Math.atan2(y + .5 - cy, x + .5 - cx); const s = (d + a * 1.6) % 4.2; return d > 10 ? '#c8803a' : s < 1.4 ? '#fff8ec' : ramp(['#f0c060', '#ffd880', '#fff0b0'], lit(x, y, cx - 3, cy - 3, 11, 9)); });
+    g.ell(cx - 4, cy - 4, 2, 1.2, '#ffffff');
+    return finish(g);
+  }
+  // 芒果班戟：白色薄皮包住芒果同忌廉，切口见到黄色
+  function mangopancake() {
+    const g = new Grid(30, 24), cx = 15, cy = 12;
+    g.ell(cx, cy + 3, 13, 7, (x, y) => ramp(['#e6dccb', '#f6efe2', '#ffffff'], lit(x, y, cx - 4, cy, 13, 7)));
+    g.ell(cx, cy - 1, 11, 6.4, (x, y) => ramp(['#efe6d4', '#fbf6ec', '#ffffff'], lit(x, y, cx - 4, cy - 4, 11, 6.4)));
+    g.ell(cx + 6, cy + 4, 4, 3, '#fff8ec'); g.ell(cx + 6, cy + 4, 2.4, 2, '#ffb020'); g.set(cx + 5, cy + 3, '#ffd870');
+    g.ell(cx - 3, cy - 3, 3, 1.4, '#ffffff');
+    return finish(g);
+  }
+  return { papercake: papercake(), swissroll: swissroll(), mangopancake: mangopancake(), redice: redice(), smoothie: smoothie(), mango: mango(), tart: tart(egg), coco: tart(coconut), bun: bun(), wife: wife(), pudding: pudding(), tea: tea(), cockbun: cockbun(), malai: malai(), eggwaf: eggwaf(), dpn: dpn(), lemontea: lemontea(), yuen: yuen() };
 })();

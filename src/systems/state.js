@@ -18,7 +18,7 @@ function newState() {
     },
     plan: Object.fromEntries(PIDS.map(p => [p, 'on'])),   // daily bake plan: 'pri' first, 'on' normal, 'off' don't make
     staff: { wen: { hired: false, post: 'bar' }, shao: { hired: false, post: 'serve' }, qing: { hired: false, post: 'bar' }, yao: { hired: false, post: 'bake' }, temp: { hired: false, post: 'take' } },
-    up: { oven: 0, till: 0, sign: 0, fridge: 0, tea: 0, ac: 0, music: 0, ads: 0 }, furn: {}, seen: {}, known: {}, hero: 'f', aff: {}, storyNext: [], pts: 0, lv: { kun: 1, lin: 1, wen: 1, shao: 1 }, decor: { tier: {}, rot: {}, wall: 'mint', walls: { mint: true }, booth: 'green', booths: { green: true } }, stats: { sold: {}, days: 0 }, ach: {}, perks: {}, priceTier: 1, stockTier: 1, expand: 0, sup: {}, items: {}, itemPos: {}, dirt: 0, fans: {}, gifted: {},
+    up: { oven: 0, till: 0, sign: 0, fridge: 0, tea: 0, ac: 0, music: 0, ads: 0 }, furn: {}, seen: {}, known: {}, hero: 'f', aff: {}, storyNext: [], pts: 0, lv: { kun: 1, lin: 1, wen: 1, shao: 1 }, decor: { tier: {}, rot: {}, wall: 'mint', walls: { mint: true }, booth: 'green', booths: { green: true } }, stats: { sold: {}, days: 0 }, ach: {}, perks: {}, priceTier: 1, stockTier: 1, expand: 0, sup: {}, items: {}, itemPos: {}, dirt: 0, fans: {}, gifted: {}, showcase: 'tart',
     total: { revenue: 0, served: 0, profit: 0 }, today: freshDay(), history: [],
   };
 }
