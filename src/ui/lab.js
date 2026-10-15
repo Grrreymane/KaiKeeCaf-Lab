@@ -32,6 +32,12 @@ const LAB_DECOR = {
   fruit: { name: '鲜果', price: 3, time: 2, good: ['mango', 'lemon', 'coconut'], tag: '鲜' },
   crumb: { name: '饼干碎', price: 1, time: 1, good: ['yuen', 'tea', 'sesame'], tag: '脆口' },
 };
+// what has to be researched (研发) before the Lab can riff on it: the classic first, then the creation
+const LAB_NEED = { base: { tart: 'tart', puff: 'papercake', cheese: 'swissroll', waffle: 'eggwaf', mousse: 'dpn' },
+  flavor: { tea: 'tea', yuen: 'yuen', redbean: 'pudding', mango: 'mango', lemon: 'lemontea', coconut: 'coco', sesame: 'tart' },
+  fill: { sago: 'mango', bean: 'pudding', mangod: 'mango', coco: 'coco' } };
+const labHas = (key, k) => { const p = (LAB_NEED[key] || {})[k]; return !p || unlocked(p); };
+const labReady = r => labHas('base', r.base) && labHas('flavor', r.flavor) && labHas('fill', r.fill);
 const LAB_SLOTS = ['lab1', 'lab2', 'lab3', 'lab4', 'lab5'];
 const LAB_DAY = 3;   // kept for old saves; the Lab is gated by expansion (labUnlocked)
 // rate a combination: stars, price, prep time, and the reasons in a line each
@@ -86,6 +92,7 @@ const labLike = (ci, p) => PRODUCTS[p].lab ? (LAB_FANS[GUEST_DEF[ci] && GUEST_DE
 function labTry(P_) {   // into the design desk with the draft in a slot
   const r = P_.r, slot = P_.slot || LAB_SLOTS.find(id => !(W.lab || {})[id]) || LAB_SLOTS[0];
   if (W.labDay === W.day) { SFX.deny(); NOTICE = { text: '今天试做过了，明天再来', t: 0 }; return; }
+  if (!labReady(r)) { SFX.deny(); NOTICE = { text: '有材料还没研发过，先去研发', t: 0 }; return; }
   if (labRate(r).warn && !P_.sure) { P_.sure = true; SFX.deny(); NOTICE = { text: '这个搭配有点问题，再按一次照做', t: 0 }; return; }
   LAB_DRAFT = { id: slot, r: { ...r } }; const keep = W.lab && W.lab[slot];
   (W.lab = W.lab || {})[slot] = { ...r }; labDesk(slot, r); applyLab(); if (keep) LAB_DRAFT.old = keep; else delete W.lab[slot];   // the desk needs the recipe card; the slot is only kept once the try succeeds
@@ -101,14 +108,14 @@ function labDone(D) {   // a successful try: keep it in the slot, a tasting with
 function labCancel() { const d = LAB_DRAFT; if (!d) return; LAB_DRAFT = null; if (d.old) { W.lab[d.id] = d.old; applyLab(); } }
 // ---------------------------------------------------------------- the Lab panel
 function drawLabPanel(c, P_) {
-  P_.r = P_.r || { base: 'puff', flavor: 'tea', fill: 'cream', decor: 'none' };
+  P_.r = P_.r || { base: 'tart', flavor: 'tea', fill: 'cream', decor: 'none' };
   const r = P_.r; let y = sheet(c, '港式 Lab · 年轻人至爱', '每日试做一款', 104) - 2;
   const row = (label, set, key) => {   // each line of choices is stretched to the full width (no ragged gaps), a thin rule between groups
     const ks = Object.keys(set), lines = Math.ceil(ks.length / 5), per = Math.ceil(ks.length / lines);
     T(c, label, 14, y + 6, SUB, 'left', null);
     for (let L = 0; L < lines; L++) { const part = ks.slice(L * per, L * per + per), w = (292 - 3 * (part.length - 1)) / part.length;
-      part.forEach((k, i) => { const x = R(54 + i * (w + 3)), on = r[key] === k, bad = key === 'fill' && set[k].bad && set[k].bad.includes(r.base);
-        btn(c, x, y, R(54 + (i + 1) * (w + 3) - 3) - x, 24, set[k].name, () => { r[key] = k; P_.sure = false; if (key === 'base' || key === 'flavor') P_.name = null; SFX.tap(); }, on ? 'gold' : bad ? 'off' : 'cream'); });
+      part.forEach((k, i) => { const x = R(54 + i * (w + 3)), on = r[key] === k, bad = key === 'fill' && set[k].bad && set[k].bad.includes(r.base), has = labHas(key, k);
+        btn(c, x, y, R(54 + (i + 1) * (w + 3) - 3) - x, 24, set[k].name, () => { if (!has) { SFX.deny(); NOTICE = { text: '先研发「' + PRODUCTS[LAB_NEED[key][k]].name + '」才能用' + set[k].name, t: 0 }; return; } r[key] = k; P_.sure = false; if (key === 'base' || key === 'flavor') P_.name = null; SFX.tap(); }, on ? 'gold' : bad || !has ? 'off' : 'cream'); });
       y += 27; }
     y += 3; px(c, 14, y - 3, 332, 1, '#e3d6bc');
   };

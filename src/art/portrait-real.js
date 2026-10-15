@@ -454,9 +454,10 @@ function spriteBustA(id) {
   c.drawImage(spr, 0, top, w, 60, R((200 - w * 4) / 2), 0, w * 4, 240);
   return out;
 }
-function guestBust(ci) {   // a customer's dialogue bust: their shop sprite, upper body at 4x (same as spriteBustA)
-  const k = 'g' + ci; if (BUST_CACHE[k]) return BUST_CACHE[k];
-  const spr = GUEST_HD[ci].SE[0], w = spr.width, h = spr.height, d = spr.getContext('2d').getImageData(0, 0, w, h).data;
+const guestBust = ci => spriteBust(GUEST_HD[ci].SE[0], 'g' + ci);
+function spriteBust(spr, k) {   // anyone's dialogue bust from their shop sprite: upper body at 4x (same as spriteBustA)
+  if (BUST_CACHE[k]) return BUST_CACHE[k];
+  const w = spr.width, h = spr.height, d = spr.getContext('2d').getImageData(0, 0, w, h).data;
   let top = 0; outer: for (; top < h; top++) for (let x = 0; x < w; x++) if (d[(top * w + x) * 4 + 3] > 0) break outer;
   const out = mk(200, 240), c = out.getContext('2d'); c.imageSmoothingEnabled = false;
   c.drawImage(spr, 0, top, w, 60, R((200 - w * 4) / 2), 0, w * 4, 240);

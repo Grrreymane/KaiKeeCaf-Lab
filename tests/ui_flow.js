@@ -122,7 +122,7 @@ ok(HIRE.temp.name && STAFF_HD.temp, "today's part-timer: " + HIRE.temp.name); { 
 { const r = { base: 'puff', flavor: 'tea', fill: 'cream', decor: 'none', name: '奶茶泡芙' }, rate = labRate(r);
   ok(rate.stars >= 4 && rate.price > 10, 'milk-tea cream puff rates well (' + rate.stars + '★ $' + rate.price + ')');
   ok(labRate({ base: 'puff', flavor: 'mango', fill: 'sago', decor: 'none' }).warn, 'sago in a puff is flagged');
-  const ph = PHASE; PHASE = 'prep'; W.expand = Math.max(W.expand || 0, 1); ok(labUnlocked(), 'the Lab opens after expanding'); W.labDay = 0; STORY_Q.length = 0; DIALOG = null;
+  const ph = PHASE; PHASE = 'prep'; W.expand = Math.max(W.expand || 0, 1); ok(labUnlocked(), 'the Lab opens after expanding'); W.labDay = 0; STORY_Q.length = 0; DIALOG = null; ok(!labReady({ base: 'puff', flavor: 'tea', fill: 'cream' }) || W.known.papercake, 'Lab bases need their classic researched'); W.known.papercake = true;
   labTry({ r, slot: 'lab1' }); ok(DESK && DESK.lab && FLOWS.lab1 && FLOWS.lab1.length >= 4, 'Lab try opens the design desk with its own steps');
   DESK.mode = 'done'; closeDesk(); STORY_Q.length = 0; DIALOG = null;
   ok(W.known.lab1 && PRODUCTS.lab1.name === '奶茶泡芙' && TABLE_ALL.includes('lab1') && RECIPE.lab1.includes('tealeaf'), 'the creation becomes a product with a recipe');

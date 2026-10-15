@@ -167,14 +167,21 @@ function morningStory() {   // one scene per morning at most: affection first, o
 
 // ---------------------------------------------------------------- the horizontal dialogue window
 function wrapText(c, s, w) { c.font = fp(12); const out = []; let line = ''; for (const ch of s) { if (c.measureText(line + ch).width > w) { out.push(line); line = ch; } else line += ch; } if (line) out.push(line); return out; }
+function speakerBust(who, D) {   // whoever is talking: staff / suppliers (their bust), the part-timer, mum and dad, a customer (their sprite's upper body)
+  if (who === 'hero') return bust('hero_' + (W.hero || 'f'));
+  if (who && BUSTS[who]) return bust(who);
+  if (who === 'temp' && STAFF_HD.temp) return spriteBust(STAFF_HD.temp.SE[0], 'temp:' + HIRE.temp.name);
+  if (who === 'mum' || who === 'dad') return guestBust(who === 'mum' ? 6 : 7);
+  if ((who === 'cust' || !who) && D.ci != null && GUEST_HD[D.ci]) return guestBust(D.ci);   // a customer's scene: they stay on screen through the narration too
+  return null;
+}
 function drawDialog(c) {
   const D = DIALOG, [who, text] = D.lines[D.i], hero = who === 'hero', id = hero ? 'hero_' + (W.hero || 'f') : who;
   c.save(); c.globalAlpha = .5; px(c, 0, 0, 360, 640, '#1c141c'); c.restore();
   button(0, 0, 360, 640, advanceDialog);
-  if (id && BUSTS[id]) { const b = bust(id), x = hero ? 236 : 14; c.drawImage(b, x, 474 - b.height / 2, b.width / 2, b.height / 2); }
-  else if (!who && D.ci != null && GUEST_HD[D.ci]) { const b = guestBust(D.ci); c.drawImage(b, 14, 474 - b.height / 2, b.width / 2, b.height / 2); }   // a customer's own scene (gift, keepsake): their bust, like the staff   // bust stands on the window
+  { const b = speakerBust(who, D); if (b) c.drawImage(b, hero ? 236 : 14, 474 - b.height / 2, b.width / 2, b.height / 2); }   // a customer's own scene (gift, keepsake): their bust, like the staff   // bust stands on the window
   px(c, 5, 465, 350, 118, OUT); px(c, 6, 466, 348, 116, '#fffaf0'); px(c, 6, 466, 348, 2, '#ffffff'); px(c, 6, 578, 348, 4, '#ead9b8');
-  const name = who ? (hero ? '店主' : who === 'temp' ? HIRE.temp.name : NAMES[who]) : '';
+  const name = who ? (hero ? '店主' : who === 'temp' ? HIRE.temp.name : who === 'cust' ? D.cname || guestKind(D.ci) || '客人' : NAMES[who]) : '';
   if (name) { c.font = sr(14); const w = R(c.measureText(name).width) + 22, x = hero ? 340 - w : 14; px(c, x - 1, 445, w + 2, 22, OUT); px(c, x, 446, w, 20, '#5a3524'); px(c, x, 446, w, 1, '#7a4a32'); TS(c, name, x + w / 2, 448, 14, '#fbe9c0', 'center'); }
   const shown = L(text).slice(0, Math.floor(D.t * 40) + 1);   // typewriter: the whole line in the chosen language first, then typed out
   wrapText(c, shown, 316).slice(0, 4).forEach((l, i) => T(c, l, 22, 480 + i * 22, who ? '#3a2a2e' : '#7a6250', 'left', null));

@@ -5,6 +5,7 @@
 const BUSTS = {
   yao: {},
   qing: {},   // dialogue bust = the shop sprite (spriteBustA)
+  rong: {}, hui: {}, cheng: {},   // 荣叔 (材料店), 惠姐, 阿澄 (suppliers): same
   kun: { skin: '#e9b48a', hair: '#e9e7e2', hairD: '#c9c6bf', hs: 'crop', brow: '#8f8a83', eyeStyle: 'soft', eyeR: .7, browFine: true, browT: 4, browTilt: 3, mouthDy: -3, eye: 'small', mouth: 'stern', top: '#c9ad7f', collar: '#dcc49a', apron: '#efe8d8', stain: '#d6c9a8', arms: 'crossed', old: true, jaw: 'square' },
   lin: { skin: '#f6d0ae', hair: '#3a2630', hs: 'bun', clip: '#d9372a', brow: '#4a3038', eyeStyle: 'soft', eyeX: 21, browFine: true, browArch: 2.5, blushStyle: 'grad', mouthDy: -5, eye: 'big', lash: true, mouth: 'smile', blush: true, top: '#e47b97', floral: '#ffd3dd', apron: '#3f8f74', arms: 'clasp' },
   wen: { skin: '#f6d0ae', hair: '#2a2024', hs: 'pony', tie: '#3f86d6', brow: '#3a2a2e', eyeStyle: 'soft', eyeR: .88, eyeX: 21, browFine: true, browArch: 0, blushStyle: 'grad', mouthDy: -4, eye: 'big', lash: true, mouth: 'lips', lips: '#c8546a', blush: true, top: '#f2f2ee', collar: '#ffffff', apron: '#3f8f74', arms: 'down', roll: true },

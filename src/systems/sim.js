@@ -73,9 +73,9 @@ function shelfCaps(id) { const t = (W.decor.tier || {})[id] || 0, base = isFridg
 let BG_WALL = 'mint', BOOTH_DONE = 'green';
 function applyDecor() {   // after loading / buying: wallpaper, booth style, shelf tiers + facing, plant facing
   const d = W.decor;
-  const bgKey = d.wall + ':' + expandLv() + ':' + upLv('ac') + ':' + Object.keys(DECOR_ITEMS).filter(id => DECOR_ITEMS[id].cat === 'wall' && hasItem(id)).join() + ':' + PIDS.filter(p => unlocked(p)).map(p => p + priceOf(p)).join();
+  const bgKey = d.wall + ':' + expandLv() + ':' + upLv('ac') + ':' + Object.keys(DECOR_ITEMS).filter(id => DECOR_ITEMS[id].cat === 'wall' && hasItem(id)).join() + ':' + keepList('w').join() + ':' + PIDS.filter(p => unlocked(p)).map(p => p + priceOf(p)).join();
   if (BG && BG_WALL !== bgKey) { drawBackground(BG.getContext('2d')); BG_WALL = bgKey; }
-  applyExpand(); applyExtraShelves(); applyItems();
+  applyExpand(); applyExtraShelves(); applyItems(); applyKeepsakes();
   if (BOOTH_DONE !== d.booth) { restyleBooths(); BOOTH_DONE = d.booth; }
   for (const id of SHELF_IDS) { if (TABLES[id]._key !== ((d.tier[id] || 0) + ':' + (d.rot[id] || 0) + ':' + (isFridge(id) ? 1 : 0))) rebuildShelf(id); shelfCaps(id); }
   for (const id of ['P1', 'P2']) { const g = MOV.find(m => m.id === id), want = !!d.rot[id]; if (g && !!g.objs[0]._flip !== want) { const o = g.objs[0]; o.cv = flipC(o.cv); o._flip = want; o._a = null; } }
@@ -246,7 +246,7 @@ function fanOf(ci, st) {   // happy visits by this kind of customer add up; at G
   const id = pool.length ? pick(pool) : alt.length ? pick(alt) : null, it = id && DECOR_ITEMS[id];
   if (it) { let pos = null; if (it.cat !== 'wall') pos = findItemSpot(); if (it.cat === 'wall' || pos) { (W.items = W.items || {})[id] = true; if (pos) (W.itemPos = W.itemPos || {})[id] = pos; applyDecor(); } }
   else W.money += 100;
-  STORY_Q.push({ key: 'gift', ci, lines: [[null, '一位' + kind + '熟客走到收银台：'], [null, '「常来光顾，你们招呼得很好。这个送给你！」'], [null, it ? '收到「' + it.name + '」' + (it.cat === 'wall' ? '，已经挂好了。' : '，摆在店里了（「摆放」里可以移动）。') : '收到一封红包：$100']] });
+  STORY_Q.push({ key: 'gift', ci, lines: [[null, '一位' + kind + '熟客走到收银台：'], ['cust', '常来光顾，你们招呼得很好。这个送给你！'], [null, it ? '收到「' + it.name + '」' + (it.cat === 'wall' ? '，已经挂好了。' : '，摆在店里了（「摆放」里可以移动）。') : '收到一封红包：$100']] });
   NOTICES.push('熟客送礼：' + (it ? it.name : '利是 $100')); SFX.ding();
 }
 function gripe(k) { W.today.gripes[k] = (W.today.gripes[k] || 0) + 1; LAST_GRIPE = { k, t: 0 }; }

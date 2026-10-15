@@ -287,6 +287,17 @@ function drawBackground(c) {
   if (hasItem('photo')) { wL(262, 298, 64, 96, '#5a3c2a'); wL(264, 296, 66, 94, '#d8c4a0'); for (const y of [270, 279, 288]) { wL(y, y + 5, 76, 84, '#8a6a4a'); wL(y + 1, y + 4, 84, 88, '#6a4a30'); } }
   if (hasItem('banner')) { wL(224, 254, 100, 156, '#b8342c'); wL(226, 252, 102, 150, '#d8402e'); for (let z = 108; z < 146; z += 8) wL(232, 246, z, z + 4, '#ffd23f'); wL(222, 256, 154, 157, '#6b4a35'); }   // 锦旗 from a regular
   if (hasItem('card')) { wL(300, 312, 100, 116, '#f4ead6'); wL(301, 311, 112, 115, '#e88aa0'); for (const z of [104, 107]) wL(302, 310, z, z + 1, '#8a7a6a'); }
+  { const ws = W ? keepList('w') : []; if (ws.length) {   // the regulars' board: a cork board on the left wall, their flat keepsakes pinned on it
+    wL(260, 300, 102, 152, '#6b4a35'); wL(262, 298, 104, 150, '#c49a6a'); for (let y = 264; y < 298; y += 5) wL(y, y + 1, 106 + (y % 3), 107 + (y % 3), '#b08658');
+    ws.slice(0, 12).forEach((k, i) => { const y0 = 264 + (i % 3) * 11, z0 = 140 - Math.floor(i / 3) * 12, [, t, col] = KEEP_ART[k];
+      if (t === 'card' || t === 'postcard') { wL(y0, y0 + 9, z0, z0 + 7, t === 'postcard' ? '#ffffff' : '#f4ead6'); wL(y0 + 1, y0 + 8, z0 + 1, z0 + (t === 'postcard' ? 6 : 3), col); }
+      else if (t === 'sticker' || t === 'badge') { wL(y0 + 2, y0 + 7, z0 + 1, z0 + 7, col); wL(y0 + 1, y0 + 8, z0 + 2, z0 + 6, col); wL(y0 + 4, y0 + 5, z0 + 3, z0 + 5, '#ffffff'); if (t === 'badge') wL(y0 + 3, y0 + 6, z0 - 2, z0 + 1, '#c8342c'); }
+      else if (t === 'ticket') { wL(y0, y0 + 10, z0 + 2, z0 + 6, col); wL(y0 + 7, y0 + 8, z0 + 2, z0 + 6, '#fff4dc'); }
+      else if (t === 'drawing') { wL(y0, y0 + 9, z0, z0 + 8, '#ffffff'); wL(y0 + 2, y0 + 7, z0 + 1, z0 + 4, col); wL(y0 + 3, y0 + 6, z0 + 4, z0 + 6, '#b8483c'); }
+      else if (t === 'photo') { wL(y0, y0 + 10, z0, z0 + 8, col); wL(y0 + 1, y0 + 9, z0 + 1, z0 + 7, '#d8c4a0'); wL(y0 + 3, y0 + 4, z0 + 2, z0 + 5, '#6a4a30'); wL(y0 + 6, y0 + 7, z0 + 2, z0 + 5, '#6a4a30'); }
+      else if (t === 'bag') { wL(y0 + 1, y0 + 9, z0, z0 + 7, col); wL(y0 + 3, y0 + 7, z0 + 7, z0 + 9, '#8a7a6a'); wL(y0 + 3, y0 + 7, z0 + 2, z0 + 5, '#e07ab0'); }
+      wL(y0 + 4, y0 + 5, z0 + 8, z0 + 9, '#d0453a');   // the pin
+    }); } }
   if (hasItem('neon')) { wR(186, 232, 146, 172, '#1f1a24'); for (const z of [148, 170]) wR(188, 230, z, z + 1, '#ff5a9a'); for (const x of [188, 229]) wR(x, x + 1, 148, 171, '#ff5a9a'); wR(196, 222, 158, 160, '#7ff0ff'); wR(205, 207, 151, 167, '#7ff0ff'); }
   if (expandLv()) {   // next door opened up: same floor and wallpaper as the shop, a brass rail and two hanging lamps' worth of trim
     tiles(320, 0, 640, 320, 16, C.floorA, C.floorB);
@@ -589,6 +600,25 @@ function decorObj(id, x, y) {
       for (const [dx, dy, col] of [[-8, -16, '#d82a2a'], [6, -22, '#f0b43a'], [-4, -34, '#3f86d6'], [5, -40, '#d82a2a'], [-2, -50, '#f0b43a'], [9, -12, '#3f86d6']]) g.ell(a + dx, b + dy, 1.6, 1.6, col);
       g.tri(a - 3, b - 74, a + 3, b - 74, a, b - 80, '#ffd23f'); g.tri(a - 3, b - 77, a + 3, b - 77, a, b - 71, '#ffd23f'); }
   } }]);
+}
+let KEEP_OBJ = null, KEEP_KEY = '';
+function applyKeepsakes() {   // the regulars' small keepsakes stand in a row on top of the front glass case
+  const L = keepList('c'), key = L.join(); if (key === KEEP_KEY) return; KEEP_KEY = key;
+  if (KEEP_OBJ) { const k = STATICS.indexOf(KEEP_OBJ); if (k >= 0) STATICS.splice(k, 1); KEEP_OBJ = null; } if (!L.length) return;
+  KEEP_OBJ = makeObj(P, { x0: 96, x1: 200, y0: 30, y1: 46.6 }, 66, [{ g: (g, Q) => { L.slice(0, 11).forEach((k, i) => { const [, t, col] = KEEP_ART[k], [a0, b0] = Q(102 + i * 9, 39, 50), a = R(a0), b = R(b0);
+    if (t === 'flask') { g.rect(a - 2, b - 10, 4, 10, col); g.rect(a - 2, b - 12, 4, 2, '#c9cdd0'); g.rect(a - 1, b - 8, 1, 6, shade(col, 30)); }
+    else if (t === 'coaster') { g.ell(a, b - 1, 4.5, 2, col); g.ell(a, b - 1.5, 3, 1.2, '#f4d0a0'); }
+    else if (t === 'jar') { g.rect(a - 3, b - 8, 6, 8, '#e8f4f0'); g.rect(a - 2, b - 6, 4, 5, col); g.rect(a - 3, b - 10, 6, 2, '#c8342c'); }
+    else if (t === 'flowers') { g.tri(a - 3, b - 6, a + 3, b - 6, a, b, '#f4ead6'); for (const [dx, dy, cc] of [[-2, -9, col], [1, -11, '#ffd23f'], [2, -8, col], [-1, -12, '#f590b0']]) g.ell(a + dx, b + dy, 1.6, 1.6, cc); g.rect(a, b - 7, 1, 3, '#3f8a3a'); }
+    else if (t === 'tin') { g.rect(a - 2, b - 9, 5, 9, col); g.rect(a - 2, b - 6, 5, 2, '#e0b84a'); g.rect(a - 2, b - 10, 5, 1, '#1f4a3a'); }
+    else if (t === 'marble') { g.ell(a, b - 2, 2, 2, col); g.set(a - 1, b - 3, '#ffffff'); }
+    else if (t === 'box') { g.rect(a - 4, b - 5, 8, 5, col); g.rect(a - 1, b - 5, 2, 5, '#c8342c'); g.rect(a - 4, b - 3, 8, 1, '#c8342c'); }
+    else if (t === 'keychain') { g.ell(a, b - 3, 2.5, 2.5, col); g.ell(a, b - 6, 2.2, 2, col); g.set(a - 2, b - 8, col); g.set(a + 2, b - 8, col); g.set(a, b - 3, '#c8342c'); g.rect(a, b - 10, 1, 2, '#c9cdd0'); }
+    else if (t === 'standcard') { g.tri(a - 3, b, a + 3, b, a, b - 7, col); g.rect(a - 1, b - 4, 2, 1, '#e88aa0'); }
+    else if (t === 'pen') { g.rect(a - 3, b - 2, 6, 2, '#6b4a35'); g.seg([a - 1, b - 2], [a + 2, b - 10], col); g.set(a + 2, b - 10, '#e0b84a'); }
+    else if (t === 'veg') { g.ell(a, b - 3, 4, 3, '#c9b38a'); g.ell(a - 1, b - 6, 2, 2.5, col); g.ell(a + 2, b - 7, 1.6, 2.5, '#6ab04a'); }
+  }); } }]);
+  STATICS.push(KEEP_OBJ);
 }
 function applyItems() {   // create the floor pieces the player owns (once), at their saved spot
   for (const id in DECOR_ITEMS) { const it = DECOR_ITEMS[id], gid = 'I_' + id; if (it.cat === 'wall' || !hasItem(id) || MOV.some(m => m.id === gid)) continue;
