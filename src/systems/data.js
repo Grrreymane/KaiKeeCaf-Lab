@@ -21,6 +21,11 @@ const PRODUCTS = {
   papercake: { name: '纸包蛋糕', price: 12, img: FOOD_L.papercake, bake: 13, where: 'table', want: .28, day: 17, cake: true },
   swissroll: { name: '瑞士卷', price: 15, img: FOOD_L.swissroll, bake: 16, where: 'table', want: .24, day: 19, cake: true },
   mangopancake: { name: '芒果班戟', price: 18, img: FOOD_L.mangopancake, bake: 10, where: 'fridge', want: .26, day: 21, cake: true },
+  lab1: { name: 'Lab 1', price: 12, img: FOOD_L.tart, bake: 10, where: 'table', want: .2, day: 999, lab: true },
+  lab2: { name: 'Lab 2', price: 12, img: FOOD_L.tart, bake: 10, where: 'table', want: .2, day: 999, lab: true },
+  lab3: { name: 'Lab 3', price: 12, img: FOOD_L.tart, bake: 10, where: 'table', want: .2, day: 999, lab: true },
+  lab4: { name: 'Lab 4', price: 12, img: FOOD_L.tart, bake: 10, where: 'table', want: .2, day: 999, lab: true },
+  lab5: { name: 'Lab 5', price: 12, img: FOOD_L.tart, bake: 10, where: 'table', want: .2, day: 999, lab: true },
   smoothie: { name: '芒果冰沙', price: 20, img: FOOD_L.smoothie, bake: 6, where: 'fridge', want: .26, day: 15 },
 };
 const PIDS = Object.keys(PRODUCTS);
@@ -37,11 +42,11 @@ const INGR = {
 };
 // sold by the bag (one bag = several batches, 10% cheaper than buying them one by one), so you restock less often
 const BAG_N = { flour: 10, butter: 6, egg: 6, sugar: 10, tealeaf: 8, evap: 6, coconut: 6, melon: 5, sesame: 10, redbean: 6, milk: 6, mango: 4, sago: 8, coconutmilk: 6, lemon: 8, coffee: 8 };
-const bagCost = k => Math.round(INGR[k].cost * BAG_N[k] * .9 * (hasPerk('lin_buyer') ? .9 : 1) * (1 - .02 * (shopLv() - 1)) * supOff(k));
+const bagCost = k => Math.round(INGR[k].cost * BAG_N[k] * .9 * (hasPerk('lin_buyer') ? .9 : 1) * (1 - .02 * (shopLv() - 1)) * supOff(k) * (W && W.today && W.today.rongSale ? .8 : 1));   // 荣叔's sale day: 20% off
 const unitCost = p => RECIPE[p].reduce((a, k) => a + bagCost(k) / BAG_N[k], 0) / BATCH;   // ingredient cost of one piece
 const RECIPE = { tart: ['flour', 'butter', 'egg'], bun: ['flour', 'butter', 'sugar'], coco: ['flour', 'butter', 'coconut'], wife: ['flour', 'melon', 'sesame'],
   tea: ['tealeaf', 'evap'], pudding: ['redbean', 'milk', 'egg'], mango: ['mango', 'sago', 'coconutmilk'],
-  cockbun: ['flour', 'butter', 'coconut'], lemontea: ['tealeaf', 'lemon', 'sugar'], malai: ['flour', 'egg', 'sugar'], dpn: ['milk', 'egg', 'sugar'], eggwaf: ['flour', 'egg', 'evap'], yuen: ['tealeaf', 'coffee', 'evap'], redice: ['redbean', 'evap', 'sugar'], smoothie: ['mango', 'milk', 'sugar'], papercake: ['flour', 'egg', 'sugar'], swissroll: ['flour', 'egg', 'milk'], mangopancake: ['flour', 'mango', 'milk'] };
+  cockbun: ['flour', 'butter', 'coconut'], lemontea: ['tealeaf', 'lemon', 'sugar'], malai: ['flour', 'egg', 'sugar'], dpn: ['milk', 'egg', 'sugar'], eggwaf: ['flour', 'egg', 'evap'], yuen: ['tealeaf', 'coffee', 'evap'], redice: ['redbean', 'evap', 'sugar'], smoothie: ['mango', 'milk', 'sugar'], lab1: ['flour'], lab2: ['flour'], lab3: ['flour'], lab4: ['flour'], lab5: ['flour'], papercake: ['flour', 'egg', 'sugar'], swissroll: ['flour', 'egg', 'milk'], mangopancake: ['flour', 'mango', 'milk'] };
 const batchCost = p => RECIPE[p].reduce((a, k) => a + INGR[k].cost, 0);
 const batchesOf = p => Math.min(...RECIPE[p].map(k => W.ing[k] || 0));   // how many batches the pantry allows
 const useIngr = p => { for (const k of RECIPE[p]) { W.ing[k]--; if (W.today && W.today.used) W.today.used[k] = (W.today.used[k] || 0) + 1; } };
@@ -107,7 +112,7 @@ const hasPerk = id => { if (!W || !W.perks) return false; const k = id.split('_'
 const perkInfo = id => { for (const k in PERKS) for (const lv in PERKS[k]) for (const q of PERKS[k][lv]) if (q[0] === id) return q; return null; };
 const LV_SKILL = { kun: '烘焙', lin: '包装、冲饮', wen: '水吧', shao: '招待、外卖', qing: '冰饮', yao: '烘焙' };
 const lvOf = k => (W.lv && W.lv[k]) || 1;
-const lvSpeed = k => (k === 'temp' ? (HIRE.temp.speed || 1) : k ? 1 - .08 * (lvOf(k) - 1) : 1) * (hasPerk('lin_org') ? .95 : 1) * (k === 'wen' && hasPerk('wen_fast') ? .85 : 1) * (k === 'qing' ? .9 : 1) * (k === 'yao' && hasPerk('yao_fast') ? .85 : 1);   // time multiplier for that person's jobs
+const lvSpeed = k => (k === 'temp' ? (HIRE.temp.speed || 1) : k ? 1 - .08 * (lvOf(k) - 1) : 1) * (hasPerk('lin_org') ? .95 : 1) * (k === 'wen' && hasPerk('wen_fast') ? .85 : 1) * (k === 'qing' ? .9 : 1) * (k === 'yao' && hasPerk('yao_fast') ? .85 : 1) * (k === 'shao' && W.today && W.today.shaoSlowUntil > clockOpen ? 1.4 : 1);   // 阿少 distracted (小剧场)   // time multiplier for that person's jobs
 // four seasons of 12 days, then a new year; each season shifts what people want
 const SEASONS = [
   { name: '春', full: '春天', want: {} },
@@ -174,10 +179,10 @@ const wealthStars = ci => { const m = wealthOf(ci)[1]; return m < 25 ? 1 : m < 4
 // gifts: when one kind of customer has been happy here often enough, one of them brings the owner something for the shop
 const GIFT_AT = 8;
 // signature showcase (the glass case on the front counter): one item a day, shown from kitchen stock
-const showcaseOk = p => unlocked(p) && (PRODUCTS[p].where === 'table' || PRODUCTS[p].cake);
+const showcaseOk = p => unlocked(p) && (PRODUCTS[p].where === 'table' || PRODUCTS[p].cake || PRODUCTS[p].lab);
 const TAGS = { hurry: { name: '赶时间' }, chill: { name: '坐耐' } };
 const wantOf = p => PRODUCTS[p].want * (seasonOf(W.day).want[p] || 1) * (PRODUCTS[p].where === 'fridge' && hasPerk('wen_sign') ? 1.3 : 1) * (wxOf()[PRODUCTS[p].where] || 1) * promoWant(p) * (W && W.showcase === p && W.stock && W.stock[p] > 0 ? 1.4 : 1);   // the signature showcase item
-const OPEN_LEN = 180, SEASON_DAYS = 12, MONTH_DAYS = 4, PARENTS_DAY = 6;   // business 07:00-19:00 in 3 minutes; spring = 3 months of 4 days
+const OPEN_LEN = 180, SEASON_DAYS = 12, MONTH_DAYS = 4, PARENTS_DAY = 6;   // business 09:00-19:00 in 3 minutes; spring = 3 months of 4 days
 const SHELF_IDS = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
 const EXTRA_SHELF = { T7: 800 };   // extra display spot bought in 装修: in front of the door (the only free place on the way to the till)
 // decor shop: better shelves (more per layer + nicer), wallpapers, booth styles. Beauty brings more customers.
@@ -234,7 +239,7 @@ const hasItem = id => !!(W && W.items && W.items[id]);
 const inSeason = it => it.season === undefined || seasonIdx((W && W.day) || 1) === it.season;
 const itemComfort = id => { const it = DECOR_ITEMS[id]; return it.cat === 'season' ? (inSeason(it) ? it.comfort * 2 : Math.floor(it.comfort / 2)) : it.comfort; };
 function comfort() {   // fan 2 → air conditioner 4 / 6 / 8, plus every item
-  if (!W) return 0; let c = upLv('ac') ? 2 + 2 * upLv('ac') : 2;
+  if (!W) return 0; let c = (upLv('ac') ? 2 + 2 * upLv('ac') : 2) + Object.keys(W.keepsakes || {}).length;   // each keepsake from a regular: +1
   for (const id in DECOR_ITEMS) if (hasItem(id)) c += itemComfort(id);
   return c;
 }

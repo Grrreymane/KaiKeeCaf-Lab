@@ -416,7 +416,8 @@ function deskHelp() { const D = DESK; if (!D || D.mode !== 'make') return; D.hel
 function finishRecipe(q) { const D = DESK; D.quality = Math.max(1, q - (D.miss >= 2 ? 1 : 0)); D.mode = 'done'; SFX.ding(); }
 function closeDesk() {
   const D = DESK; DESK = null;
-  if (D && D.mode === 'done') { W.known[D.p] = true; W.rdDay = W.day; W.pts = (W.pts || 0) + 15; notice(PRODUCTS[D.p].name + ' 研发成功！明天可以摆上去'); playScene('rd_' + D.p); saveGame(); }
+  if (D && D.lab) { if (D.mode === 'done') labDone(D); else labCancel(); return; }   // Lab creation (lab.js)
+  if (D && D.mode === 'done') { W.known[D.p] = true; setTimeout(() => applyDecor(), 0); /* the wall menu gets the new item */ W.rdDay = W.day; W.pts = (W.pts || 0) + 15; notice(PRODUCTS[D.p].name + ' 研发成功！明天可以摆上去'); playScene('rd_' + D.p); saveGame(); }
 }
 function deskTap() {   // tap-type steps: knead / cut / pull / dice / press / cover to rest
   const D = DESK; if (!D || D.mode !== 'make') return; const s = curStep(D);
@@ -712,7 +713,7 @@ function drawDesk(c) {
   px(c, 0, 0, 360, 640, '#2f2430'); button(0, 0, 360, 640, () => {});
   px(c, 0, 40, 360, 2, '#1c141c');
   TS(c, '设计台', 12, 10, 16, '#fbe9c0');
-  px(c, 300, 8, 52, 24, OUT); px(c, 301, 9, 50, 22, '#4a3a48'); T(c, '离开', 326, 14, '#fbe9c0', 'center', null); button(296, 4, 60, 32, () => { DESK = null; SFX.tap(); });
+  px(c, 300, 8, 52, 24, OUT); px(c, 301, 9, 50, 22, '#4a3a48'); T(c, '离开', 326, 14, '#fbe9c0', 'center', null); button(296, 4, 60, 32, () => { if (DESK && DESK.lab) labCancel(); DESK = null; SFX.tap(); });
   if (D.mode === 'pick') {
     px(c, 0, 42, 360, 598, '#e9e3d3');
     T(c, '今晚想试做边款？', 180, 70, '#5a3f2e', 'center', null);
@@ -722,7 +723,7 @@ function drawDesk(c) {
   }
   const p = D.p, R0 = RECIPES[p], st = curStep(D) || D.flow[D.flow.length - 1];
   c.save(); c.scale(.5, .5); drawDeskDevice(c); c.restore();
-  TS(c, PRODUCTS[p].name, 80, 10, 16, C.gold);
+  { const nm = PRODUCTS[p].name; TS(c, nm.length > 4 ? nm.slice(0, 4) + '…' : nm, 80, 10, 16, C.gold); }   // long Lab names would run into the step label
   { const n = D.flow.length, si = D.mode === 'done' ? n : D.si;   // the whole process: a dot per step, the current one named
     D.flow.forEach((q, i) => { const x = 150 + i * Math.min(14, 140 / n); px(c, x, 30, 9, 6, i < si ? '#6cb86c' : i === si ? C.gold : '#6a5a68'); });
     T(c, (Math.min(si + 1, n)) + '/' + n + ' ' + stepName(st, R0), 150, 12, C.gold, 'left', null); }
@@ -767,7 +768,7 @@ function drawDesk(c) {
 // achievements that grow with the content: one per product, recipe, regular staff, upgrade, plus lifetime milestones
 (function () {
   const add = a => { if (!ACH.some(b => b.id === a.id)) ACH.push(a); };
-  for (const p of PIDS) add({ id: 'sell_' + p, name: PRODUCTS[p].name + '熟客', desc: '累计卖出 50 个' + PRODUCTS[p].name, test: () => soldTotal(p) >= 50, pts: 20 });
+  for (const p of PIDS.filter(q => !PRODUCTS[q].lab)) add({ id: 'sell_' + p, name: PRODUCTS[p].name + '熟客', desc: '累计卖出 50 个' + PRODUCTS[p].name, test: () => soldTotal(p) >= 50, pts: 20 });
   for (const p of Object.keys(RECIPES)) add({ id: 'rd_' + p, name: '新品：' + PRODUCTS[p].name, desc: '研发成功' + PRODUCTS[p].name, test: () => !!W.known[p], pts: 15 });
   for (const [k, n] of [['kun', '坤伯'], ['lin', '莲姨'], ['wen', '雯姐'], ['shao', '阿少']]) add({ id: 'lv5_' + k, name: n + '满级', desc: n + '升到 5 级', test: () => lvOf(k) >= 5, pts: 40 });
   for (const k of Object.keys(UPGRADES)) add({ id: 'up_' + k, name: UPGRADES[k].lv[2][0], desc: '把' + UPGRADES[k].lv[0][0] + '升到第三级', test: () => upLv(k) >= 3, pts: 30 });

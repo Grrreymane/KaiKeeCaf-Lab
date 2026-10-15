@@ -201,5 +201,20 @@ const FOOD_L = (function () {
     g.ell(cx - 3, cy - 3, 3, 1.4, '#ffffff');
     return finish(g);
   }
-  return { papercake: papercake(), swissroll: swissroll(), mangopancake: mangopancake(), redice: redice(), smoothie: smoothie(), mango: mango(), tart: tart(egg), coco: tart(coconut), bun: bun(), wife: wife(), pudding: pudding(), tea: tea(), cockbun: cockbun(), malai: malai(), eggwaf: eggwaf(), dpn: dpn(), lemontea: lemontea(), yuen: yuen() };
+  const LAB_IMG = new Map();
+  function labImg(base, fc, ic, decor) {   // Lab creations: the base's shape in the flavour colour, the filling showing, the decoration on top
+    const key = [base, fc, ic, decor].join(); if (LAB_IMG.has(key)) return LAB_IMG.get(key);
+    const g = new Grid(32, 28), cx = 16, F = [shade(fc, -30), shade(fc, -12), fc, shade(fc, 20)];
+    if (base === 'puff') { g.ell(cx, 18, 13, 7, (x, y) => ramp(['#c8803a', '#e0a050', '#f2c070', '#ffe0a0'], lit(x, y, cx - 4, 14, 13, 7))); g.ell(cx, 13, 12, 3, (x, y) => ramp(F, lit(x, y, cx - 3, 12, 12, 3))); if (ic) for (const dx of [-7, -2, 4, 8]) g.ell(cx + dx, 13, 1.6, 1.4, ic); g.ell(cx, 8, 11, 5.5, (x, y) => ramp(['#c8803a', '#e0a050', '#f2c070', '#ffe0a0'], lit(x, y, cx - 4, 5, 11, 5.5))); }
+    else if (base === 'tart') { for (let t = 4; t >= 1; t--) g.ell(cx, 15 + t, 14 - t * .3, 6.4, (x, y) => ((x + t) % 3 === 0) ? '#9a4c16' : '#d08030'); g.ell(cx, 15, 14.4, 6.8, (x, y) => ramp(['#c87a2c', '#e8a050', '#ffc870'], lit(x, y, cx - 3, 13, 14, 6.8))); g.ell(cx, 14.6, 12, 5.2, (x, y) => ramp(F, lit(x, y, cx - 3, 13, 12, 5.2))); if (ic) for (const [dx, dy] of [[-5, -1], [2, 1], [6, -2], [-1, 2]]) g.ell(cx + dx, 14.6 + dy, 1.3, 1, ic); }
+    else if (base === 'cheese') { g.tri(4, 22, 28, 22, 28, 8, '#b07040'); for (let y = 8; y < 21; y++) for (let x = 4; x < 28; x++) if ((x - 4) / 24 >= (21 - y) / 13 - .02) g.set(x, y, y < 11 ? F[3] : y > 18 ? '#c88a4a' : ramp(F, -((x - 16) / 14) * .5 - ((y - 14) / 7) * .6)); for (let x = 4; x < 28; x++) g.set(x, 21, '#8a5a30'); if (ic) for (const [x, y] of [[14, 16], [20, 14], [24, 17], [18, 18]]) g.set(x, y, ic); }
+    else if (base === 'waffle') { [[6, 15], [12, 12], [18, 10], [24, 12], [28, 16]].forEach(([x, y]) => { for (let r = 0; r < 2; r++) g.ell(x - 1 + r, y + r * 5, 3.6, 3.2, (xx, yy) => ramp([shade(fc, -10), mixHex(fc, '#ffc44a', .5), mixHex(fc, '#ffe08a', .6)], lit(xx, yy, x - 2, y - 1, 3.6, 3.2))); }); if (ic) for (const [x, y] of [[9, 20], [16, 17], [22, 19]]) g.ell(x, y, 1.4, 1.2, ic); }
+    else { for (let t = 0; t < 16; t++) g.ell(cx, 24 - t, 8.5 - t * .06, 3.2, t < 1 ? '#c9d2d8' : t < 6 ? (ic || shade(fc, -16)) : t < 13 ? F[2] : F[3]); g.ell(cx, 8, 8.4, 3.2, '#e8f4f6'); for (let y = 9; y < 23; y++) { g.set(cx - 8, y, '#ffffff'); } }
+    if (decor === 'icing') for (let x = 6; x < 27; x += 2) g.set(x, (base === 'cheese' ? 9 : base === 'mousse' ? 7 : base === 'puff' ? 5 : 11) + (x % 4 === 0 ? 1 : 0), '#ffffff');
+    if (decor === 'gold') for (const [x, y] of [[12, 5], [17, 4], [21, 7], [9, 8]]) { g.set(x, y, '#ffe06a'); g.set(x + 1, y, '#f0b030'); }
+    if (decor === 'fruit') for (const [x, y, col] of [[11, 4, '#e8402a'], [16, 3, '#ffb020'], [21, 5, '#5ab85a']]) { g.rect(x, y, 3, 3, col); g.set(x, y, '#ffffff'); }
+    if (decor === 'crumb') for (const [x, y] of [[10, 6], [13, 4], [17, 6], [20, 4], [23, 7], [15, 8]]) g.set(x, y, '#a8703e');
+    const cv = finish(g); LAB_IMG.set(key, cv); return cv;
+  }
+  return { labImg, papercake: papercake(), swissroll: swissroll(), mangopancake: mangopancake(), redice: redice(), smoothie: smoothie(), mango: mango(), tart: tart(egg), coco: tart(coconut), bun: bun(), wife: wife(), pudding: pudding(), tea: tea(), cockbun: cockbun(), malai: malai(), eggwaf: eggwaf(), dpn: dpn(), lemontea: lemontea(), yuen: yuen() };
 })();

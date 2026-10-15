@@ -2,7 +2,7 @@
 let PHASE = 'title', clockOpen = 0, LEDGER = null, NOTICES = [], NOTICE = null;
 function startGame(fresh, hero) {
   if (fresh || !loadGame()) { W = newState(); wipeSave(); if (hero) W.hero = hero; playScene('intro'); W.toured = {}; W.tourStep = 0; }   // the day's tour starts once the opening talk is over
-  bindShelves(); initSeats(); applyDecor(); applyFurniture(); RINGS.clear(); MODE = 'play'; camX = LM; PANEL = null; startDay(); saveGame();
+  bindShelves(); initSeats(); applyLab(); applyDecor(); applyFurniture(); RINGS.clear(); MODE = 'play'; camX = LM; PANEL = null; startDay(); saveGame();
 }
 function applyFurniture() {   // saved placement offsets -> objects (relative to where they are now, so nothing stacks)
   for (const g of MOV) { const f = W.furn[g.id] || [0, 0]; if (f[0] !== g.dx || f[1] !== g.dy) moveGroup(g, f[0] - g.dx, f[1] - g.dy); }
@@ -18,13 +18,14 @@ function checkAch() {   // award any achievement that has just come true (once e
 }
 function startDay() {
   setTemp();
-  PHASE = 'prep'; clockOpen = 0; resetRuntime(); W.today = freshDay(); LEDGER = null; NOTICES = []; NOTICE = null;
+  PHASE = 'prep'; clockOpen = 0; prepT = 0; resetRuntime(); W.today = freshDay(); LEDGER = null; NOTICES = []; NOTICE = null;
   if (W.money < 60) { W.money += 200; W.bailout++; notice('家里寄来 $200 周转'); }   // never stuck
   if (W.day > 1 && (W.day - 1) % SEASON_DAYS === 0) notice(seasonOf(W.day).hello || ('新一年开始！第 ' + yearOf(W.day) + ' 年'));   // a new season
   for (const p of PIDS) if (PRODUCTS[p].day === W.day && W.day > 1 && !W.known[p]) notice((PRODUCTS[p].where === 'table' ? '坤伯想试做' : '水吧想试做') + PRODUCTS[p].name + ' → 研发');
   { const L_ = SEASON_WX[seasonIdx(W.day)]; W.today.wx = W.day === 1 ? 'sun' : pick(L_);   // today's weather and the opening forecast
     W.today.fc = forecast(); notice('今日' + wxOf().name + ' · 约 ' + W.today.fc.n + ' 位客 · 好卖' + PRODUCTS[W.today.fc.top[0]].name); }
   morningStory();
+  for (const [ci, d] of GUEST_UNLOCK) if (d === W.day && W.day > 1) notice('新客人：' + guestKind(ci) + '开始来光顾');
   for (const k in HIRE) if (!HIRE[k].temp && HIRE[k].day === W.day && !W.staff[k].hired) notice(HIRE[k].name + '来应征 → 员工里请' + (k === 'wen' || k === 'qing' ? '她' : '他'));
   if (W.day === PARENTS_DAY && !W.seen.parents) notice('今天爸妈说要来探班');
 }
@@ -38,6 +39,8 @@ function syncStaff() {   // after hiring / changing posts: waiter + takeaway win
   WAITERS = postsOf('serve').map((k, i) => WAITERS.find(w => w.k === k) || newWaiter(k, i)); WAITER = WAITERS[0] || null;
   TAKEAWAY.open = !!postOf('take');
 }
+const PREP_LEN = 90; let prepT = 0;   // the morning: 07:00 -> 09:00 in 90 s of shop time (panels pause it); at 9 the shop opens by itself
+function stepPrep(dt) { if (MODE !== 'play' || STORY_Q.length || (W.tut !== undefined && W.tut < 4) || tourOn()) return; prepT += dt; if (prepT >= PREP_LEN) { notice('九点了，自动开门营业'); openShop(); } }
 function openShop() { if (PHASE !== 'prep') return; PHASE = 'open'; clockOpen = 0; spawnT = 1.5; takeT = 5; SFX.open(); if (W.tut === 3) W.tut = 4; }
 function stepDay(dt) {
   if (PHASE === 'open') {
@@ -105,8 +108,8 @@ function adviceFor(k) {
 function nextDay() { startDay(); saveGame(); }
 const isOpenPhase = () => PHASE === 'open' || PHASE === 'closing';
 function clockText() {
-  if (PHASE === 'prep' || PHASE === 'title') return '06:30';
-  const m = 7 * 60 + Math.min(1, clockOpen / OPEN_LEN) * 12 * 60, h = Math.floor(m / 60), mm = Math.floor((m % 60) / 10) * 10;
+  if (PHASE === 'title') return '07:00';
+  const m = PHASE === 'prep' ? 7 * 60 + Math.min(1, prepT / PREP_LEN) * 120 : 9 * 60 + Math.min(1, clockOpen / OPEN_LEN) * 10 * 60, h = Math.floor(m / 60), mm = Math.floor((m % 60) / 10) * 10;
   return String(h).padStart(2, '0') + ':' + String(mm).padStart(2, '0');
 }
 
@@ -203,7 +206,7 @@ function placeNow(id) {   // placement mode with this piece picked out and the v
 }
 function buyExpand() {
   const n = expandLv(), E = EXPAND[n]; if (!E || W.money < E.cost || (E.day && W.day < E.day) || PHASE === 'open' || PHASE === 'closing') { SFX.deny(); if (PHASE === 'open' || PHASE === 'closing') NOTICE = { text: '打烊先扩建', t: 0 }; return false; }
-  W.money -= E.cost; W.today.upCost += E.cost; W.expand = n + 1; applyDecor(); applyFurniture(); SFX.ding(); playScene(n ? 'expand_more' : 'expand'); checkAch(); saveGame(); return true;
+  W.money -= E.cost; W.today.upCost += E.cost; W.expand = n + 1; applyDecor(); applyFurniture(); SFX.ding(); playScene(n ? 'expand_more' : 'expand'); if (!n) notice('隔壁打通了，「港式 Lab」也开了！'); checkAch(); saveGame(); return true;
 }
 function signSupplier(k) {
   const S = SUPPLIERS[k]; if (!S || (W.sup || {})[k] || shopLv() < S.lv || W.money < S.cost) { SFX.deny(); return false; }

@@ -45,7 +45,7 @@ function computeHint() {
     const n = newItem(); if (n) return { text: '新品' + PRODUCTS[n].name + '，摆上去试试', btn: 0, open: true };
     if (W.day >= 2 && W.seen.planDay !== W.day) return { text: '今天主打什么？去员工安排', btn: 3, open: true };
     const e = emptyLayer(); if (e && W.tut >= 4) return { text: '还有空层可以摆', shelf: e, open: true };
-    return { text: W.tut === 3 ? '坤伯会自己烤，准备好就' : '准备好就开门营业', open: true };
+    return { text: W.tut === 3 ? '坤伯会自己烤，准备好就' : '九点自动开门，也可以提前开', open: true };
   }
   if (dirtOf() > 50) return { text: '店里好污糟 · 客人少咗', act: postsOf('clean').length ? '加多个人打扫 →' : '派人打扫 →', btn: 3, warn: true };
   if (queueLen() >= 4) return { text: '排队好长 · 收银忙不过来', act: !W.up.till && W.money >= UPGRADES.till.lv[0][1] ? '账本换收银机 →' : '', btn: !W.up.till && W.money >= UPGRADES.till.lv[0][1] ? 4 : null, warn: true };
@@ -61,9 +61,9 @@ function computeHint() {
 
 function drawInfoStrip(c) {   // one line under the sign: weather, today so far, comfort, reputation
   const D = W.today; if (!D) return; const st = D.stars.length ? D.stars.reduce((a, b) => a + b, 0) / D.stars.length : 0;
-  c.save(); c.globalAlpha = .78; px(c, 0, 48, 290, 15, '#2a1d20'); c.restore();
+  c.save(); c.globalAlpha = .78; px(c, 0, 35, 290, 15, '#2a1d20'); c.restore();
   const parts = [[wxOf().name, '#bfe0ff'], ['客 ' + D.served, '#fff4dc'], [money$(D.revenue), C.gold], ['★' + (st ? st.toFixed(1) : '-'), '#ffd75e'], ['舒适 ' + comfort(), '#9fe0b8'], ['清洁 ' + Math.round(100 - dirtOf()) + '%', dirtOf() > 50 ? '#ff9a8a' : '#c8f0d8'], ['名气 ' + W.rep.toFixed(1), '#f6c0a0']];
-  let x = 6; c.font = fp(12); for (const [t, col] of parts) { T(c, t, x, 49, col, 'left', null); x += R(c.measureText(t).width) + 10; }
+  let x = 6; c.font = fp(12); for (const [t, col] of parts) { T(c, t, x, 36, col, 'left', null); x += R(c.measureText(t).width) + 10; }
 }
 function drawHUD(c) {
   const t = gtime;
@@ -82,11 +82,10 @@ function drawHUD(c) {
     for (let k = 1; k <= 3; k++) px(c, R(cx + Math.cos(ha) * k), R(cy + Math.sin(ha) * k), 1, 1, '#3a2a2e'); for (let k = 1; k <= 4; k++) px(c, R(cx + Math.cos(ma) * k), R(cy + Math.sin(ma) * k), 1, 1, '#b8342c'); px(c, cx, cy, 1, 1, '#3a2a2e'); }
   T(c, clockText(), 108, 11);
   // tear-off calendar hanging from the board
-  px(c, 159, 3, 42, 41, OUT); px(c, 160, 4, 40, 39, '#fbf3e0'); px(c, 160, 4, 40, 11, '#b8483c'); px(c, 160, 42, 40, 1, '#e3d6bc'); px(c, 161, 44, 38, 2, '#e9dcc0');
-  for (const x of [163, 195]) { px(c, x, 0, 2, 6, '#c9c4b8'); px(c, x, 0, 2, 1, '#ffffff'); }
+  px(c, 159, 1, 42, 32, OUT); px(c, 160, 2, 40, 30, '#fbf3e0'); px(c, 160, 2, 40, 11, '#b8483c'); px(c, 160, 31, 40, 1, '#e3d6bc');   // tear-off calendar, sitting inside the sign board
   const day = W ? (PHASE === 'ledger' && LEDGER ? LEDGER.day : W.day) : 1;
-  T(c, monthOf(day) + '月', 180, 5, '#fff4dc', 'center', null); T(c, seasonOf(day).name, 150, 11, C.cream, 'center');
-  TS(c, String(dayInMonth(day)), 180, 16, 20, '#3a2a2e', 'center');
+  T(c, monthOf(day) + '月', 180, 2, '#fff4dc', 'center', null); T(c, seasonOf(day).name, 150, 11, C.cream, 'center');
+  TS(c, String(dayInMonth(day)), 180, 14, 16, '#3a2a2e', 'center');
   // pause / sound
   for (const x of [300, 326]) { px(c, x - 1, 7, 22, 20, OUT); px(c, x, 8, 20, 18, '#f3e2bf'); px(c, x, 24, 20, 2, '#d9c49a'); }
   px(c, 306, 12, 3, 10, '#5a3a28'); px(c, 311, 12, 3, 10, '#5a3a28');
@@ -115,6 +114,7 @@ function drawHUD(c) {
     if (H.btn != null) button(10, 548, H.open ? 236 : 338, 26, () => clickBar(H.btn));
   }
   if (MODE === 'play') drawDeskButton(c);
+  if (MODE === 'play') drawEpisodeBar(c);
   // bottom bar: dark green strip, five cream tiles
   px(c, 0, BAR_Y, 360, 640 - BAR_Y, '#2f4a3e'); px(c, 0, BAR_Y, 360, 2, '#4f7a64'); px(c, 0, BAR_Y + 2, 360, 1, '#1e3028');
   [0, 1, 3, 6, 4, 5].forEach((i, j) => {   // 研发 (2) is not on the bar (its own button, top right); 6 = 装修 shop
@@ -158,9 +158,10 @@ const TOUR_DAYS = {
   10: [{ text: '有钱了可以扩建：装修 → 扩建，打通隔壁', rect: () => barRect(3) }],
   13: [{ text: '天气和季节会改变客人想买的东西，看这一栏', rect: () => [0, 48, 290, 15] },
        { text: '暑假有学生来打工，可以一次签 6 天', rect: () => barRect(2) }],
+  lab: [{ text: '扩建后开了「港式 Lab」：自己配搭创意新品，年轻客人最爱', rect: () => [296, 68, 58, 18] }],
   dirt: [{ text: '店里脏了客人会变少：员工里派人「打扫」，或买垃圾桶', rect: () => [0, 48, 290, 15] }],
 };
-const tourKey = () => { if (!W) return null; W.toured = W.toured || {}; if (TOUR_DAYS[W.day] && !W.toured[W.day]) return W.day; if (!W.toured.dirt && dirtOf() > 25) return 'dirt'; return null; };
+const tourKey = () => { if (!W) return null; W.toured = W.toured || {}; if (TOUR_DAYS[W.day] && !W.toured[W.day]) return W.day; if (!W.toured.lab && labUnlocked()) return 'lab'; if (!W.toured.dirt && dirtOf() > 25) return 'dirt'; return null; };
 const tourOn = () => W && !W.tourOff && PHASE === 'prep' && MODE === 'play' && !DIALOG && !STORY_Q.length && !PANEL && !DESK && tourKey() !== null;
 function drawTour(c) {
   const key = tourKey(), steps = TOUR_DAYS[key], i = Math.min(W.tourStep || 0, steps.length - 1), st = steps[i], t = gtime;
@@ -186,6 +187,13 @@ function drawTour(c) {
   btn(c, 200, cy + 64, 60, 22, '跳过', () => { SFX.tap(); done(); }, 'cream');
   btn(c, 266, cy + 64, 74, 22, '不再提示', () => { SFX.tap(); W.tourOff = true; saveGame(); }, 'cream');
 }
+function drawEpisodeBar(c) {   // 小剧场 invitation at the top: 看 to watch (the shop pauses while reading), or let it pass
+  const B = EP_BANNER; if (!B || PANEL || DIALOG || DESK) return;
+  const y = 54, pulse = Math.sin(gtime * 4) > -.2;
+  px(c, 8, y - 1, 280, 30, pulse ? C.gold : OUT); px(c, 9, y, 278, 28, '#fff3d6');
+  T(c, '小剧场 · 店里好像有事发生', 18, y + 8, '#b8483c', 'left', null);
+  btn(c, 200, y + 4, 44, 20, '看', () => { SFX.tap(); playEpisode(B.ep); }, 'gold'); btn(c, 248, y + 4, 34, 20, '×', () => { EP_BANNER = null; SFX.tap(); }, 'cream');
+}
 function drawDeskButton(c) {
   if (!W || PHASE === 'title') return;
   const on = canResearch(), n = on ? researchable().length : 0, x = 296, y = 40, t = gtime;
@@ -194,6 +202,9 @@ function drawDeskButton(c) {
   T(c, '研发', x + 39, y + 5, on ? '#5a3f2e' : '#d8d0c4', 'center', null);
   if (on && n) { px(c, x + 51, y - 3, 8, 8, '#e5412f'); px(c, x + 52, y - 2, 2, 2, '#ff9a8a'); }
   button(x - 2, y - 2, 62, 28, () => clickBar(2));
+  if (labUnlocked()) { const ly = y + 28, on2 = labOpen(), fresh = on2 && W.labDay !== W.day;   // 港式 Lab, under 研发
+    px(c, x - 1, ly - 1, 60, 20, fresh && Math.sin(t * 3) > -.3 ? C.gold : OUT); px(c, x, ly, 58, 18, on2 ? '#d8f0e0' : '#8a8078'); T(c, '港式 Lab', x + 29, ly + 3, on2 ? '#2f6e56' : '#d8d0c4', 'center', null);
+    button(x - 2, ly - 2, 62, 22, () => { if (labOpen()) { PANEL = { kind: 'lab', bar: 2 }; SFX.tap(); } else { SFX.deny(); NOTICE = { text: '收工后或开门前才能进 Lab', t: 0 }; } }); }
 }
 function clickBar(i) {
   SFX.tap();

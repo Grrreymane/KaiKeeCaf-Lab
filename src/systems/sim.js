@@ -73,7 +73,7 @@ function shelfCaps(id) { const t = (W.decor.tier || {})[id] || 0, base = isFridg
 let BG_WALL = 'mint', BOOTH_DONE = 'green';
 function applyDecor() {   // after loading / buying: wallpaper, booth style, shelf tiers + facing, plant facing
   const d = W.decor;
-  const bgKey = d.wall + ':' + expandLv() + ':' + upLv('ac') + ':' + Object.keys(DECOR_ITEMS).filter(id => DECOR_ITEMS[id].cat === 'wall' && hasItem(id)).join();
+  const bgKey = d.wall + ':' + expandLv() + ':' + upLv('ac') + ':' + Object.keys(DECOR_ITEMS).filter(id => DECOR_ITEMS[id].cat === 'wall' && hasItem(id)).join() + ':' + PIDS.filter(p => unlocked(p)).map(p => p + priceOf(p)).join();
   if (BG && BG_WALL !== bgKey) { drawBackground(BG.getContext('2d')); BG_WALL = bgKey; }
   applyExpand(); applyExtraShelves(); applyItems();
   if (BOOTH_DONE !== d.booth) { restyleBooths(); BOOTH_DONE = d.booth; }
@@ -147,7 +147,7 @@ function spawnRate() {
   const curve = .55 + .9 * g(.12, .06) + 1.0 * g(.45, .07) + .7 * g(.7, .06);   // breakfast, lunch, afternoon tea
   return .3 * curve * (.6 + W.rep * .12) * (W.day === 1 ? .85 : 1) * [1, 1.2, 1.3, 1.4][upLv('sign')] * (1 + .05 * upLv('ads')) * (hasPerk('shao_lure') ? 1.08 : 1) * (1 + beauty() * .015) * (beautyLv() >= 2 ? 1.05 : 1) * (beautyLv() >= 3 ? 1.1 : 1) * wxOf().rate * priceTier().rate * (hasPerk('qing_student') ? 1.06 : 1) * (1 + comfort() * .01) * (1 + .03 * festive()) * dirtSlow();   // comfort brings people in; festive pieces in season too   // a nicer shop draws more people; weather, prices
 }
-function freshLook() { const used = new Set([...CUST, ...DINERS].map(c => c.ci)), free = CUST_POOL.filter(i => !used.has(i)); return pick(free.length ? free : CUST_POOL); }
+function freshLook() { const pool = guestPool(), used = new Set([...CUST, ...DINERS].map(c => c.ci)), free = pool.filter(i => !used.has(i)); return pick(free.length ? free : pool); }   // only the kinds of customer that have started coming
 function spawnCustomer(force) {
   // sit-down guests need a waiter and a clean free seat
   const seats = SEATS.filter(s => !s.who && !s.dirty);
@@ -155,11 +155,11 @@ function spawnCustomer(force) {
   if (!force && WAITER && seats.length && DINERS.length < cap && rng() < .3 * (1 + .12 * Math.min(expandLv(), WAITERS.length)) * (wxOf().dine || 1)) return spawnDiner(pick(near.length ? near : seats));
   if (CUST.length >= 12) return;
   if (!force && queueLen() >= 5) {   // they look at the queue from the street and walk on
-    const w = { ch: GUEST_HD[pick(CUST_POOL)], y: 338, dir: 1, v: 30, x: 150, dist: 0, temp: true };
+    const w = { ch: GUEST_HD[pick(guestPool())], y: 338, dir: 1, v: 30, x: 150, dist: 0, temp: true };
     WALKERS.push(w); say(w, '排好长…下次再来', true); W.today.lost++; gripe('long'); return;
   }
   const ci = force ? force.ci : freshLook(), avail = PIDS.filter(unlocked), n = rng() < .55 ? 1 : rng() < .73 ? 2 : 3, wants = [];
-  const per = personaOf(ci), likeW = ps => { let r = rng() * ps.reduce((a, p) => a + wantOf(p) * (per.likes[p] || 1), 0); for (const p of ps) { r -= wantOf(p) * (per.likes[p] || 1); if (r <= 0) return p; } return ps[ps.length - 1]; };
+  const per = personaOf(ci), likeW = ps => { let r = rng() * ps.reduce((a, p) => a + wantOf(p) * (per.likes[p] || 1) * labLike(ci, p), 0); for (const p of ps) { r -= wantOf(p) * (per.likes[p] || 1) * labLike(ci, p); if (r <= 0) return p; } return ps[ps.length - 1]; };
   const [itemMax, budget] = wealthOf(ci), afford = avail.filter(p => priceOf(p) <= itemMax);   // what this kind of guest can pay for
   let spend = 0; for (let i = 0; i < n + (per.extra || 0) && afford.length; i++) { const p = likeW(afford); if (spend + priceOf(p) > budget) break; spend += priceOf(p); wants.push(p); }   // taste of this kind of guest, within their budget
   const c = { ci, ch: GUEST_HD[ci], s: -20, wants: force ? force.wants : wants, got: {}, done: new Set(), hold: 0, wait: 0, moved: 0, dist: 0, missed: new Set(), paid: false, spent: 0, vip: force && force.vip, tag: !force && W.day >= 3 && rng() < .18 ? 'hurry' : null, pace: .82 + rng() * .36, off: (rng() - .5) * 8, ph: rng() * 6, look: 0, lookFace: null };
@@ -239,13 +239,14 @@ function leaveShop(c) {
 function fanOf(ci, st) {   // happy visits by this kind of customer add up; at GIFT_AT one of them brings a present (once per kind)
   const kind = GUEST_DEF[ci] && GUEST_DEF[ci].name; if (!kind || !W) return; W.fans = W.fans || {}; W.gifted = W.gifted || {};
   W.fans[kind] = Math.max(0, (W.fans[kind] || 0) + (st >= 5 ? 1 : st <= 2 ? -1 : 0));
+  if (W.fans[kind] >= LOYAL_STORY) loyalStory(kind, ci);   // a true regular: their own scene + a keepsake (guests.js)
   if (W.fans[kind] < GIFT_AT || W.gifted[kind]) return;
   W.gifted[kind] = true;
   const pool = ['luckycat', 'bonsai', 'banner', 'card'].filter(id => !hasItem(id)), alt = Object.keys(DECOR_ITEMS).filter(id => !hasItem(id) && DECOR_ITEMS[id].cat !== 'season' && DECOR_ITEMS[id].cost && DECOR_ITEMS[id].cost <= 200);
   const id = pool.length ? pick(pool) : alt.length ? pick(alt) : null, it = id && DECOR_ITEMS[id];
   if (it) { let pos = null; if (it.cat !== 'wall') pos = findItemSpot(); if (it.cat === 'wall' || pos) { (W.items = W.items || {})[id] = true; if (pos) (W.itemPos = W.itemPos || {})[id] = pos; applyDecor(); } }
   else W.money += 100;
-  STORY_Q.push({ key: 'gift', lines: [[null, '一位' + kind + '熟客行埋嚟收银：'], [null, '「成日嚟帮衬，你哋好好招呼。呢样嘢送俾你！」'], [null, it ? '收到「' + it.name + '」' + (it.cat === 'wall' ? '，已经挂好。' : '，摆咗喺店里（摆放里可以移）。') : '收到一封利是：$100']] });
+  STORY_Q.push({ key: 'gift', ci, lines: [[null, '一位' + kind + '熟客走到收银台：'], [null, '「常来光顾，你们招呼得很好。这个送给你！」'], [null, it ? '收到「' + it.name + '」' + (it.cat === 'wall' ? '，已经挂好了。' : '，摆在店里了（「摆放」里可以移动）。') : '收到一封红包：$100']] });
   NOTICES.push('熟客送礼：' + (it ? it.name : '利是 $100')); SFX.ding();
 }
 function gripe(k) { W.today.gripes[k] = (W.today.gripes[k] || 0) + 1; LAST_GRIPE = { k, t: 0 }; }
@@ -504,7 +505,7 @@ function stepWalkers(dt) {
   }
   WALKERS = WALKERS.filter(w => !w.temp || (w.x < 760 && w.x > -200));
 }
-function spawnTaker() { WALKERS.push({ ch: GUEST_HD[pick(CUST_POOL)], y: 326, dir: -1, v: 26, x: 720, dist: 0, temp: true, taker: true }); }
+function spawnTaker() { WALKERS.push({ ch: GUEST_HD[pick(guestPool())], y: 326, dir: -1, v: 26, x: 720, dist: 0, temp: true, taker: true }); }
 function say(who, text, hint) { if (BUBBLES.some(b => b.who === who) || BUBBLES.length >= 2) return; BUBBLES.push({ who, text, hint, t: 0 }); }
 function stepBubbles(dt) {
   for (let i = BUBBLES.length - 1; i >= 0; i--) if ((BUBBLES[i].t += dt) > 2.8 || BUBBLES[i].who.gone) BUBBLES.splice(i, 1);
@@ -567,5 +568,6 @@ function simStep(dt) {
   stepFly(dt); stepLeavers(dt); stepMurmur(dt);
   stepWalkers(dt); stepBubbles(dt);
   for (const p of POPS) p.t += dt; POPS = POPS.filter(p => p.t < 1.4);
+  stepEpisodes(dt); if (PHASE === 'prep') stepPrep(dt);
   if (PHASE === 'prep' || PHASE === 'open' || PHASE === 'closing') { stepStaff(dt); stepTrays(dt); stepCustomers(dt); stepDiners(dt); stepWaiter(dt); stepCleaners(dt); }
 }

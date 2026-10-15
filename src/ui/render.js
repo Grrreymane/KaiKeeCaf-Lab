@@ -250,10 +250,10 @@ function umbFrame(ch, face, fr) {
   const back = face === 'NE' || face === 'NW', im = drawPersonHD({ ...ch.o, pose: UMB_POSE }, back, fr);
   return (ch.work[key] = face === 'SW' || face === 'NW' ? flipC(im) : im);
 }
-const walkImg = (who, ch, face, fr, x, y) => { if (!ch.work || !ch.o) return ch[face][fr]; const seed = who._us || (who._us = Math.floor(Math.random() * 1e6)); return umbrellaFor(who, x, y, seed) ? umbFrame(ch, face, fr) : ch[face][fr]; };
+const walkImg = (who, ch, face, fr, x, y) => { if (!ch.work || !ch.o || face === 'NE' || face === 'NW') return ch[face][fr]; const seed = who._us || (who._us = Math.floor(Math.random() * 1e6)); return umbrellaFor(who, x, y, seed) ? umbFrame(ch, face, fr) : ch[face][fr]; };
 function drawUmbrella(c, x, y, col, face) {
   const side = face === 'SW' || face === 'NW' ? -1 : 1, [a, b] = P(x, y), hand = R(b) - 64, top = R(b) - FOOT * K - 4, cx = R(a) + side * 5;   // pole from the canopy down into the raised hand
-  c.fillStyle = '#4a3a3a'; c.fillRect(cx, top, 2, hand - top + 2); c.fillRect(cx - 1, hand + 1, 3, 3);
+  const back = face === 'NE' || face === 'NW'; c.fillStyle = '#4a3a3a'; if (!back) { c.fillRect(cx, top, 2, hand - top + 2); c.fillRect(cx - 1, hand + 1, 3, 3); }   // from behind, the arm and the pole are hidden by the body
   for (let r = 0; r < 12; r++) { const w = R(Math.sqrt(1 - ((11 - r) / 12) ** 2) * 28); c.fillStyle = r < 3 ? shade(col, 22) : r > 9 ? shade(col, -26) : col; c.fillRect(cx - w, top - 12 + r, w * 2, 1); }
   c.fillStyle = shade(col, -40); for (let k = 0; k <= 4; k++) { c.fillRect(cx - 28 + k * 14, top - 1, 1, 2); c.fillRect(cx - 14 + k * 7, top - 11, 1, 10); }
   c.fillStyle = '#2a2024'; c.fillRect(cx, top - 15, 2, 3);

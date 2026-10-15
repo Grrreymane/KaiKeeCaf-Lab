@@ -16,7 +16,7 @@ const TEMP_TALK = {   // part-timers (and summer students) joining: a few lines 
   '天佑': [['temp', '老板，你啲客其实可以用手机落单。'], ['hero', '要几多钱？'], ['temp', '……我谂下先，今日先抹枱。']],
   '米米': [['temp', '你个价目牌啲字可以改下！'], ['hero', '改成点？'], ['temp', '等我画，包你靓！']],
 };
-const NAMES = { kun: '坤伯', lin: '莲姨', wen: '雯姐', shao: '阿少', qing: '阿晴', yao: '耀仔', hui: '惠姐', cheng: '阿澄', mum: '妈妈', dad: '爸爸' };
+const NAMES = { kun: '坤伯', lin: '莲姨', wen: '雯姐', shao: '阿少', qing: '阿晴', yao: '耀仔', hui: '惠姐', cheng: '阿澄', mum: '妈妈', dad: '爸爸', rong: '荣叔' };
 const SCENES = {
   // opening: the hero's situation, Dad's introduction of Kun, Lin answering the ad (from the character notes)
   intro: [[[null, '工作还未找到，铺位倒先看好了。'], [null, '家里给了一笔钱，接下来要靠自己把账算明白。'],
@@ -133,6 +133,7 @@ const TONE = {
   yao: { pre: ['……嗯，', '呃，', '哦……'], end: ['……'] },
   hero: { pre: ['嗯，', '哦～', '哈哈，', '诶，'], end: ['啦。', '喎。'] },
   hui: { pre: ['哎呀！', '哈哈，'], end: ['啦！'] }, cheng: { pre: ['嗯……', '唔，'], end: [] },
+  rong: { pre: ['哈哈，', '喂，', '哎，'], end: ['啦！'] },
   mum: { pre: ['哎呀，', '嗯，'], end: ['啦。'] }, dad: { pre: ['嗯，', '哈，'], end: ['啦。'] },
 };
 function toned(who, text) {
@@ -160,6 +161,7 @@ const affLevel = k => lvOf(k) - 1;   // affection grows only when the person lev
 function morningStory() {   // one scene per morning at most: affection first, otherwise sometimes a bit of small talk
   W.storyNext = W.storyNext || [];
   if (W.storyNext.length) playScene(W.storyNext.shift());
+  else if (W.day >= 3 && rng() < .28) rongVisit();   // 荣叔 drops by: today's ingredients are cheaper (guests.js)
   else if (W.day > 1 && rng() < .8) { const ok = SCENES.chat.filter(sc => sc.every(([w]) => !w || w === 'hero' || cast().includes(w))); if (ok.length) STORY_Q.push({ key: 'chat', lines: tonedLines(pick(ok)) }); }
 }
 
@@ -169,7 +171,8 @@ function drawDialog(c) {
   const D = DIALOG, [who, text] = D.lines[D.i], hero = who === 'hero', id = hero ? 'hero_' + (W.hero || 'f') : who;
   c.save(); c.globalAlpha = .5; px(c, 0, 0, 360, 640, '#1c141c'); c.restore();
   button(0, 0, 360, 640, advanceDialog);
-  if (id && BUSTS[id]) { const b = bust(id), x = hero ? 236 : 14; c.drawImage(b, x, 474 - b.height / 2, b.width / 2, b.height / 2); }   // bust stands on the window
+  if (id && BUSTS[id]) { const b = bust(id), x = hero ? 236 : 14; c.drawImage(b, x, 474 - b.height / 2, b.width / 2, b.height / 2); }
+  else if (!who && D.ci != null && GUEST_HD[D.ci]) { const b = guestBust(D.ci); c.drawImage(b, 14, 474 - b.height / 2, b.width / 2, b.height / 2); }   // a customer's own scene (gift, keepsake): their bust, like the staff   // bust stands on the window
   px(c, 5, 465, 350, 118, OUT); px(c, 6, 466, 348, 116, '#fffaf0'); px(c, 6, 466, 348, 2, '#ffffff'); px(c, 6, 578, 348, 4, '#ead9b8');
   const name = who ? (hero ? '店主' : who === 'temp' ? HIRE.temp.name : NAMES[who]) : '';
   if (name) { c.font = sr(14); const w = R(c.measureText(name).width) + 22, x = hero ? 340 - w : 14; px(c, x - 1, 445, w + 2, 22, OUT); px(c, x, 446, w, 20, '#5a3524'); px(c, x, 446, w, 1, '#7a4a32'); TS(c, name, x + w / 2, 448, 14, '#fbe9c0', 'center'); }

@@ -118,3 +118,20 @@ ok(HIRE.temp.name && STAFF_HD.temp, "today's part-timer: " + HIRE.temp.name); { 
 { ok(PRODUCTS.papercake && PRODUCTS.swissroll && PRODUCTS.mangopancake && RECIPES.papercake && FLOWS.swissroll, 'three Hong Kong cakes with recipes and steps');
   W.known.papercake = true; W.showcase = 'papercake'; W.stock.papercake = 0; const w0 = wantOf('papercake'); W.stock.papercake = 6; ok(wantOf('papercake') > w0, 'a stocked signature item sells to more people');
   ok(showcaseOk('papercake') && showcaseOk('tart') && !showcaseOk('tea'), 'cakes and bakes can go in the case, drinks cannot'); W.showcase = 'tart'; }
+// 港式 Lab: rate a combination, try it at the desk, keep it as a product
+{ const r = { base: 'puff', flavor: 'tea', fill: 'cream', decor: 'none', name: '奶茶泡芙' }, rate = labRate(r);
+  ok(rate.stars >= 4 && rate.price > 10, 'milk-tea cream puff rates well (' + rate.stars + '★ $' + rate.price + ')');
+  ok(labRate({ base: 'puff', flavor: 'mango', fill: 'sago', decor: 'none' }).warn, 'sago in a puff is flagged');
+  const ph = PHASE; PHASE = 'prep'; W.expand = Math.max(W.expand || 0, 1); ok(labUnlocked(), 'the Lab opens after expanding'); W.labDay = 0; STORY_Q.length = 0; DIALOG = null;
+  labTry({ r, slot: 'lab1' }); ok(DESK && DESK.lab && FLOWS.lab1 && FLOWS.lab1.length >= 4, 'Lab try opens the design desk with its own steps');
+  DESK.mode = 'done'; closeDesk(); STORY_Q.length = 0; DIALOG = null;
+  ok(W.known.lab1 && PRODUCTS.lab1.name === '奶茶泡芙' && TABLE_ALL.includes('lab1') && RECIPE.lab1.includes('tealeaf'), 'the creation becomes a product with a recipe');
+  ok(unlocked('lab1') && showcaseOk('lab1'), 'it can go on the shelves and in the showcase');
+  ok(labLike(GUEST_DEF.findIndex(g => g.name === '潮人（女）'), 'lab1') > 2 && labLike(GUEST_DEF.findIndex(g => g.name === '婆婆'), 'lab1') < 1, 'young customers love Lab food, grannies less'); PHASE = ph; }
+// customer list, loyal regulars, 小剧场, 荣叔, 9:00 auto-open
+{ const d0 = W.day; W.day = 1; ok(guestPool().filter(ci => GUEST_UNLOCK.find(u => u[0] === ci)[1] <= 1).length === 5 && guestPool().length <= 7, 'day 1: five kinds of customer'); W.day = 12; ok(guestPool().length > 15, 'more kinds by day 12'); W.day = d0;
+  const k = guestKind(0), cf = comfort(); W.keepsakes = {}; W.fans[k] = LOYAL_STORY - 1; STORY_Q.length = 0; fanOf(0, 5);
+  ok(W.keepsakes[k] && STORY_Q.some(q => q.key === 'loyal') && comfort() >= cf, 'loyalty 14: a story and a keepsake'); STORY_Q.length = 0; DIALOG = null;
+  const e = EPISODES[0]; W.eps = {}; playEpisode(e); ok(W.eps[e.id] && STORY_Q.some(q => q.key === 'ep'), 'an episode plays and is remembered'); STORY_Q.length = 0; DIALOG = null;
+  const b0 = bagCost('flour'); W.today.rongSale = false; const full = bagCost('flour'); rongVisit(); ok(W.today.rongSale && bagCost('flour') < full && STORY_Q.some(q => q.key === 'rong'), '荣叔: sale today'); STORY_Q.length = 0; DIALOG = null; W.today.rongSale = false;
+  const ph = PHASE, tu = W.tut; PHASE = 'prep'; W.tut = 9; W.tourOff = true; prepT = 0; MODE = 'play'; stepPrep(PREP_LEN + 1); ok(PHASE === 'open', 'the shop opens by itself at 9:00'); PHASE = ph; W.tut = tu; }

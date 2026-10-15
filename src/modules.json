@@ -15,10 +15,12 @@
   "src/systems/sim.js",
   "src/systems/day.js",
   "src/systems/story.js",
+  "src/systems/guests.js",
   "src/ui/render.js",
   "src/ui/hud.js",
   "src/ui/panels.js",
   "src/ui/desk.js",
+  "src/ui/lab.js",
   "src/ui/input.js",
   "src/core/boot.js"
 ]

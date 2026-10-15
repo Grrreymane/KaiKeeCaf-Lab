@@ -303,8 +303,10 @@ function drawBackground(c) {
   if (!expandLv()) { const [a, b] = P(470, 150); c.save(); c.font = fp(24); c.textAlign = 'center'; c.fillStyle = '#b9b3aa'; c.fillText('隔壁 · 可扩建', a, b); c.restore(); }
   wallText(c, 238, 132, 100, 28, (x) => { x.fillStyle = '#5a3524'; x.fillRect(0, 0, 100, 28); x.fillStyle = '#7a4a32'; x.fillRect(0, 0, 100, 2); x.font = sr(16); x.fillStyle = C.gold; x.textAlign = 'center'; x.textBaseline = 'top'; x.fillText('烘 焙 间', 50, 5); });
   // 价目牌上的字
-  wallText(c, 8, 102, 108, 72, (x) => { menuHead(x, '饮 品', 54); menuRows(x, [['港式奶茶', '18'], ['鸳鸯', '18'], ['冻柠茶', '17']], 6, 102); });
-  wallText(c, 70, 96, 212, 64, (x) => { menuHead(x, '饼 食 · 糖 水', 106); menuRows(x, [['蛋挞', '8'], ['菠萝包', '9'], ['椰挞', '8']], 8, 98); menuRows(x, [['老婆饼', '10'], ['红豆布丁', '16'], ['杨枝甘露', '22']], 114, 204); });
+  { const on = p => W && unlocked(p), drinks = PIDS.filter(p => on(p) && PRODUCTS[p].where === 'fridge' && !PRODUCTS[p].cake && !PRODUCTS[p].lab), food = PIDS.filter(p => on(p) && !drinks.includes(p)).sort((a, b) => (PRODUCTS[b].cake ? 1 : 0) - (PRODUCTS[a].cake ? 1 : 0));   // the menu boards show what is really on sale, cakes first
+    const row = p => [PRODUCTS[p].name, String(priceOf(p))], d3 = (drinks.length ? drinks : ['tea']).slice(-3).map(row), f6 = (food.length ? food : ['tart', 'bun']).slice(0, 6).map(row);
+    wallText(c, 8, 102, 108, 72, (x) => { menuHead(x, '饮 品', 54); menuRows(x, d3, 6, 102); });
+    wallText(c, 70, 96, 212, 64, (x) => { menuHead(x, PIDS.some(p => on(p) && PRODUCTS[p].cake) ? '饼 食 · 蛋 糕' : '饼 食 · 糖 水', 106); menuRows(x, f6.slice(0, 3), 8, 98); menuRows(x, f6.slice(3, 6), 114, 204); }); }
   // 隔壁压暗（空铺）
   // 店名：「街记冰室」按右墙方向斜着贴（逐列往下错半格）
   const tc = mk(212, 32), tx = tc.getContext('2d'); tx.font = sr(26); tx.textBaseline = 'top'; tx.fillStyle = C.gold;
