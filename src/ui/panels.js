@@ -109,7 +109,7 @@ function staffStatus(id) {
   return takeOpen() ? '外卖窗开着' : '外卖窗';
 }
 function drawStaffPanel(c) {   // each row: who, what they do now, level + affection, upgrade with points
-  let y = sheet(c, '员工', '积分 ' + (W.pts || 0) + ' · 工钱 ' + money$(wages() - DAILY.rent) + '/天', 166) - 4;
+  let y = sheet(c, '员工', '积分 ' + (W.pts || 0) + ' · 工钱 ' + money$(wages() - rentToday()) + '/天', 166) - 4;
   btn(c, 62, 169, 72, 20, '特技 ★', () => { PANEL = { kind: 'special', bar: 3 }; SFX.tap(); }, Object.keys(SPECIALS).some(k => lvOf(k) >= SK_LV && !(W.sk || {})[SPECIALS[k][0]] && (W.pts || 0) >= SPECIALS[k][3] && (!HIRE[k] || W.staff[k].hired)) ? 'gold' : 'cream');   // the specials sheet
   const rows = [['kun', '坤伯', '烘焙'], ['lin', '莲姨', '包装']].concat(Object.keys(HIRE).filter(k => W.staff[k].hired || W.day >= HIRE[k].day - 2).map(k => [k, HIRE[k].name, null]));   // people not due for days yet stay hidden
   const rh = Math.max(52, Math.min(66, Math.floor((BAR_Y - 6 - y) / rows.length)));   // rows grow to use the sheet's height (bigger text needs the room)

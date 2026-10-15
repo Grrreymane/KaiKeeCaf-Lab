@@ -375,8 +375,12 @@ function ovenBody(fr) {   // countertop oven (or the fridge) front: flat steel b
     for (let x = 6; x < W2 - 6; x += 2) if (hsh(x, 1, 5) > .6) g.set(x, 2 + (x % 3), body[2]);   // brushed streaks
     const wx = (OV.wx - OV.x) / 2, wy = (OV.wy - OV.y) / 2, ww = OV.ww / 2, wh = OV.wh / 2; g.rect(wx - 3, wy - 3, ww + 6, wh + 6, fr ? '#8fb0ba' : '#2f2830'); g.rect(wx - 3, wy - 3, ww + 6, 1, fr ? '#c9dde3' : '#4a4048');
     for (let y = wy; y < wy + wh; y++) for (let x = wx; x < wx + ww; x++) g.d[y * W2 + x] = null;   // the window is drawn live
-    if (!fr) { for (const x of [8, 232]) for (let y = 15; y < 90; y += 5) g.rect(x - 2, y, 4, 2, '#6a7073'); g.rect(W2 / 2 - 12, H2 - 5, 24, 2, '#5a5e62'); }   // vents + handle
-    else for (let y = 15; y < 90; y += 4) { g.rect(5, y, 5, 1, '#8fb0ba'); g.rect(230, y, 5, 1, '#8fb0ba'); }
+    if (!fr) { for (const x of [8, 232]) for (let y = 15; y < 90; y += 5) g.rect(x - 2, y, 4, 2, '#6a7073');   // vents
+      g.rect(40, 5, 160, 4, '#5a5e62'); g.rect(40, 5, 160, 1, '#c9cdd0'); g.rect(38, 4, 4, 6, '#3a3e42'); g.rect(198, 4, 4, 6, '#3a3e42');   // the door handle
+      for (const [x, col] of [[22, '#2a2a30'], [36, '#2a2a30'], [50, '#2a2a30']]) { g.ell(x, H2 - 5, 4, 4, col); g.ell(x, H2 - 5, 3, 3, '#8a9093'); g.rect(x, H2 - 8, 1, 3, '#ffffff'); }   // knobs
+      g.rect(176, H2 - 9, 40, 8, '#1a1014'); for (const [i, on] of [[0, 1], [1, 1], [2, 1]]) g.rect(180 + i * 9, H2 - 7, 6, 4, on ? '#ff5a3a' : '#4a2020'); g.rect(208, H2 - 7, 2, 2, '#ff5a3a');   // the timer: 200°
+      g.rect(100, H2 - 8, 40, 5, '#c99428'); g.rect(101, H2 - 7, 38, 3, '#e8c060'); }   // brass name plate
+    else { for (let y = 15; y < 90; y += 4) { g.rect(5, y, 5, 1, '#8fb0ba'); g.rect(230, y, 5, 1, '#8fb0ba'); } g.rect(40, 5, 160, 4, '#8fb0ba'); g.rect(40, 5, 160, 1, '#eef6f8'); g.rect(176, H2 - 9, 40, 8, '#1a2a30'); g.rect(180, H2 - 7, 6, 4, '#5ad0f0'); g.rect(189, H2 - 7, 6, 4, '#5ad0f0'); g.rect(198, H2 - 7, 2, 2, '#5ad0f0'); }   // fridge: handle, a blue 4° read-out
     g.selOutline(); return up2(g.canvas());
   });
 }
@@ -407,13 +411,13 @@ function nextStep(D) {   // one step done: on to the next part of the process
   D.step = curStep(D).type;
   if (D.step === 'mix') D.mix = 0;
 }
-const ingCell = i => [(i % 9) * 80, 96 + Math.floor(i / 9) * 108];   // device px: a two-tier rack, 9 bins of 80 per tier (tag underneath)
+const ingCell = i => [(i % 6) * 120, 90 + Math.floor(i / 6) * 124];   // device px: a three-tier rack, 6 bins of 120 per tier (name strip at the bottom)
 const spotFor = n => { const a = n * 2.3 + .6, r = 34 + (n * 37) % 46; return [BX + Math.cos(a) * r, BY + Math.sin(a) * r * .9]; };
 const litIngs = D => { const s = curStep(D); return s.type === 'add' ? s.ks.filter(k => !(D.s.got || []).includes(k)) : s.type === 'weigh' ? [s.k] : []; };
 function addIngredient(k) {   // start the lift / pour / crack / drop animation for one ingredient
   const D = DESK; if (D.anim) return; (D.s.got = D.s.got || []).push(k); D.got.push(k); SFX.buy();
   const [x, y] = ingCell(ING_ORDER.indexOf(k));
-  D.anim = { k, t: 0, T: k === 'egg' ? 1 : .85, from: [x + 40, y + 36], spot: spotFor(D.blobs.length) };
+  D.anim = { k, t: 0, T: k === 'egg' ? 1 : .85, from: [x + 60, y + 44], spot: spotFor(D.blobs.length) };
 }
 function blobFor(k, spot) { return { k, col: POUR[k] || ING[k][2], spot: spot || spotFor(DESK.blobs.length) }; }
 function finishStep(D, good = true) {   // complete the current step (also what 帮我做 does)
@@ -469,13 +473,13 @@ function deskUp() {
 }
 
 // ---------------------------------------------------------------- drawing (device px inside c.scale(.5); text in UI px afterwards)
-const RACK = () => cache('rack', () => {   // two-tier wooden rack from above: planked shelves, a bin per ingredient with a shadowed inner wall
-  const g = new Grid(360, 111);
-  g.rect(0, 0, 360, 111, '#4a2e1e');
-  for (let r = 0; r < 2; r++) {
-    const y0 = 4 + r * 54; g.rect(0, y0, 360, 39, (x, y) => { const pl = Math.floor((y - y0) / 13); return (y - y0) % 13 === 12 ? '#6e4a30' : hsh(x >> 2, y, pl + 3) > .93 ? '#a8744a' : ['#c48c58', '#b88250', '#c99360'][pl]; });   // three planks
-    g.rect(0, y0, 360, 1, '#e0aa70'); g.rect(0, y0 + 38, 360, 2, '#5a3a24');
-    for (let k = 0; k < 9; k++) { const x0 = k * 40 + 2; g.rect(x0, y0 + 2, 36, 35, '#3a2a2e'); g.rect(x0 + 1, y0 + 3, 34, 33, '#8a5e3c'); g.rect(x0 + 1, y0 + 3, 34, 3, '#6a4428'); g.rect(x0 + 1, y0 + 3, 2, 33, '#74492c'); g.rect(x0 + 33, y0 + 6, 2, 30, '#a6764a'); }   // bin: dark rim, shadowed top / left wall
+const RACK = () => cache('rack', () => {   // three-tier wooden rack from above: planked shelves, six big bins per tier (name strip at the bottom of each)
+  const g = new Grid(360, 186);
+  g.rect(0, 0, 360, 186, '#4a2e1e');
+  for (let r = 0; r < 3; r++) {
+    const y0 = 2 + r * 62; g.rect(0, y0, 360, 59, (x, y) => { const pl = Math.floor((y - y0) / 20); return (y - y0) % 20 === 19 ? '#6e4a30' : hsh(x >> 2, y, pl + 3) > .93 ? '#a8744a' : ['#c48c58', '#b88250', '#c99360'][pl % 3]; });
+    g.rect(0, y0, 360, 1, '#e0aa70'); g.rect(0, y0 + 58, 360, 2, '#5a3a24');
+    for (let k = 0; k < 6; k++) { const x0 = k * 60 + 2; g.rect(x0, y0 + 1, 56, 57, '#3a2a2e'); g.rect(x0 + 1, y0 + 2, 54, 55, '#8a5e3c'); g.rect(x0 + 1, y0 + 2, 54, 3, '#6a4428'); g.rect(x0 + 1, y0 + 2, 2, 55, '#74492c'); g.rect(x0 + 53, y0 + 5, 2, 52, '#a6764a'); }
   }
   return up2(g.canvas());
 });
@@ -485,6 +489,16 @@ const WORKTOP = () => cache('worktop', () => {   // marble bench like the shop's
   let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
   for (let v = 0; v < 7; v++) { let x = rnd() * 360, y = rnd() * 520, a = rnd() * 6.28; const col = v % 2 ? '#e6d9be' : '#eadec6';
     for (let k = 0; k < 200; k++) { a += (rnd() - .5) * .5; x += Math.cos(a); y += Math.sin(a) * .6; if (x < 0 || x > 360 || y < 0 || y > 520) break; g.set(x, y, col); } }
+  // the bench is lived in: an open recipe book and pencil, a crock of spoons and a whisk, a folded tea towel, a carton of eggs, a dusting of flour
+  const O = '#3a2a2e', box = (x, y, w, h, fill, top) => { g.rect(x - 1, y - 1, w + 2, h + 2, O); g.rect(x, y, w, h, fill); if (top) g.rect(x, y, w, 2, top); };
+  box(6, 206, 78, 52, '#8a4a2a'); g.rect(8, 208, 36, 48, '#fbf4e4'); g.rect(46, 208, 36, 48, '#f6edd8'); g.rect(44, 208, 2, 48, '#c9b48a');
+  for (let y = 214; y < 252; y += 5) { g.rect(11, y, 30, 1, '#d8c8a8'); g.rect(49, y, 30, 1, '#d8c8a8'); } g.rect(12, 212, 18, 2, '#b8483c'); g.rect(50, 220, 12, 8, '#f2c96a'); g.rect(51, 221, 10, 6, '#e8b04a');
+  for (let k = 0; k < 26; k++) g.set(60 + k, 262 - (k >> 2), k < 22 ? '#e0b84a' : '#2a2024');   // pencil
+  box(22, 318, 30, 40, '#e8e4dc'); g.rect(22, 330, 30, 6, '#3f86d6'); g.rect(22, 318, 30, 2, '#ffffff'); g.rect(26, 300, 3, 20, '#b07a48'); g.rect(24, 296, 7, 6, '#b07a48'); g.rect(36, 296, 2, 24, '#9aa0a3');
+  for (let k = 0; k < 4; k++) g.rect(33 + k * 2, 288 + (k & 1), 1, 10, '#c9cdd0'); g.rect(42, 304, 3, 16, '#6b4a35');   // a whisk, a wooden spoon, a ladle handle
+  box(278, 206, 70, 38, '#ffffff'); for (let y = 206; y < 244; y += 6) for (let x = 278; x < 348; x += 6) if (((x + y) / 6) % 2 < 1) g.rect(x, y, 3, 3, '#d0453a'); g.rect(278, 238, 70, 6, '#b8342c');   // tea towel
+  box(272, 318, 76, 30, '#c9b48a'); for (let k = 0; k < 5; k++) { g.rect(276 + k * 14, 322, 12, 10, '#a89068'); g.rect(278 + k * 14, 320, 9, 10, k === 3 ? '#a89068' : '#f4e6cc'); g.rect(279 + k * 14, 321, 3, 2, '#ffffff'); }   // eggs (one gone)
+  for (let k = 0; k < 60; k++) { const x = 90 + hsh(k, 1, 4) * 40, y = 270 + hsh(k, 2, 4) * 30; g.set(x, y, '#fbf8ee'); }   // flour dust
   return up2(g.canvas());
 });
 function drawContents(c, D, t) {   // what is in the bowl: separate piles that swirl together into one batter while mixing
@@ -586,6 +600,8 @@ const SCALE = () => cache('scale', () => {   // digital kitchen scale from above
   const g = new Grid(190, 185);
   rrect(g, 0, 0, 190, 185, 4, (x, y) => y < 4 ? '#eef1f2' : x > 185 || y > 179 ? '#a8adb2' : x < 3 ? '#dfe3e5' : '#c9cdd0');
   for (const [x, y] of [[6, 6], [182, 6], [6, 171], [182, 171]]) { g.rect(x, y, 3, 3, '#8e959a'); g.set(x, y, '#ffffff'); }
+  for (let y = 10; y < 140; y += 3) for (let x = 6; x < 184; x += 1) if (hsh(x >> 3, y, 7) > .82) g.set(x, y, '#d6dadd');   // brushed steel
+  g.rect(12, 140, 40, 4, '#b8bdc0'); g.rect(12, 140, 40, 1, '#e4e8eb');
   g.rect(138, 150, 46, 24, '#2a3a30'); g.rect(140, 152, 42, 20, '#9ad8a0'); g.rect(140, 152, 42, 2, '#c4f0c8');   // LCD in the free front corner (the bowl covers the middle)
   g.rect(10, 162, 8, 8, '#d0453a'); g.rect(10, 162, 8, 2, '#f07a6a');   // tare button
   g.selOutline(); return up2(g.canvas());
@@ -688,11 +704,11 @@ function drawDeskDevice(c) {
   c.drawImage(RACK(), 0, 84);
   ING_ORDER.forEach((k, i) => {   // the whole pantry in bins on the rack; this recipe's ingredients glow and lift a little
     const [x, y] = ingCell(i), lits = litIngs(D), need = lits.includes(k), used = D.got.includes(k) && !need, lit = need;
-    if (lit) { c.save(); c.globalAlpha = .35 + .25 * Math.sin(t * 5); c.fillStyle = '#fff2a0'; c.fillRect(x + 2, y - 2, 76, 76); c.globalAlpha = 1; c.strokeStyle = Math.sin(t * 6) > 0 ? '#ffd23f' : '#ff9a2a'; c.lineWidth = 8; c.strokeRect(x + 4, y, 72, 72); c.strokeStyle = OUT; c.lineWidth = 2; c.strokeRect(x, y - 4, 80, 80); c.restore(); }
-    else if (lits.length) { c.save(); c.globalAlpha = .45; c.fillStyle = '#1c141c'; c.fillRect(x + 2, y - 2, 76, 76); c.restore(); }   // everything not needed now steps back
+    if (lit) { c.save(); c.globalAlpha = .35 + .25 * Math.sin(t * 5); c.fillStyle = '#fff2a0'; c.fillRect(x + 6, y, 108, 112); c.globalAlpha = 1; c.strokeStyle = Math.sin(t * 6) > 0 ? '#ffd23f' : '#ff9a2a'; c.lineWidth = 8; c.strokeRect(x + 8, y + 2, 104, 108); c.strokeStyle = OUT; c.lineWidth = 2; c.strokeRect(x + 3, y - 3, 114, 118); c.restore(); }
+    else if (lits.length) { c.save(); c.globalAlpha = .45; c.fillStyle = '#1c141c'; c.fillRect(x + 6, y, 108, 112); c.restore(); }   // everything not needed now steps back
     if (D.anim && D.anim.k === k) return;
-    const im = ingTop(k), s = Math.min(62 / im.width, 58 / im.height, 1);
-    c.save(); if (used) c.globalAlpha = .35; else if (!need) c.globalAlpha = .6; putShadowed(c, im, x + 40, y + 36 - (lit ? 6 + R(Math.abs(Math.sin(t * 5)) * 4) : 0), lit ? .3 : 0, s * (lit ? 1.12 : 1)); c.restore();
+    const im = ingTop(k), s = Math.min(98 / im.width, 74 / im.height, 1.5);
+    c.save(); if (used) c.globalAlpha = .35; else if (!need) c.globalAlpha = .6; putShadowed(c, im, x + 60, y + 44 - (lit ? 6 + R(Math.abs(Math.sin(t * 5)) * 4) : 0), lit ? .3 : 0, s * (lit ? 1.1 : 1)); c.restore();
   });
   const st = curStep(D) || {};
   if (['add', 'mix', 'weigh', 'sift'].includes(D.step)) {
@@ -754,15 +770,15 @@ function drawDesk(c) {
     D.flow.forEach((q, i) => { const x = 150 + i * Math.min(14, 140 / n); px(c, x, 30, 9, 6, i < si ? '#6cb86c' : i === si ? C.gold : '#6a5a68'); });
     T(c, (Math.min(si + 1, n)) + '/' + n + ' ' + stepName(st, R0), 150, 12, C.gold, 'left', null); }
   ING_ORDER.forEach((k, i) => { const [x, y] = ingCell(i), need = D.mode === 'make' && litIngs(D).includes(k);
-    const hot = need; px(c, x / 2 + 2, y / 2 + 39, 36, 14, hot ? '#fff0b0' : '#f4ead6'); px(c, x / 2 + 2, y / 2 + 52, 36, 1, '#b8a48a'); T(c, ING[k][0], x / 2 + 20, y / 2 + 41, hot ? '#b8342c' : '#6a5240', 'center', null, 12);
-    if (D.step === 'add' && D.mode === 'make') button(x / 2, y / 2 - 2, 40, 56, () => { if (need) addIngredient(k); else { D.msg = ING[k][0] + '今次唔使用'; SFX.deny(); } }); });
+    const hot = need; px(c, x / 2 + 4, y / 2 + 43, 52, 13, hot ? '#fff0b0' : '#f4ead6'); T(c, ING[k][0], x / 2 + 30, y / 2 + 43, hot ? '#b8342c' : '#6a5240', 'center', null, 12);
+    if (D.step === 'add' && D.mode === 'make') button(x / 2 + 2, y / 2, 58, 58, () => { if (need) addIngredient(k); else { D.msg = ING[k][0] + '今次唔使用'; SFX.deny(); } }); });
   const S = D.s, TN = TAP_N[D.step], line = D.step === 'weigh' ? '按住倒' + ING[st.k][0] + '，到 ' + st.g + 'g 就松手' : D.step === 'add' ? '点亮着的材料放入盆 ' + (S.got || []).length + '/' + st.ks.length
     : D.step === 'sift' ? '按住摇筛 ' + R((S.v || 0) * 100) + '%' : D.step === 'roll' ? '按住碾皮 ' + R((S.v || 0) * 100) + '%' : D.step === 'stove' ? '按住搅 ' + R((S.v || 0) * 100) + '%'
     : D.step === 'brew' ? '按住焗茶，茶色到绿格就松手' : D.step === 'rest' ? (S.covered ? stepName(st, R0) + '中…' : '点一下盖保鲜纸') : TN ? ({ knead: '连点搓面团', cut: '连点压出挞皮', pull: '连点来回撞茶', dice: '连点切粒', press: '连点压柠檬' })[D.step] + ' ' + (S.n || 0) + '/' + TN
     : D.step === 'mix' ? '按住 用打蛋器拌匀 ' + R(D.mix * 100) + '%' : D.step === 'fill' ? (R0.vessel === 'disc' ? '点一下 ' : '按住 ') + R0.verb + ' ' + Math.min(6, D.cur) + '/6' : !D.oven ? '点' + (R0.heat === 'oven' ? '烤箱入炉' : R0.heat === 'steam' ? '蒸柜入蒸' : '雪柜冷藏') : D.oven.ph === 'cook' ? '睇住颜色，到绿色就拎出嚟' : D.oven.ph === 'load' ? (R0.heat === 'fridge' ? '放入雪柜…' : R0.heat === 'steam' ? '入蒸柜…' : '入炉…') : R0.heat === 'oven' ? '好香！' : R0.heat === 'steam' ? '热辣辣！' : '冻冰冰！';
   px(c, 86, 250, 188, 20, 'rgba(255,250,240,.92)'); T(c, line, 180, 253, '#b8342c', 'center', null);
   if (D.msg) T(c, D.msg, 180, 274, '#7a6250', 'center', null);
-  if (D.mode === 'make') { const L_ = litIngs(D); if (L_.length) { const i = ING_ORDER.indexOf(L_[0]), [x, y] = ingCell(i), ax = x / 2 + 20, tip = y / 2 - 1 - R(Math.abs(Math.sin(rtime * 5)) * 4);   // a bouncing arrow pointing down at the bin to tap
+  if (D.mode === 'make') { const L_ = litIngs(D); if (L_.length) { const i = ING_ORDER.indexOf(L_[0]), [x, y] = ingCell(i), ax = x / 2 + 30, tip = y / 2 - 1 - R(Math.abs(Math.sin(rtime * 5)) * 4);   // a bouncing arrow pointing down at the bin to tap
       px(c, ax - 4, tip - 20, 9, 12, OUT); px(c, ax - 3, tip - 19, 7, 11, C.gold); for (let k = 0; k < 8; k++) { px(c, ax - 8 + k, tip - 8 + k, 17 - 2 * k, 1, k ? C.gold : OUT); px(c, ax - 9 + k, tip - 8 + k, 1, 1, OUT); px(c, ax + 9 - k, tip - 8 + k, 1, 1, OUT); } } }
   if (D.mode === 'make' && D.step === 'weigh') { const gr = R(S.grams || 0), dev = (S.grams || 0) / st.g; T(c, gr + 'g', 246, 421, dev > 1.1 ? '#b8342c' : '#1c3a24', 'center', null, 12); }   // on the scale's display
   if (D.mode === 'make' && D.step === 'brew') { const v = S.v || 0, bx = 60, bw = 240, by = 420; px(c, bx - 2, by - 2, bw + 4, 14, OUT); for (let i = 0; i < bw; i++) px(c, bx + i, by, 1, 10, mixHex('#e8c890', '#5a2a10', i / bw)); px(c, bx + bw * .45, by - 4, bw * .33, 2, '#6cb86c'); px(c, bx + bw * .45, by + 12, bw * .33, 2, '#6cb86c'); px(c, R(bx + bw * Math.min(1, v)) - 1, by - 5, 3, 20, '#2f2430'); }

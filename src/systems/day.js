@@ -19,7 +19,8 @@ function checkAch() {   // award any achievement that has just come true (once e
 function startDay() {
   setTemp();
   PHASE = 'prep'; clockOpen = 0; prepT = 0; resetRuntime(); W.today = freshDay(); LEDGER = null; NOTICES = []; NOTICE = null;
-  if (W.money < 60) { W.money += 200; W.bailout++; notice('家里寄来 $200 周转'); }   // never stuck
+  if (W.money < 60) { W.money += 150; W.bailout++; notice('家里寄来 $150 周转'); }   // never stuck
+  if (W.day > 1 && (W.day - 1) % MONTH_DAYS === 0 && W.day - 1 <= MONTH_DAYS * 9) notice('业主加租：每天租金 ' + money$(rentToday()));
   if (W.day > 1 && (W.day - 1) % SEASON_DAYS === 0) notice(seasonOf(W.day).hello || ('新一年开始！第 ' + yearOf(W.day) + ' 年'));   // a new season
   for (const p of PIDS) if (PRODUCTS[p].day === W.day && W.day > 1 && !W.known[p]) notice((PRODUCTS[p].where === 'table' ? '坤伯想试做' : '水吧想试做') + PRODUCTS[p].name + ' → 研发');
   { const L_ = SEASON_WX[seasonIdx(W.day)]; W.today.wx = W.day === 1 ? 'sun' : pick(L_);   // today's weather and the opening forecast

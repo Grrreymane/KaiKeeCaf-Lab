@@ -42,7 +42,7 @@ function loadGame() {
 }
 function wipeSave() { try { localStorage.removeItem(SAVE_KEY); } catch (e) {} }
 const wageOf = k => (DAILY[k] || HIRE[k].wage) + (lvOf(k) - 1) * LV_WAGE;
-const wages = () => DAILY.rent + wageOf('kun') + wageOf('lin') + Object.keys(HIRE).reduce((a, k) => a + (W.staff[k].hired ? wageOf(k) : 0), 0);
+const wages = () => rentToday() + wageOf('kun') + wageOf('lin') + Object.keys(HIRE).reduce((a, k) => a + (W.staff[k].hired ? wageOf(k) : 0), 0);
 const postsOf = post => Object.keys(HIRE).filter(k => W.staff[k].hired && W.staff[k].post === post);   // everyone on that post
 const POST_MAX = { bake: 2, bar: 2, serve: 3, take: 2, clean: 2 };   // more hands on a post = more done
 const postOf = post => Object.keys(HIRE).find(k => W.staff[k].hired && W.staff[k].post === post) || null;   // who is on this post

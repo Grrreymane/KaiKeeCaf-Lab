@@ -42,7 +42,7 @@ const INGR = {
 };
 // sold by the bag (one bag = several batches, 10% cheaper than buying them one by one), so you restock less often
 const BAG_N = { flour: 10, butter: 6, egg: 6, sugar: 10, tealeaf: 8, evap: 6, coconut: 6, melon: 5, sesame: 10, redbean: 6, milk: 6, mango: 4, sago: 8, coconutmilk: 6, lemon: 8, coffee: 8 };
-const bagCost = k => Math.round(INGR[k].cost * BAG_N[k] * .9 * (hasPerk('lin_buyer') ? .9 : 1) * (1 - .02 * (shopLv() - 1)) * supOff(k) * (W && W.today && W.today.rongSale ? .8 : 1));   // 荣叔's sale day: 20% off
+const bagCost = k => Math.round(INGR[k].cost * BAG_N[k] * 1.05 * (hasPerk('lin_buyer') ? .9 : 1) * (1 - .02 * (shopLv() - 1)) * supOff(k) * (W && W.today && W.today.rongSale ? .8 : 1));   // 荣叔's sale day: 20% off
 const unitCost = p => RECIPE[p].reduce((a, k) => a + bagCost(k) / BAG_N[k], 0) / BATCH;   // ingredient cost of one piece
 const RECIPE = { tart: ['flour', 'butter', 'egg'], bun: ['flour', 'butter', 'sugar'], coco: ['flour', 'butter', 'coconut'], wife: ['flour', 'melon', 'sesame'],
   tea: ['tealeaf', 'evap'], pudding: ['redbean', 'milk', 'egg'], mango: ['mango', 'sago', 'coconutmilk'],
@@ -95,6 +95,7 @@ const priceOf0 = p => PRODUCTS[p].price + (PRODUCTS[p].where === 'fridge' ? upLv
 const priceOf = p => Math.max(1, Math.round(priceOf0(p) * priceTier().mult * (promoOn('ice') && PRODUCTS[p].where === 'fridge' ? .8 : 1)));   // the day's price tier
 const SHELF_COST = 250;
 const DAILY = { rent: 100, kun: 70, lin: 60 };
+const rentToday = () => !W ? DAILY.rent : R(DAILY.rent * (1 + Math.min(1, .12 * Math.floor((W.day - 1) / MONTH_DAYS))) + 80 * expandLv() + (W.xk ? 40 : 0) + (W.xf ? 30 : 0));   // the landlord raises it every month (up to double); a bigger shop costs more
 const SEAT_FEE = 3;   // 茶位: every booth guest pays it; quick service also earns a tip (more with a higher-level waiter)
 // staff ability: level 1..5, bought with points (earned every day: 10 + 1 per guest served, +15 per new recipe).
 // each level: the job goes 8% faster, wage +15/day, affection +1 (a short scene plays)
