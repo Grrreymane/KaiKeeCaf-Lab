@@ -25,7 +25,7 @@ function startDay() {
   { const L_ = SEASON_WX[seasonIdx(W.day)]; W.today.wx = W.day === 1 ? 'sun' : pick(L_);   // today's weather and the opening forecast
     W.today.fc = forecast(); notice('今日' + wxOf().name + ' · 约 ' + W.today.fc.n + ' 位客 · 好卖' + PRODUCTS[W.today.fc.top[0]].name); }
   morningStory();
-  for (const [ci, d] of GUEST_UNLOCK) if (d === W.day && W.day > 1) notice('新客人：' + guestKind(ci) + '开始来光顾');
+  newGuests();   // kinds of customer coming for the first time: a short scene for one of them (guests.js)
   for (const k in HIRE) if (!HIRE[k].temp && HIRE[k].day === W.day && !W.staff[k].hired) notice(HIRE[k].name + '来应征 → 员工里请' + (k === 'wen' || k === 'qing' ? '她' : '他'));
   if (W.day === PARENTS_DAY && !W.seen.parents) notice('今天爸妈说要来探班');
 }
