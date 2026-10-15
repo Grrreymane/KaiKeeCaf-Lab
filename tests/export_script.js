@@ -34,6 +34,8 @@ H('客人：好感 14 老熟客故事 + 纪念品');
 for (const k in LOYAL_TALK) { H(k + ' — 纪念品「' + KEEPSAKE[k] + '」', 3); say(LOYAL_TALK[k], GUEST_DEF.findIndex(g => g.name === k)); }
 H('小剧场（营业中）');
 EPISODES.forEach(e => { H(e.id, 3); say(e.lines, e.ci != null ? e.ci : 0, e.cname || (e.ci == null ? '客人' : null)); });
+H('中插连续剧（营业中，分几集）');
+EP_ARCS.forEach(e => { H(e.arc + ' ' + e.part + '：' + e.id, 3); say(e.lines, e.ci != null ? e.ci : 0, e.cname || '客人'); });
 H('荣叔来访（当天进货八折）');
 RONG_TALK.forEach((l, i) => { H('第 ' + (i + 1) + ' 段', 3); say(l); });
 console.log(META ? JSON.stringify(meta) : out.join('\n'));

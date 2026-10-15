@@ -64,19 +64,89 @@ const EPISODES = [
   { id: 'umbrella', ok: () => !!wxOf().rain, lines: [['cust', '伞放哪里？'], ['lin', '门口那个桶！别滴到地上呀！'], [null, '（下雨天地上容易脏，记得派人打扫）']] },
   { id: 'regular', ok: () => Object.values(W.fans || {}).some(v => v >= 5), lines: [['cust', '老样子！'], ['hero', '马上来~'], ['lin', '老板现在连客人的「老样子」都记得了，厉害哦。']] },
 ];
+
+// ---------------------------------------------------------------- 中插连续剧: longer episodes in parts, about the people and how they get on;
+// a part comes a couple of days after the one before, so the story threads through the weeks between the one-off moments
+const epSeen = (id, gap = 2) => () => W.eps && W.eps[id] && W.day - W.eps[id] >= gap;
+const hired = k => W.staff[k] && W.staff[k].hired;
+const EP_ARCS = [
+  // 阿少的心事 — the florist who comes every Wednesday, and the past he doesn't talk about
+  { id: 'shao1', arc: '阿少的心事', part: 1, ok: () => hired('shao') && W.day >= 6, ci: 19, cname: '咏欣', lines: [
+    [null, '咏欣抱着一束白色桔梗走进店里。'], ['cust', '阿少，今天的花。放老位置哦。'], ['shao', '……谢谢。每周三都麻烦你。'],
+    ['lin', '（小声）又是周三，又是桔梗~'], ['cust', '阿少，你对每个客人都这么温柔吗？'], ['shao', '（想了想）……不是每个人都会每周三来。'],
+    ['cust', '……（脸红）我、我先回店里了！'], ['lin', '哎哟哟，年轻真好啊~'], ['shao', '莲姨，客人在等哦。']] },
+  { id: 'shao2', arc: '阿少的心事', part: 2, ok: () => hired('shao') && epSeen('shao1')(), lines: [
+    [null, '收银台旁边放着一本旧杂志，封面是一个拿着麦克风的年轻歌手。'], ['lin', '（举起杂志）阿少！这个人……这个人跟你一模一样啊！'],
+    ['shao', '……是吗。'], ['lin', '「林少恒，十年前退出乐坛，至今下落不明」……少恒？阿少？'], ['shao', '（把杂志轻轻合上）莲姨，那个人已经不唱了。'],
+    ['lin', '……（惊）那、那就是说——'], ['shao', '今天的蛋挞出炉了。我去摆。'], ['lin', '（小声）我什么都没看见，什么都没看见……']] },
+  { id: 'shao3', arc: '阿少的心事', part: 3, ok: () => hired('shao') && epSeen('shao2')() && !!wxOf().rain, ci: 19, cname: '咏欣', lines: [
+    [null, '下雨了。咏欣站在门口，没有带伞。'], ['shao', '（递过一把伞）拿去吧。'], ['cust', '那你呢？'], ['shao', '我等雨停。'],
+    ['cust', '……阿少，莲姨说你以前是歌手。'], ['shao', '……她说得太快了。'], ['cust', '为什么不唱了？'],
+    ['shao', '每天都被很多人看着，看到最后……忘了自己长什么样。'], ['shao', '这里不一样。这里的人只问我，蛋挞还有没有。'],
+    ['cust', '……那我也不问了。'], ['cust', '（撑开伞）周三见。'], ['shao', '（笑了一下）嗯，周三见。']] },
+  { id: 'shao4', arc: '阿少的心事', part: 4, ok: () => hired('shao') && epSeen('shao3', 3)(), ci: 19, cname: '咏欣', lines: [
+    [null, '今天是周三。但是先推门进来的，是阿少。'], ['shao', '（手里拿着一束桔梗）……今天换我送。'], ['cust', '诶？！'],
+    ['shao', '我不太会说话，以前的歌词都是别人写的。'], ['shao', '所以……这次我想自己说。'], ['shao', '咏欣，周末一起去看海吧。'],
+    ['cust', '……（点头）嗯！'], ['wen', '（压低声音）莲姨，你别哭啊。'], ['lin', '（擦眼泪）我没有……是洋葱……'], ['kun', '……今天没切洋葱。']] },
+  // 坤伯与阿珍 — what 荣叔 has been carrying for twenty years
+  { id: 'jan1', arc: '坤伯与阿珍', part: 1, ok: () => W.day >= 7 && (W.rongN || 0) >= 1, lines: [
+    [null, '午后，荣叔又路过，探头进来。'], ['rong', '老坤，阿珍下个月从加拿大回来。'], ['kun', '……嗯。'],
+    ['lin', '（眼睛一亮）阿珍是谁呀？坤伯的什么人？'], ['rong', '嘿嘿，这个嘛——'], ['kun', '荣仔，你的货车挡住门口了。'],
+    ['rong', '好好好，我走我走！'], ['lin', '（小声）坤伯，你耳朵红了哦~'], ['kun', '……炉子热。']] },
+  { id: 'jan2', arc: '坤伯与阿珍', part: 2, ok: () => epSeen('jan1', 3)(), ci: 9, cname: '阿珍', lines: [
+    [null, '一位戴着珍珠耳环的老太太走进店里，看了很久的价目牌。'], ['cust', '……一个蛋挞，谢谢。'], [null, '坤伯从厨房走出来，停住了。'],
+    ['kun', '……（把蛋挞放进纸袋，又放了一个）'], ['cust', '我只要一个。'], ['kun', '……另一个，是以前欠你的。'],
+    ['cust', '（愣住）……你还是这样。四十年了，话还是这么少。'], ['cust', '（咬了一口）味道……一点都没变。'], ['kun', '……嗯。没变。'],
+    ['lin', '（躲在柜台后面，捂住嘴）']] },
+  { id: 'jan3', arc: '坤伯与阿珍', part: 3, ok: () => epSeen('jan2', 3)(), lines: [
+    [null, '收工后，荣叔拎着两瓶汽水来找坤伯。'], ['rong', '老坤，四十年前，你攒了三个月的钱买戒指，结果呢？'], ['kun', '……结果那天，饼房接了一张大单。'],
+    ['rong', '你做了一整晚的蛋挞，她就上了去加拿大的飞机。'], ['hero', '坤伯……'], ['kun', '（看着烤炉）没关系。'],
+    ['kun', '现在她回来了，每天能做她爱吃的，就够了。'], ['rong', '……你这个人啊。（拍了拍他的肩）'], ['kun', '明天，帮我留两个最好的。']] },
+  // 莲姨的追问 — why the owner opened a cha chaan teng
+  { id: 'why1', arc: '为什么开冰室', part: 1, ok: () => W.day >= 5 && hired('wen'), lines: [
+    ['lin', '雯姐，你帮我问！老板为什么开冰室？我问了十次都被打哈哈。'], ['wen', '（看了看手表）还有二十分钟下班……好吧，我问。'],
+    ['wen', '老板，冒昧问一句——'], ['hero', '啊！奶茶要撞七次对吧？我去看看！'], ['wen', '……（看向莲姨）跑了。'], ['lin', '哼，我一定会查出来的！']] },
+  { id: 'why2', arc: '为什么开冰室', part: 2, ok: () => epSeen('why1', 3)() && W.day >= 9, lines: [
+    [null, '莲姨在储物间找东西时，翻出一张发黄的旧照片。'], ['lin', '（举着照片）这间店……是这间店！门口站着一个老先生，还有一个年轻的……坤伯？！'],
+    ['kun', '……那是我。旁边那个，是何伯。'], ['lin', '何伯？……老板的外公，好像就姓何……'], ['kun', '……你自己问老板吧。'], ['lin', '（盯着照片，好久没说话）']] },
+  { id: 'why3', arc: '为什么开冰室', part: 3, ok: () => epSeen('why2', 2)(), lines: [
+    ['hero', '……莲姨，你找到那张照片了吧。'], ['lin', '嗯。'], ['hero', '那是我外公。这里以前就是他的冰室。'],
+    ['hero', '我小时候每天放学都来，外公给我做菠萝油，坤伯偷偷多放牛油。'], ['hero', '后来外公病了，店关了……我一直想，总有一天要把灯重新打开。'],
+    ['kun', '……所以我才来的。'], ['lin', '（眼眶红了）傻孩子……这种事怎么不早说呀！'], ['hero', '说出来……好像就很难过嘛。'],
+    ['lin', '（用力抱住老板）明天开始，早餐我包了！一天都不准不吃！']] },
+  // 雯姐的两个世界
+  { id: 'wen1', arc: '雯姐的两个世界', part: 1, ok: () => hired('wen') && W.day >= 8, ci: 18, cname: '雯姐的朋友', lines: [
+    [null, '五点半，一位太太走进来。'], ['cust', '阿雯，今晚的慈善晚宴，七点开始。车在外面等你哦。'], ['wen', '我六点下班。'],
+    ['cust', '……你真的要在这里做到六点？'], ['wen', '（继续冲奶茶）答应了的事，就要做完。'], ['cust', '你以前不是这样的。'],
+    ['wen', '以前我什么都有，就是没有自己的时间表。'], ['wen', '现在有了。你先去吧，我晚一点到。'], ['lin', '（小声）雯姐好帅……']] },
+  { id: 'wen2', arc: '雯姐的两个世界', part: 2, ok: () => hired('wen') && epSeen('wen1', 3)(), ci: 2, cname: '小沅', lines: [
+    [null, '一个背着画板的女生在门口张望。'], ['cust', '妈！'], ['wen', '小沅？你怎么来了？'], ['cust', '来看看你工作的地方嘛。（四处看）原来是这样的~'],
+    ['cust', '老板，我妈在这里……还好吗？'], ['hero', '雯姐冲的奶茶，是整条街最好喝的。'], ['cust', '……（小声）她以前在家里，很少笑的。'],
+    ['cust', '现在每天回家，都会跟我说今天谁点了什么。'], ['wen', '（背对着大家）……奶茶要凉了，快喝。']] },
+  // 阿晴和耀仔
+  { id: 'qy1', arc: '阿晴和耀仔', part: 1, ok: () => hired('qing') && hired('yao'), lines: [
+    ['qing', '耀仔！你的笔记本封面好丑哦，我帮你画！'], ['yao', '诶？不、不用……'], ['qing', '（已经在画了）画一只戴眼镜的小熊，像你~'],
+    ['yao', '……我不像熊。'], ['kun', '……挺像的。'], ['yao', '坤伯！'], ['qing', '好啦！（把本子还给他）喜欢吗？'],
+    ['yao', '……（看了很久）……嘿嘿，喜欢。']] },
+  { id: 'qy2', arc: '阿晴和耀仔', part: 2, ok: () => hired('qing') && hired('yao') && epSeen('qy1', 3)(), lines: [
+    ['qing', '（趴在柜台上）哎，数学考砸了……'], ['yao', '……哪一题？'], ['qing', '全部。'], ['yao', '（翻开笔记本，背面全是工整的公式）……我教你。'],
+    ['qing', '你这本子怎么什么都写？'], ['yao', '……坤伯说要记在手上，可是我手笨，只好先记在本子上。'],
+    ['qing', '耀仔你一点都不笨！'], ['yao', '……（耳朵红了）'], ['lin', '（偷看）哎呀呀~']] },
+];
 let EP_BANNER = null;   // { ep, t } — the bar at the top inviting the player to watch
 function stepEpisodes(dt) {
   if (!W || !isOpenPhase()) return; W.eps = W.eps || {};
   if (EP_BANNER) { EP_BANNER.t += dt; if (EP_BANNER.t > 14) EP_BANNER = null; return; }   // ignored: it may come back another day
-  const T = W.today; if (T.epAt === undefined) T.epAt = rng() < .4 ? 40 + rng() * (OPEN_LEN * .6) : -1;   // about one day in three
+  const T = W.today; if (T.epAt === undefined) T.epAt = rng() < .5 ? 40 + rng() * (OPEN_LEN * .6) : -1;   // about one day in two
   if (T.epAt < 0 || clockOpen < T.epAt || T.epDone) return;
-  const ep = EPISODES.find(e => !W.eps[e.id] && e.ok()); T.epDone = true; if (!ep) return;
+  const arc = EP_ARCS.filter(e => !W.eps[e.id] && e.ok()), one = EPISODES.find(e => !W.eps[e.id] && e.ok());   // a story part when one is due (more often than not), otherwise a one-off
+  const ep = arc.length && (rng() < .65 || !one) ? arc[0] : one; T.epDone = true; if (!ep) return;
   EP_BANNER = { ep, t: 0 }; SFX.ding();
 }
 function playEpisode(ep) {
   EP_BANNER = null; W.eps[ep.id] = W.day;
   const ci = ep.ci != null ? ep.ci : pick(guestPool());   // who's in it: the episode's own customer, or one of today's kinds
-  STORY_Q.push({ key: 'ep', ci, cname: ep.cname, lines: [[null, '小剧场']].concat(ep.lines) });
+  STORY_Q.push({ key: 'ep', ci, cname: ep.cname, lines: [[null, ep.arc ? '小剧场 · ' + ep.arc + '（' + ep.part + '/' + EP_ARCS.filter(e => e.arc === ep.arc).length + '）' : '小剧场']].concat(ep.lines) });
   if (ep.fx === 'shao') W.today.shaoSlowUntil = clockOpen + 45;
   if (ep.fx === 'rich' || ep.fx === 'fans') { const amt = ep.fx === 'rich' ? 180 : 80; W.money += amt; W.today.revenue += amt; notice((ep.fx === 'rich' ? '雯姐的朋友' : '阿少的「粉丝」') + '买了 $' + amt); }   // 阿少 distracted for a while: works slower
 }

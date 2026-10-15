@@ -10,6 +10,7 @@
   for (const k in FIRST_TALK) FIRST_TALK[k].forEach(([w, t]) => lines.push(['first:' + k, w, t, GUEST_DEF.findIndex(g => g.name === k)]));
   for (const k in GIFT_THANKS) GIFT_THANKS[k].forEach(([w, t]) => lines.push(['gift:' + k, w, t, GUEST_DEF.findIndex(g => g.name === k)]));
   EPISODES.forEach(e => e.lines.forEach(([w, t]) => lines.push(['ep:' + e.id, w, t, e.ci != null ? e.ci : 0])));
+  EP_ARCS.forEach(e => e.lines.forEach(([w, t]) => lines.push(['arc:' + e.id, w, t, e.ci != null ? e.ci : 0])));
   RONG_TALK.forEach((T_, i) => T_.forEach(([w, t]) => lines.push(['rong:' + i, w, t])));
   const ph = PHASE; PHASE = 'prep'; HIRE.temp.name = HIRE.temp.name || '学生阿明';
   for (const [where, who, text, ci] of lines) {

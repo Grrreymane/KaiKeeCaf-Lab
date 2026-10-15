@@ -138,3 +138,8 @@ ok(HIRE.temp.name && STAFF_HD.temp, "today's part-timer: " + HIRE.temp.name); { 
 { const it0 = { ...(W.items || {}) }, c0 = comfort(); W.items = { ...it0, pothos: true, bamboo: true, monstera: true }; ok(setBonus() >= 3 && comfort() > c0, 'a full decor set adds comfort');
   W.items = { ...it0, money: true, luckycat: true }; ok(DECOR_SETS.find(S => S[0] === '招财进宝')[2] > DECOR_SETS.find(S => S[0] === '绿意盎然')[2], 'sets with a gift are worth more'); W.items = it0;
   const d = { x: 100, y: 100, st: SEATS[0], ci: 23 }; W.vipBuff = null; vipDone(d, false); ok(vipMul() < 1, 'an unhappy VIP: fewer customers for a while'); vipDone(d, true); ok(vipMul() > 1, 'a happy VIP: more customers'); W.vipBuff = null; BUBBLES.length = 0; }
+// story arcs: parts come in order, a couple of days apart
+{ const s1 = EP_ARCS.find(e => e.id === 'shao1'), s2 = EP_ARCS.find(e => e.id === 'shao2'), e0 = W.eps, d0 = W.day, h0 = W.staff.shao.hired;
+  W.eps = {}; W.staff.shao.hired = true; W.day = 8; ok(s1.ok() && !s2.ok(), 'part 2 waits for part 1');
+  playEpisode(s1); STORY_Q.length = 0; DIALOG = null; ok(!s2.ok(), '...and for a couple of days'); W.day = 10; ok(s2.ok(), 'then part 2 is due');
+  W.eps = e0; W.day = d0; W.staff.shao.hired = h0; }

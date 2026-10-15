@@ -195,7 +195,7 @@ function drawEpisodeBar(c) {   // 小剧场 invitation at the top: 看 to watch 
   const B = EP_BANNER; if (!B || PANEL || DIALOG || DESK) return;
   const y = 54, pulse = Math.sin(rtime * 4) > -.2;
   px(c, 8, y - 1, 280, 30, pulse ? C.gold : OUT); px(c, 9, y, 278, 28, '#fff3d6');
-  T(c, '小剧场 · 店里好像有事发生', 18, y + 8, '#b8483c', 'left', null);
+  T(c, B.ep.arc ? '小剧场 · ' + B.ep.arc : '小剧场 · 店里好像有事发生', 18, y + 8, '#b8483c', 'left', null);
   btn(c, 200, y + 4, 44, 20, '看', () => { SFX.tap(); playEpisode(B.ep); }, 'gold'); btn(c, 248, y + 4, 34, 20, '×', () => { EP_BANNER = null; SFX.tap(); }, 'cream');
 }
 function drawDeskButton(c) {
