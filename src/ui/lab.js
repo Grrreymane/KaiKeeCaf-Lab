@@ -100,7 +100,7 @@ function labTry(P_) {   // into the design desk with the draft in a slot
 }
 function labDone(D) {   // a successful try: keep it in the slot, a tasting with reasons
   const d = LAB_DRAFT; if (!d) return; LAB_DRAFT = null;
-  W.lab = W.lab || {}; W.lab[d.id] = d.r; W.known[d.id] = true; W.labDay = W.day; W.pts = (W.pts || 0) + 20; applyLab(); applyDecor();
+  W.lab = W.lab || {}; W.lab[d.id] = d.r; W.known[d.id] = true; W.labDay = W.day; W.labGuide = false; W.pts = (W.pts || 0) + 20; applyLab(); applyDecor();
   const rate = labRate(d.r), taster = W.staff.yao && W.staff.yao.hired ? 'yao' : 'kun';
   STORY_Q.push({ key: 'labtaste', lines: tonedLines([[taster, '先试试……「' + d.r.name + '」。'], [taster, rate.why[0] + '。'], ['lin', rate.why.slice(1).join('，') || '挺好的！'], [null, '「' + d.r.name + '」' + '★'.repeat(rate.stars) + ' · $' + rate.price + ' · 明天可以摆上去']]) });
   notice('Lab 新品「' + d.r.name + '」做好了！'); saveGame();
@@ -138,4 +138,6 @@ function drawLabPanel(c, P_) {
   y += 50;
   const done = W.labDay === W.day;
   btn(c, 70, y, 220, 36, done ? '今天试做过了' : '试做 →', () => labTry(P_), done ? 'off' : 'gold');
+  if (W.labGuide && !done) { const ay = y + 18, tx = 64 - R(Math.abs(Math.sin(rtime * 4)) * 5); px(c, tx - 24, ay - 4, 14, 8, OUT); px(c, tx - 23, ay - 3, 13, 6, C.gold); for (let k = 0; k < 8; k++) { px(c, tx - 10 + k, ay - 8 + k, 1, 16 - 2 * k, C.gold); px(c, tx - 10 + k, ay - 9 + k, 1, 1, OUT); px(c, tx - 10 + k, ay + 8 - k, 1, 1, OUT); }   // an arrow from the left, pointing at 试做
+    T(c, '选好搭配，按「试做」', 180, y + 40, '#b8483c', 'center', null); }   // first visit from the tour: point at 试做
 }
