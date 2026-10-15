@@ -56,8 +56,8 @@ const ingrInUse = () => [...new Set(PIDS.filter(unlocked).flatMap(p => RECIPE[p]
 const usedIn = k => PIDS.filter(p => unlocked(p) && RECIPE[p].includes(k));
 // staff: Kun bakes, Lin runs the till (and the water bar while nobody else does). Wen / Shao are hired and given a post.
 const HIRE = {
-  wen: { name: '雯姐', day: 2, wage: 70, note: '冲饮手稳，做事快' },
-  shao: { name: '阿少', day: 4, wage: 70, note: '嘴甜招客，跑得快' },
+  wen: { name: '雯姐', day: 2, wage: 70, note: '冲饮手稳 · 唔等钱使 · 六点准时放工' },
+  shao: { name: '阿少', day: 4, wage: 70, note: '安静体贴 · 好识招呼人 · 好似喺边度见过' },
   yao: { name: '耀仔', day: 25, wage: 75, note: '惠姐外甥 · 读过烘焙课 · 帮坤伯焗多一盘' },
   qing: { name: '阿晴', day: 13, wage: 55, note: '莲姨外甥女 · 中六 · 放学后上岗 · 冰饮快' },
   temp: { name: '', day: 1, wage: 50, note: '', temp: true },   // today's part-timer (filled in each morning from TEMPS)

@@ -57,7 +57,9 @@ const EPISODES = [
   { id: 'firstday', ok: () => W.staff.temp.hired, lines: [['temp', '请问堂食还是外带？'], ['cust', '（举着外带袋）你猜？'], ['temp', '……外带，马上来！']] },
   { id: 'rush', ok: () => W.staff.wen.hired, lines: [['wen', '三杯冻奶茶、两杯鸳鸯、一杯柠檬茶——'], ['wen', '（深呼吸）……好，一杯一杯来。'], ['lin', '雯姐，你的手比计算机还快。']] },
   { id: 'qingpush', ok: () => W.staff.qing.hired, lines: [['qing', '今天听我的，试试新品！'], ['cust', '我只是想要杯热奶茶……'], ['qing', '……好吧，热奶茶一杯。']] },
-  { id: 'shaotrouble', ok: () => W.staff.shao.hired && W.day >= 6, fx: 'shao', ci: 19, cname: '咏欣', lines: [[null, '一个女生冲进店里。'], ['cust', '阿少！你说周末请我看戏的呢？'], ['shao', '我……我记得的！'], ['lin', '又来了。（阿少要分心一阵子）']] },
+  { id: 'shaotrouble', ok: () => W.staff.shao.hired && W.day >= 6, fx: 'shao', ci: 19, cname: '咏欣', lines: [[null, '一个女生冲进店里。'], ['cust', '阿少！你说周末请我看戏的呢？'], ['shao', '（递上一杯热奶茶）先坐下，慢慢说。'], ['cust', '……（脸红）好吧。'], ['lin', '又来了。（阿少要陪她一阵子）']] },
+  { id: 'richfriend', ok: () => W.staff.wen.hired && W.day >= 5, ci: 18, cname: '雯姐的朋友', fx: 'rich', lines: [[null, '几位打扮讲究的太太走进店里。'], ['cust', '阿雯！原来你真的在这里打工！'], ['wen', '（压低声音）……照样排队。'], ['cust', '那我们每样来两份，全部外带！'], [null, '（雯姐的朋友一口气买了 $180）']] },
+  { id: 'fans', ok: () => W.staff.shao.hired && W.day >= 8, ci: 2, cname: '女学生', fx: 'fans', lines: [[null, '两个女学生在门口探头探脑。'], ['cust', '（小声）就是他……真的是他！'], ['shao', '（竖起手指）嘘——要买蛋挞吗？'], ['cust', '要！要十个！'], ['lin', '……阿少，你到底是谁？']] },
   { id: 'yaotaste', ok: () => W.staff.yao.hired, ci: 8, lines: [['yao', '可可浓度是不是太高了？'], ['cust', '好吃，但可以切大块一点吗？'], ['yao', '（写在本子上）……大块一点。']] },
   { id: 'umbrella', ok: () => !!wxOf().rain, lines: [['cust', '伞放哪里？'], ['lin', '门口那个桶！别滴到地上！'], [null, '（下雨天地上容易脏，记得派人打扫）']] },
   { id: 'regular', ok: () => Object.values(W.fans || {}).some(v => v >= 5), lines: [['cust', '老样子！'], ['hero', '马上来！'], ['lin', '老板现在连客人的「老样子」都记得了。']] },
@@ -75,11 +77,14 @@ function playEpisode(ep) {
   EP_BANNER = null; W.eps[ep.id] = W.day;
   const ci = ep.ci != null ? ep.ci : pick(guestPool());   // who's in it: the episode's own customer, or one of today's kinds
   STORY_Q.push({ key: 'ep', ci, cname: ep.cname, lines: [[null, '小剧场']].concat(ep.lines) });
-  if (ep.fx === 'shao') W.today.shaoSlowUntil = clockOpen + 45;   // 阿少 distracted for a while: works slower
+  if (ep.fx === 'shao') W.today.shaoSlowUntil = clockOpen + 45;
+  if (ep.fx === 'rich' || ep.fx === 'fans') { const amt = ep.fx === 'rich' ? 180 : 80; W.money += amt; W.today.revenue += amt; notice((ep.fx === 'rich' ? '雯姐的朋友' : '阿少的「粉丝」') + '买了 $' + amt); }   // 阿少 distracted for a while: works slower
 }
 
 // ---------------------------------------------------------------- 荣叔 drops by: ingredients 20% off today; small talk with 坤伯 (they go way back) and the owner
 const RONG_TALK = [
+  [['rong', '老坤，星期日西贡，五点码头等。'], ['kun', '带多件外套。'], ['rong', '知道啦，你比我老婆还啰嗦。'], ['rong', '老板，今天进货八折！']],
+  [['rong', '上次那条鱼，老坤说是他钓的。'], ['kun', '是我的饵。'], ['rong', '哈哈！老板，今天材料八折，算鱼的份。']],
   [['rong', '老坤！今天牛油到货多，全场八折。'], ['kun', '你每次都说多。'], ['rong', '这次是真的多！'], ['hero', '那我多订一点。']],
   [['rong', '还记得七几年我们在庙街抢鸡蛋吗？'], ['kun', '是你抢，我付钱。'], ['rong', '哈哈，所以今天算你便宜。']],
   [['rong', '老板，坤伯年轻时烤焦过一整盘蛋挞。'], ['kun', '……那是炉坏了。'], ['rong', '炉坏了四十年？'], ['hero', '（偷笑）']],
