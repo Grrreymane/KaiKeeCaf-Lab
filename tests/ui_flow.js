@@ -63,10 +63,9 @@ ok(HIRE.temp.name && STAFF_HD.temp, "today's part-timer: " + HIRE.temp.name); { 
 { const L = W.shelves.T4.layers[0]; assignLayer('T4', 0, 'tart'); L.n = 4; const w0 = W.today.waste || 0; assignLayer('T4', 0, 'bun'); ok(W.today.waste > w0 && W.today.wasteN >= 4 && L.n === 0, 'swap wastes the 4 tarts: -$' + (W.today.waste - w0)); }
 // the R&D process by hand: weigh with the scale, knead by tapping, rest, roll, cut ...
 { PHASE = 'ledger'; W.known.coco = false; W.day = 3; DESK = startRecipe('coco'); const D = DESK;
-  ok(D.step === 'weigh' && D.flow.length >= 8, 'coconut tart: ' + D.flow.map(s => s.type).join('>'));
-  D.hold = true; for (let i = 0; i < 80 && (D.s.grams || 0) < 250; i++) stepDesk(1 / 30); deskUp(); ok(D.step === 'weigh' && D.si === 1, 'flour weighed (' + D.msg + ')');
-  deskHelp(); ok(D.step === 'knead', 'on to kneading'); for (let i = 0; i < 8; i++) deskTap(); for (let i = 0; i < 20; i++) stepDesk(1 / 30); ok(D.step === 'rest', 'kneaded by tapping');
-  deskTap(); for (let i = 0; i < 90; i++) stepDesk(1 / 30); ok(D.step === 'roll', 'dough rested'); DESK = null; PHASE = 'prep'; }
+  ok(D.step === 'weigh' && D.flow.length <= 7 && !D.flow.some(q => q.type === 'rest'), 'coconut tart, simplified: ' + D.flow.map(s => s.type).join('>'));
+  D.hold = true; for (let i = 0; i < 80 && (D.s.grams || 0) < 250; i++) stepDesk(1 / 30); deskUp(); for (let i = 0; i < 40; i++) stepDesk(1 / 30); ok(D.si === 1 && D.step === 'add' && D.flow[1].ks.includes('butter'), 'flour weighed, butter goes in with the next step (' + D.msg + ')');
+  deskHelp(); ok(D.step === 'knead', 'on to kneading'); for (let i = 0; i < TAP_N.knead; i++) deskTap(); for (let i = 0; i < 20; i++) stepDesk(1 / 30); ok(D.step === 'add', 'kneaded by tapping (' + TAP_N.knead + ' taps)'); DESK = null; PHASE = 'prep'; }
 // upgrades have levels: till three times, each faster
 { W.money = 9000; W.up.till = 0; const t0 = checkoutTime({ got: { tart: 2 } }, false); buyUpgrade('till'); buyUpgrade('till'); buyUpgrade('till'); ok(upLv('till') === 3 && !buyUpgrade('till') && checkoutTime({ got: { tart: 2 } }, false) < t0 * .5, 'till upgraded to level 3, checkout >2x faster');
   const p0 = priceOf('tea'); buyUpgrade('tea'); ok(priceOf('tea') === p0 + 1, 'tea set raises drink price'); const b0 = beauty(); buyUpgrade('music'); ok(beauty() === b0 + 2, 'radio adds beauty');
