@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="zh"><head><meta charset="utf-8"><title>街记冰室 · 店铺立体对比</title>
+<style>
+@font-face { font-family: FP; src: url(fp.ttf); }
+body { margin: 0; background: #2b2230; color: #f3e6cf; font-family: FP, sans-serif; }
+.row { display: flex; gap: 24px; padding: 24px 24px 0; align-items: flex-start; }
+.p { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.cap { font-size: 24px; }
+canvas { image-rendering: pixelated; display: block; }
+</style></head><body><div class="row" id="r1"></div><div class="row" id="r2"></div>
+<script>
+'use strict';
+// 店铺立体感两种做法对比 + 精修食物 + 背景配色。画板同 _workflow/template。
+const OUT = '#3a2a2e', R = Math.round;
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+function mk(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
+function shade(hex, a) { const n = parseInt(hex.slice(1), 16), c = v => clamp(v + a, 0, 255); return '#' + ((1 << 24) | (c(n >> 16) << 16) | (c((n >> 8) & 255) << 8) | c(n & 255)).toString(16).slice(1); }
+function mixHex(a, b, t) { const p = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)], A = p(a), B = p(b); return '#' + A.map((v, i) => R(v + (B[i] - v) * t).toString(16).padStart(2, '0')).join(''); }
+const _RGBA = new Map();
+function rgbaOf(col) { let q = _RGBA.get(col); if (!q) { const n = parseInt(col.slice(1), 16); q = [n >> 16, (n >> 8) & 255, n & 255, 255]; _RGBA.set(col, q); } return q; }
+class Grid {
+  constructor(w, h) { this.w = w; this.h = h; this.d = new Array(w * h).fill(null); }
+  set(x, y, c) { x |= 0; y |= 0; if (c && x >= 0 && y >= 0 && x < this.w && y < this.h) this.d[y * this.w + x] = c; }
+  get(x, y) { return (x < 0 || y < 0 || x >= this.w || y >= this.h) ? null : this.d[y * this.w + x]; }
+  ell(cx, cy, rx, ry, c) { for (let y = Math.max(0, Math.floor(cy - ry - 1)); y < Math.min(this.h, cy + ry + 1); y++) for (let x = Math.max(0, Math.floor(cx - rx - 1)); x < Math.min(this.w, cx + rx + 1); x++) { const dx = (x + .5 - cx) / rx, dy = (y + .5 - cy) / ry; if (dx * dx + dy * dy <= 1) this.set(x, y, typeof c === 'function' ? c(x, y) : c); } }
+  rect(x, y, w, h, c) { for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) this.set(i, j, c); }
+  tri(ax, ay, bx, by, cx, cy, c) {
+    const e = (px, py, qx, qy, rx, ry) => (qx - px) * (ry - py) - (qy - py) * (rx - px);
+    for (let y = Math.floor(Math.min(ay, by, cy)); y <= Math.ceil(Math.max(ay, by, cy)); y++) for (let x = Math.floor(Math.min(ax, bx, cx)); x <= Math.ceil(Math.max(ax, bx, cx)); x++) {
+      const px = x + .5, py = y + .5, w0 = e(bx, by, cx, cy, px, py), w1 = e(cx, cy, ax, ay, px, py), w2 = e(ax, ay, bx, by, px, py);
+      if ((w0 >= 0 && w1 >= 0 && w2 >= 0) || (w0 <= 0 && w1 <= 0 && w2 <= 0)) this.set(x, y, c);
+    }
+  }
+  quad(a, b, c, d, col) { this.tri(a[0], a[1], b[0], b[1], c[0], c[1], col); this.tri(a[0], a[1], c[0], c[1], d[0], d[1], col); }
+  line(a, b, c) { const n = Math.max(1, Math.ceil(Math.max(Math.abs(b[0] - a[0]), Math.abs(b[1] - a[1])))); for (let i = 0; i <= n; i++) this.set(R(a[0] + (b[0] - a[0]) * i / n), R(a[1] + (b[1] - a[1]) * i / n), c); }
+  selOutline() { const add = []; for (let y = 0; y < this.h; y++) for (let x = 0; x < this.w; x++) { if (this.get(x, y)) continue; const below = this.get(x, y + 1), n = below || this.get(x - 1, y) || this.get(x + 1, y) || this.get(x, y - 1); if (n) add.push([x, y, mixHex(n, OUT, below ? .55 : .75)]); } add.forEach(([x, y, c]) => this.set(x, y, c)); }
+  canvas() { const c = mk(this.w, this.h), x = c.getContext('2d'), im = x.createImageData(this.w, this.h), D = im.data; for (let p = 0; p < this.w * this.h; p++) { const col = this.d[p]; if (col) D.set(rgbaOf(col), p * 4); } x.putImageData(im, 0, 0); return c; }
+}
+function paint(w, h, fn) { const G = new Grid(w, h); fn(G); G.selOutline(); return G.canvas(); }
+// 手点的小图：字符 → 颜色，外圈自动描一圈「深一档的同色」
+function spr(rs, pal) { const G = new Grid(rs[0].length + 2, rs.length + 2); rs.forEach((r, y) => [...r].forEach((ch, x) => { if (pal[ch]) G.set(x + 1, y + 1, pal[ch]); })); G.selOutline(); return G.canvas(); }
+const px = (c, x, y, w, h, col) => { c.fillStyle = col; c.fillRect(x, y, w, h); };
+const put = (c, img, x, y) => c.drawImage(img, R(x), R(y));
+const putB = (c, img, x, y) => put(c, img, x - img.width / 2, y - img.height + 1);   // 以脚底中点为锚
+let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+function T(d, s, x, y, col = '#fff4dc', align = 'left', stroke = '#2a1e22') {
+  d.font = '12px FP'; d.textAlign = align; d.textBaseline = 'top';
+  if (stroke) { d.fillStyle = stroke; for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [1, 1], [-1, 1], [1, -1]]) d.fillText(s, x + dx, y + dy); }
+  d.fillStyle = col; d.fillText(s, x, y);
+}
+
+// ============================================================ 精修食物（量少、饱和度高）
+const FOOD = {
+  // 蛋挞：花边挞皮一圈亮暗相间，蛋馅左上一道高光，下面露出挞皮侧面的褶
+  tart: spr([
+    '....LCLCLCL....',
+    '..LCyyyyyyyCL..',
+    '.CyYYYYYYYYYyC.',
+    'LyYhhhYYYYYYYyL',
+    'CyYhYYYYYYYYsyC',
+    'LyYYYYYYYYYssyL',
+    '.CyyYYYYYsssyC.',
+    '.LCLCyyyyyCLCL.',
+    '..dCdCdCdCdCd..',
+    '...ddddddddd...',
+  ], { L: '#ffc46a', C: '#e3832a', y: '#f5a33a', Y: '#ffd21f', h: '#fff6b8', s: '#f2ad0e', d: '#a9561a' }),
+  // 菠萝包：顶上一块块酥皮（左上亮、右下暗），下面露出颜色浅的包身
+  bun: spr([
+    '.....bbbbbb.....',
+    '...bhhkhhhkLbb..',
+    '..bhhhkhhkLLLkb.',
+    '.bkkkhkkkkLkLLLb',
+    '.bhLLkLLLkkLLLsb',
+    'bLLLkLLLLkLLkksb',
+    'bkkkLkkkLkkLLskb',
+    'bLLkLLLkLsskssb.',
+    '.bsksssksskssbb.',
+    '.pPPPPPPPPPPPPp.',
+    '..pPPPPPPPPPPp..',
+    '....pppppppp....',
+  ], { b: '#e0901f', h: '#ffe9a0', L: '#ffc23a', k: '#c56e12', s: '#e9a12a', P: '#f7d79a', p: '#d8a560' }),
+  // 港式奶茶：厚白瓷杯 + 杯碟，茶面一点奶沫
+  tea: spr([
+    '..wwwwwwww....',
+    '.wTTTTTTTTw...',
+    'wTTttTTTTTTw..',
+    'wTTTTTTTTTTwhh',
+    'wwTTTTTTTTww.h',
+    'wwwwwwwwwwww.h',
+    'wWwwwwwwwwwWh.',
+    '.wWwwwwwwwWw..',
+    '..wWWWWWWWw...',
+    'SSSSSSSSSSSS..',
+    '.SssssssssS...',
+    '...ssssss.....',
+  ], { w: '#ffffff', W: '#dde3ec', T: '#c47838', t: '#e9b27c', h: '#e6ebf2', S: '#f3f5f8', s: '#c2c9d4' }),
+  // 双皮奶：蓝边瓷碗，奶皮上两粒红豆
+  pudding: spr([
+    '...BBBBBBBB...',
+    '.BBMMMMMMMMBB.',
+    'BMMmmMMMMMMMMB',
+    'BMmMMMMMrRMMMB',
+    'BMMMMMrRMMMMnB',
+    '.BMMMMMMMMnnB.',
+    'wwBBBBBBBBBBww',
+    '.wbwbwbwbwbww.',
+    '..wwwwwwwwww..',
+    '....ffffff....',
+  ], { B: '#2d6cc4', M: '#fff4d6', m: '#ffffff', n: '#f1dfb4', r: '#d9372a', R: '#8c1d17', w: '#f2f6fa', b: '#4a8ae0', f: '#c9d3df' }),
+};
+
+// 店里货架上用的中号（约 10 px，比小人窄）；大号留给选货卡、设计台
+const FOOD_S = {
+  tart: spr(['..LCLCLC..', '.CyYYYYyC.', 'LyhhYYYYyL', 'CyYYYYYsyC', '.CyYYYssC.', '.LCLyyLCL.', '..dddddd..'],
+    { L: '#ffc46a', C: '#e3832a', y: '#f5a33a', Y: '#ffd21f', h: '#fff6b8', s: '#f2ad0e', d: '#a9561a' }),
+  bun: spr(['...bbbbb...', '.bhhkhLLb..', '.bhkhLkLLb.', 'bkkLkkLkLsb', 'bLLkLLkLssb', '.bskssksb..', '.pPPPPPPPp.', '..ppppppp..'],
+    { b: '#e0901f', h: '#ffe9a0', L: '#ffc23a', k: '#c56e12', s: '#e9a12a', P: '#f7d79a', p: '#d8a560' }),
+  tea: spr(['.wwwwww...', 'wTTtTTTw..', 'wTTTTTTwhh', 'wwwwwwww.h', 'wWwwwwwWh.', '.wWWWWWw..', 'SSSSSSSSS.', '.sssssss..'],
+    { w: '#ffffff', W: '#dde3ec', T: '#c47838', t: '#e9b27c', h: '#e6ebf2', S: '#f3f5f8', s: '#c2c9d4' }),
+  pudding: spr(['..BBBBBB..', '.BMMMMrMB.', 'BMmMMrRMMB', 'BMMMMMMnnB', 'wBBBBBBBBw', '.wbwbwbww.', '..wwwwww..'],
+    { B: '#2d6cc4', M: '#fff4d6', m: '#ffffff', n: '#f1dfb4', r: '#d9372a', R: '#8c1d17', w: '#f2f6fa', b: '#4a8ae0' }),
+};
+
+// ============================================================ 配色方案（背景）
+const PAL = {
+  mint: { name: '1 薄荷冰室', wall: '#7fcfae', wallD: '#69bc9b', trim: '#7a3f2a', trimL: '#a35a3c', tile: '#f7f3e7', tileL: '#d9d3c3', floorA: '#f3e6c4', floorB: '#e7d3a7', dot: '#2f8f6e', board: '#d93a2f', stool: '#e5412f', wood: '#c07a3e', woodL: '#e0a466', woodD: '#8a512a', note: '上一版，颜色加浓' },
+  butter: { name: '2 奶黄格仔', wall: '#f8d36a', wallD: '#edc350', trim: '#8e2436', trimL: '#b53c4e', tile: '#fff6df', tileL: '#e8dcc0', floorA: '#f6f1e6', floorB: '#3a3442', dot: null, board: '#2a6f6b', stool: '#2aa39c', wood: '#a8653a', woodL: '#cf8b55', woodD: '#723f22', note: '格子地板最抢眼' },
+  blue: { name: '3 蓝白瓷砖', wall: '#f6f3ec', wallD: '#e9e4d9', trim: '#24508f', trimL: '#3a6fb4', tile: '#3f7ec4', tileL: '#d9e8f7', floorA: '#e4dacb', floorB: '#d6cab8', dot: '#a8998a', board: '#ee7a1f', stool: '#f08a24', wood: '#7a4a2e', woodL: '#a06a44', woodD: '#4f2e1c', note: '最清爽，食物最跳' },
+  neon: { name: '4 粉红霓虹', wall: '#f4a7b6', wallD: '#ea93a6', trim: '#256b5e', trimL: '#358a7a', tile: '#fbf1e9', tileL: '#ead9cc', floorA: '#efe4d6', floorB: '#e3d3c0', dot: '#3aa58f', board: '#256b5e', stool: '#2fb39a', wood: '#b06b3c', woodL: '#d48c58', woodD: '#7c4524', note: '港风夜色，适合冬季' },
+};
+
+function person(o) {
+  const sk = o.skin || '#f5c9a0', h = o.seat ? 16 : 20;
+  return paint(12, h, G => {
+    if (!o.seat) { G.rect(3, 14, 2, 4, o.pants || '#4a4a5a'); G.rect(7, 14, 2, 4, o.pants || '#4a4a5a'); }
+    G.rect(2, 9, 8, 6, o.shirt); G.rect(1, 10, 1, 4, o.shirt); G.rect(10, 10, 1, 4, o.shirt);
+    G.set(1, 14, sk); G.set(10, 14, sk);
+    if (o.apron && o.face === 'f') G.rect(3, 10, 6, 5, o.apron);
+    G.ell(6, 5, 4.3, 4.3, sk);
+    if (o.face === 'b') G.ell(6, 4.6, 4.5, 4.4, o.hair); else { G.rect(2, 1, 8, 3, o.hair); G.set(2, 4, o.hair); G.set(9, 4, o.hair); }
+    if (o.style === 'bun') G.ell(6, 1, 2, 1.6, o.hair);
+    if (o.face === 'f') { G.set(4, 5, OUT); G.set(7, 5, OUT); G.set(5, 7, '#e0857a'); G.set(6, 7, '#e0857a'); }
+  });
+}
+const LIN = person({ face: 'f', hair: '#4a3040', style: 'bun', shirt: '#e76f8f', apron: '#f6eedc' });
+const CUS = person({ face: 'b', hair: '#3a2a2a', shirt: '#3f86d6' });
+const CUS2 = person({ face: 'f', hair: '#6b4a35', shirt: '#f0b43a' });
+const STOOL = paint(12, 14, G => { G.rect(5, 4, 2, 8, '#cfd4d8'); G.rect(3, 11, 6, 2, '#a3aab0'); G.ell(6, 3, 5.4, 2.8, '#e5412f'); G.rect(2, 3, 8, 1, '#ff6a52'); });
+const PLANT = paint(18, 26, G => { [[5, 8, 4, 6], [11, 6, 4, 6], [8, 3, 3, 5], [13, 11, 4, 4], [4, 13, 4, 4]].forEach(([x, y, rx, ry]) => G.ell(x, y, rx, ry, '#3fae5a')); G.ell(8, 9, 2, 2, '#7fd36a'); G.rect(4, 16, 10, 9, '#d9643a'); G.rect(4, 16, 10, 2, '#f08a50'); });
+const shadowOf = (g) => { const c = g.canvas(); return c; };
+function shadow(c, fn) { const g = new Grid(c.canvas.width, c.canvas.height); fn(g); c.save(); c.globalAlpha = .26; c.drawImage(g.canvas(), 0, 0); c.restore(); }
+
+// ============================================================ A：3/4 俯视加强（正面看，高度拉高 + 投影）
+function cornerA(pal) {
+  const lo = mk(180, 200), c = lo.getContext('2d'); seed = 5;
+  // 后墙：上半墙 + 窗 + 菜单牌 + 墙裙
+  px(c, 0, 0, 180, 4, pal.trim); px(c, 0, 4, 180, 40, pal.wall); for (let x = 2; x < 180; x += 6) px(c, x, 4, 1, 40, pal.wallD);
+  px(c, 0, 44, 180, 3, pal.trim); px(c, 0, 44, 180, 1, pal.trimL);
+  px(c, 0, 47, 180, 17, pal.tile); for (let y = 51; y < 64; y += 4) px(c, 0, y, 180, 1, pal.tileL); for (let x = 2; x < 180; x += 4) px(c, x, 47, 1, 17, pal.tileL);
+  px(c, 103, 7, 52, 34, OUT); px(c, 104, 8, 50, 32, pal.trimL); px(c, 107, 11, 44, 26, '#8fd6f6'); px(c, 107, 30, 44, 7, '#bfe9fb'); px(c, 112, 15, 12, 4, '#ffffff'); px(c, 128, 11, 2, 26, pal.trimL); px(c, 107, 23, 44, 2, pal.trimL);
+  for (const [x, w] of [[8, 40], [54, 40]]) { px(c, x - 1, 9, w + 2, 20, OUT); px(c, x, 10, w, 18, pal.board); px(c, x, 10, w, 1, shade(pal.board, 30)); for (let r = 13; r < 26; r += 4) { let cx = x + 3; while (cx < x + w - 4) { const l = 2 + R(rnd() * 5); if (cx + l > x + w - 3) break; px(c, cx, r, l, 2, '#fff1c8'); cx += l + 2; } } }
+  // 地板 + 窗光 + 墙根阴影
+  for (let y = 64; y < 200; y += 8) for (let x = 0; x < 180; x += 8) px(c, x, y, 8, 8, (((x >> 3) + (y >> 3)) & 1) ? pal.floorB : pal.floorA);
+  if (pal.dot) for (let y = 64; y <= 200; y += 16) for (let x = 0; x <= 180; x += 16) { px(c, x - 1, y - 2, 2, 4, pal.dot); px(c, x - 2, y - 1, 4, 2, pal.dot); }
+  c.save(); c.globalAlpha = .22; c.fillStyle = '#ffffff'; c.beginPath(); c.moveTo(104, 64); c.lineTo(154, 64); c.lineTo(130, 120); c.lineTo(80, 120); c.fill(); c.restore();
+  px(c, 0, 64, 180, 3, 'rgba(50,25,20,.25)');
+  // 柜台（高 32：台面 8 + 正面 24）+ 员工 + 收银机 + 挞盘
+  putB(c, LIN, 40, 78);
+  shadow(c, g => g.quad([6, 106], [118, 106], [126, 112], [10, 112], '#2a1a24'));
+  px(c, 4, 73, 110, 34, OUT); px(c, 5, 74, 108, 8, '#f1ece2'); px(c, 5, 74, 108, 1, '#ffffff'); px(c, 5, 82, 108, 1, '#bdb5a8');
+  px(c, 5, 83, 108, 23, pal.wood); for (let x = 9; x < 112; x += 12) { px(c, x, 86, 9, 17, pal.woodL); px(c, x, 86, 9, 1, shade(pal.woodL, 20)); px(c, x + 8, 86, 1, 17, pal.woodD); }
+  px(c, 5, 104, 108, 2, pal.woodD);
+  px(c, 13, 59, 22, 18, OUT); px(c, 14, 60, 20, 5, '#f2ead2'); px(c, 14, 65, 20, 11, '#dccfab'); px(c, 16, 56, 10, 5, OUT); px(c, 17, 57, 8, 3, '#2f6a50'); px(c, 18, 58, 3, 1, '#a6f0bd');
+  for (let i = 0; i < 4; i++) px(c, 16 + i * 4, 62, 2, 1, '#a49671');
+  px(c, 60, 74, 48, 6, '#d9dee3'); px(c, 60, 74, 48, 1, '#ffffff');
+  put(c, FOOD_S.tart, 64, 68); put(c, FOOD_S.tart, 78, 68); put(c, FOOD_S.tart, 92, 68);
+  // 三层阶梯货架（底 y 158，越往后越高）
+  shadow(c, g => g.quad([30, 158], [96, 158], [106, 166], [36, 166], '#2a1a24'));
+  const tiers = [[0, 16, 10, FOOD_S.tart], [1, 30, 8, FOOD_S.bun], [2, 42, 6, FOOD_S.pudding]];
+  for (let k = tiers.length - 1; k >= 0; k--) {
+    const [, up, fh, food] = tiers[k], yt = 158 - up, x0 = 30, w = 66;
+    px(c, x0 - 1, yt - 1, w + 2, 6 + fh + 2, OUT); px(c, x0, yt, w, 6, pal.woodL); px(c, x0, yt, w, 1, shade(pal.woodL, 22)); px(c, x0, yt + 6, w, fh, pal.wood); px(c, x0, yt + 6, w, 1, pal.woodD);
+    for (let i = 0; i < 3; i++) put(c, food, x0 + 9 + i * 18, yt - food.height + 4);
+  }
+  px(c, 28, 112, 4, 47, OUT); px(c, 29, 113, 2, 45, pal.woodD); px(c, 94, 112, 4, 47, OUT); px(c, 95, 113, 2, 45, pal.woodD);
+  // 客人、凳、盆栽（都带脚下阴影）
+  shadow(c, g => { g.ell(124, 178, 7, 2.4, '#2a1a24'); g.ell(150, 186, 7, 2.4, '#2a1a24'); g.ell(166, 118, 9, 3, '#2a1a24'); });
+  putB(c, PLANT, 162, 118); putB(c, CUS, 122, 177); putB(c, STOOL, 150, 186);
+  // 左右墙（墙顶厚度）
+  px(c, 0, 0, 5, 200, pal.trim); px(c, 4, 0, 1, 200, pal.trimL); px(c, 175, 0, 5, 200, pal.trim); px(c, 175, 0, 1, 200, pal.trimL);
+  return lo;
+}
+
+// ============================================================ B：斜 45° 等距（2:1，像图 3 / 开罗）
+function cornerB(pal) {
+  const lo = mk(180, 200), c = lo.getContext('2d'); seed = 9;
+  px(c, 0, 0, 180, 200, '#2b2230');
+  const OX = 90, OY = 70, W = 88, D = 88, H = 58;
+  const P = (x, y, z = 0) => [OX + (x - y), OY + (x + y) / 2 - z];
+  const G = new Grid(180, 200);
+  for (let i = 0; i < W / 8; i++) for (let j = 0; j < D / 8; j++) G.quad(P(i * 8, j * 8), P(i * 8 + 8, j * 8), P(i * 8 + 8, j * 8 + 8), P(i * 8, j * 8 + 8), (i + j) & 1 ? pal.floorB : pal.floorA);
+  if (pal.dot) for (let i = 0; i <= W / 8; i += 2) for (let j = 0; j <= D / 8; j += 2) { const [x, y] = P(i * 8, j * 8); G.rect(R(x) - 1, R(y), 2, 1, pal.dot); }
+  // 两面后墙（右墙 y=0 面亮一档，左墙 x=0 面暗一档）
+  const wallR = (z0, z1, col) => G.quad(P(0, 0, z0), P(W, 0, z0), P(W, 0, z1), P(0, 0, z1), col);
+  const wallL = (z0, z1, col) => G.quad(P(0, 0, z0), P(0, D, z0), P(0, D, z1), P(0, 0, z1), col);
+  wallR(0, H, pal.wall); wallL(0, H, shade(pal.wall, -20));
+  wallR(0, 18, pal.tile); wallL(0, 18, shade(pal.tile, -14));
+  for (let z = 4; z < 18; z += 4) { G.line(P(0, 0, z), P(W, 0, z), pal.tileL); G.line(P(0, 0, z), P(0, D, z), shade(pal.tileL, -14)); }
+  for (let t = 4; t < W; t += 4) { G.line(P(t, 0, 0), P(t, 0, 18), pal.tileL); G.line(P(0, t, 0), P(0, t, 18), shade(pal.tileL, -14)); }
+  for (let t = 3; t < W; t += 6) { G.line(P(t, 0, 20), P(t, 0, H - 2), pal.wallD); G.line(P(0, t, 20), P(0, t, H - 2), shade(pal.wallD, -20)); }
+  wallR(18, 21, pal.trim); wallL(18, 21, shade(pal.trim, -12)); wallR(H - 3, H, pal.trim); wallL(H - 3, H, shade(pal.trim, -12));
+  // 左墙的窗
+  G.quad(P(0, 28, 24), P(0, 64, 24), P(0, 64, 50), P(0, 28, 50), pal.trimL);
+  G.quad(P(0, 31, 27), P(0, 61, 27), P(0, 61, 47), P(0, 31, 47), '#7fcaf0'); G.quad(P(0, 31, 27), P(0, 61, 27), P(0, 61, 32), P(0, 31, 32), '#b6e6fa');
+  G.line(P(0, 46, 27), P(0, 46, 47), pal.trimL); G.line(P(0, 31, 37), P(0, 61, 37), pal.trimL);
+  // 右墙的菜单牌
+  for (const [x0, x1] of [[8, 36], [44, 82]]) { G.quad(P(x0, 0, 28), P(x1, 0, 28), P(x1, 0, 46), P(x0, 0, 46), pal.board); for (let z = 31; z < 45; z += 4) { let t = x0 + 2; while (t < x1 - 4) { const l = 2 + R(rnd() * 4); if (t + l > x1 - 2) break; G.line(P(t, 0, z), P(t + l, 0, z), '#fff1c8'); t += l + 2; } } }
+  c.drawImage(G.canvas(), 0, 0);
+  // 窗光 + 物件投影（往右下）
+  c.save(); c.globalAlpha = .2; const g0 = new Grid(180, 200); g0.quad(P(0, 30), P(0, 62), P(26, 74), P(26, 42), '#ffffff'); c.drawImage(g0.canvas(), 0, 0); c.restore();
+  shadow(c, g => { g.quad(P(8, 22), P(72, 22), P(80, 26), P(16, 26), '#2a1a24'); g.quad(P(26, 58), P(62, 58), P(70, 62), P(34, 62), '#2a1a24'); g.quad(P(62, 40), P(62, 58), P(70, 58), P(70, 40), '#2a1a24'); });
+  const obj = fn => { const g = new Grid(180, 200); fn(g); g.selOutline(); c.drawImage(g.canvas(), 0, 0); };
+  const box = (g, x, y, z, w, d, h, top, left, right) => {
+    g.quad(P(x, y + d, z + h), P(x + w, y + d, z + h), P(x + w, y + d, z), P(x, y + d, z), left);
+    g.quad(P(x + w, y, z + h), P(x + w, y + d, z + h), P(x + w, y + d, z), P(x + w, y, z), right);
+    g.quad(P(x, y, z + h), P(x + w, y, z + h), P(x + w, y + d, z + h), P(x, y + d, z + h), top);
+  };
+  // 柜台后面的员工 → 柜台 → 柜台上的东西
+  putB(c, LIN, ...P(36, 5));
+  obj(g => {
+    box(g, 6, 12, 0, 66, 10, 16, '#f1ece2', pal.wood, pal.woodD);
+    for (let t = 10; t < 70; t += 10) g.line(P(t, 22, 3), P(t, 22, 13), pal.woodL);
+  });
+  obj(g => { box(g, 12, 14, 16, 12, 6, 9, '#f2ead2', '#dccfab', '#c2b48c'); box(g, 13, 14, 25, 6, 2, 4, '#2f6a50', '#2f6a50', '#24533e'); });
+  putB(c, FOOD_S.tart, ...P(54, 18, 16)); putB(c, FOOD_S.tart, ...P(62, 18, 16)); putB(c, FOOD_S.tart, ...P(70, 18, 16));
+  // 双层货架：下层大台、上层小搁板、黄铜柱
+  obj(g => {
+    box(g, 26, 40, 0, 36, 18, 11, pal.woodL, pal.wood, pal.woodD);
+    for (const [x, y] of [[33, 54], [53, 54]]) box(g, x, y, 11, 2, 2, 9, '#ffd36a', '#e2a93a', '#c48a26');
+    box(g, 31, 44, 20, 26, 12, 3, pal.woodL, pal.wood, pal.woodD);
+  });
+  putB(c, FOOD_S.bun, ...P(38, 51, 23)); putB(c, FOOD_S.bun, ...P(50, 51, 23));
+  putB(c, FOOD_S.tart, ...P(32, 56, 11)); putB(c, FOOD_S.tart, ...P(43, 56, 11)); putB(c, FOOD_S.tart, ...P(54, 56, 11));
+  // 客人、凳、盆栽
+  shadow(c, g => { const [a, b] = P(72, 70), [s, t] = P(18, 76), [p, q] = P(80, 8); g.ell(a, b, 7, 2.6, '#2a1a24'); g.ell(s, t, 7, 2.6, '#2a1a24'); g.ell(p, q, 9, 3, '#2a1a24'); });
+  putB(c, PLANT, ...P(80, 8)); putB(c, CUS2, ...P(72, 70)); putB(c, STOOL, ...P(18, 76));
+  return lo;
+}
+
+// ============================================================ 食物精修页（6 倍）
+function foodSheet() {
+  const lo = mk(180, 200), c = lo.getContext('2d'); c.imageSmoothingEnabled = false;
+  px(c, 0, 0, 180, 200, '#3a2e3c');
+  const at = [['tart', 12, 14], ['bun', 98, 14], ['tea', 12, 108], ['pudding', 98, 108]];
+  at.forEach(([k, x, y]) => { px(c, x - 4, y - 4, 78, 82, '#4a3c4c'); const s = FOOD[k]; c.drawImage(s, R(x + 35 - s.width * 2), R(y + 30 - s.height * 2), s.width * 4, s.height * 4); put(c, FOOD_S[k], x + 46, y + 60); put(c, s, x + 58, y + 56); });
+  return lo;
+}
+
+// ============================================================ 配色卡
+function swatch(pal) {
+  const lo = mk(180, 110), c = lo.getContext('2d'); seed = 3;
+  px(c, 0, 0, 180, 3, pal.trim); px(c, 0, 3, 180, 34, pal.wall); for (let x = 2; x < 180; x += 6) px(c, x, 3, 1, 34, pal.wallD);
+  px(c, 0, 37, 180, 3, pal.trim); px(c, 0, 37, 180, 1, pal.trimL);
+  for (let y = 40; y < 56; y += 4) for (let x = 0; x < 180; x += 4) px(c, x, y, 4, 4, pal.name.startsWith('3') ? (((x + y) >> 2) & 1 ? pal.tile : pal.tileL) : pal.tile);
+  if (!pal.name.startsWith('3')) { for (let y = 43; y < 56; y += 4) px(c, 0, y, 180, 1, pal.tileL); for (let x = 2; x < 180; x += 4) px(c, x, 40, 1, 16, pal.tileL); }
+  for (let y = 56; y < 110; y += 8) for (let x = 0; x < 180; x += 8) px(c, x, y, 8, 8, (((x >> 3) + (y >> 3)) & 1) ? pal.floorB : pal.floorA);
+  if (pal.dot) for (let y = 56; y <= 110; y += 16) for (let x = 0; x <= 180; x += 16) { px(c, x - 1, y - 2, 2, 4, pal.dot); px(c, x - 2, y - 1, 4, 2, pal.dot); }
+  px(c, 0, 56, 180, 2, 'rgba(50,25,20,.25)');
+  px(c, 11, 7, 42, 22, OUT); px(c, 12, 8, 40, 20, pal.board); for (let r = 11; r < 26; r += 4) { let cx = 15; while (cx < 48) { const l = 2 + R(rnd() * 5); if (cx + l > 49) break; px(c, cx, r, l, 2, '#fff1c8'); cx += l + 2; } }
+  // 小柜台 + 食物，看背景和食物撞不撞色
+  px(c, 99, 61, 66, 26, OUT); px(c, 100, 62, 64, 6, '#f1ece2'); px(c, 100, 68, 64, 18, pal.wood); for (let x = 103; x < 162; x += 10) px(c, x, 70, 8, 14, pal.woodL);
+  put(c, FOOD_S.tart, 105, 56); put(c, FOOD_S.bun, 120, 54); put(c, FOOD_S.tea, 136, 54); put(c, FOOD_S.pudding, 151, 56);
+  const st = paint(12, 14, G => { G.rect(5, 4, 2, 8, '#cfd4d8'); G.rect(3, 11, 6, 2, '#a3aab0'); G.ell(6, 3, 5.4, 2.8, pal.stool); });
+  put(c, st, 30, 80); put(c, st, 56, 80);
+  const sw = [pal.wall, pal.trim, pal.tile, pal.floorA, pal.floorB, pal.board, pal.wood];
+  sw.forEach((col, i) => { px(c, 3 + i * 13, 97, 12, 10, OUT); px(c, 4 + i * 13, 98, 10, 8, col); });
+  return lo;
+}
+
+// ============================================================ 摆出来
+function show(row, title, lo, sc, text) {
+  const w = lo.width * sc, h = lo.height * sc, d = mk(w, h), x = d.getContext('2d');
+  x.imageSmoothingEnabled = false; x.drawImage(lo, 0, 0, w, h); if (text) text(x);
+  const el = document.createElement('div'); el.className = 'p'; el.appendChild(d);
+  const cap = document.createElement('div'); cap.className = 'cap'; cap.textContent = title; el.appendChild(cap);
+  document.getElementById(row).appendChild(el);
+}
+document.fonts.load('12px FP').then(() => {
+  show('r1', 'A · 3/4 俯视加强（正面看）', cornerA(PAL.mint), 2);
+  show('r1', 'B · 斜 45° 等距（像图 3）', cornerB(PAL.mint), 2);
+  show('r1', '食物精修（大图 4 倍；右下：店里中号 / 卡片大号原大）', foodSheet(), 2, x => {
+    [['港式蛋挞', 12, 14], ['菠萝包', 98, 14], ['港式奶茶', 12, 108], ['双皮奶', 98, 108]].forEach(([s, a, b]) => T(x, s, (a - 2) * 2, (b + 66) * 2));
+  });
+  for (const k of ['mint', 'butter', 'blue', 'neon']) show('r2', PAL[k].name, swatch(PAL[k]), 2, x => T(x, PAL[k].note, 190, 196, '#fff4dc'));
+});
+</script></body></html>

@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="zh"><head><meta charset="utf-8"><title>街记冰室 · 植物方案</title>
+<style>
+@font-face { font-family: FP; src: url(fp.ttf); }
+body { margin: 0; background: #2b2230; color: #f3e6cf; font-family: FP, sans-serif; font-size: 12px; }
+.row { display: flex; gap: 12px; padding: 16px; flex-wrap: wrap; width: 1340px; }
+.card { background: #d9c098; padding: 10px; display: flex; flex-direction: column; align-items: center; gap: 6px; width: 186px; }
+.name { font-size: 24px; color: #3a2a2e; } .note { color: #5a3f2e; text-align: center; line-height: 18px; }
+canvas { image-rendering: pixelated; display: block; }
+</style></head><body><div class="row" id="row"></div>
+<script src="lib.js"></script><script src="plants.js"></script>
+<script>
+const NOTE = { monstera: '大叶带裂口，最上镜；文青咖啡店常见', money: '编辫树干 + 掌状叶；港铺开张必摆，寓意好', bamboo: '几根竹节高低错落；收银台旁常见，招财', pothos: '心形小叶垂下来；挂在柜顶、窗边都好看', rubber: '深绿亮面大叶，红褐顶芽；老店门口常见', palm: '现在用的散尾葵，对照' };
+const POT = { monstera: 'cream', money: 'celadon', bamboo: 'charcoal', pothos: 'terracotta', rubber: 'charcoal', palm: 'cream' };
+document.fonts.load('12px FP').then(() => {
+  for (const k of Object.keys(PLANT_KINDS)) {
+    const g = new Grid(80, 110); drawPlant(g, 40, 104, k, POT[k]); g.selOutline(); const im = g.canvas();
+    const big = mk(160, 220), bx = big.getContext('2d'); bx.imageSmoothingEnabled = false; bx.drawImage(im, 0, 0, 160, 220);
+    const d = document.createElement('div'); d.className = 'card';
+    const n = document.createElement('div'); n.className = 'name'; n.textContent = PLANT_KINDS[k];
+    const t = document.createElement('div'); t.className = 'note'; t.textContent = NOTE[k];
+    d.append(big, im, n, t); document.getElementById('row').append(d);
+  }
+});
+</script></body></html>

@@ -1,0 +1,6 @@
+_test.html
+_bot.js
+.shots/
+__pycache__/
+node_modules/
+.claude/

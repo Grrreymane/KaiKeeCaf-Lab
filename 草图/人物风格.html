@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh"><head><meta charset="utf-8"><title>街记冰室 · 人物风格</title>
+<style>
+@font-face { font-family: FP; src: url(fp.ttf); }
+body { margin: 0; background: #2b2230; color: #f3e6cf; font-family: FP, sans-serif; font-size: 12px; }
+h2 { font-size: 24px; font-weight: normal; margin: 18px 24px 8px; }
+.row { display: flex; flex-wrap: wrap; gap: 12px; padding: 0 24px; align-items: flex-start; }
+.card { background: #3a2e3c; padding: 8px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.pair { display: flex; gap: 6px; align-items: flex-end; }
+canvas { image-rendering: pixelated; display: block; }
+.name { font-size: 24px; } .note { color: #cdbfb0; }
+</style></head><body>
+<h2>员工（细像素新版，照莲姨的规则；2 倍看，右下角是店里实际大小）</h2><div class="row" id="staff"></div>
+<h2>顾客（男女老少分眼睛和手臂）</h2><div class="row" id="guests"></div>
+<h2>偶尔来打工的学生（短工，浅薄荷围裙）</h2><div class="row" id="part"></div>
+<h2>全员站一排（实际大小）</h2><div class="row"><canvas id="line" width="1500" height="280"></canvas></div>
+<script src="lib.js"></script>
+<script src="chars.js"></script>
+<script>
+function big(img, k) { const c = mk(img.width * k, img.height * k), x = c.getContext('2d'); x.imageSmoothingEnabled = false; x.drawImage(img, 0, 0, c.width, c.height); return c; }
+const div = (cls, ...kids) => { const d = document.createElement('div'); d.className = cls; d.append(...kids); return d; };
+const txt = (cls, s) => { const d = document.createElement('div'); d.className = cls; d.textContent = s; return d; };
+const card = (ch) => div('card', div('pair', big(ch.SE[0], 2), big(ch.NE[0], 2), ch.SE[0]), txt('name', ch.o.name), txt('note', ch.o.note));
+document.fonts.load('12px FP').then(() => {
+  Object.values(STAFF_HD).forEach(ch => document.getElementById('staff').append(card(ch)));
+  GUEST_HD.forEach(ch => document.getElementById('guests').append(card(ch)));
+  PART_HD.forEach(ch => document.getElementById('part').append(card(ch)));
+  const d = document.getElementById('line').getContext('2d'); d.fillStyle = '#3a2e3c'; d.fillRect(0, 0, 1500, 280);
+  [...Object.values(STAFF_HD), ...PART_HD, ...GUEST_HD].forEach((ch, i) => d.drawImage(i % 2 ? ch.SW[0] : ch.SE[0], 10 + (i % 22) * 66, 10 + Math.floor(i / 22) * 130));
+});
+</script></body></html>

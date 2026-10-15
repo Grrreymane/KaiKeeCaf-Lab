@@ -1,0 +1,23 @@
+[
+  "src/core/base.js",
+  "src/art/palette.js",
+  "src/art/food.js",
+  "src/art/chars.js",
+  "src/art/plants.js",
+  "src/art/portraits.js",
+  "src/art/portrait-real.js",
+  "src/systems/data.js",
+  "src/systems/state.js",
+  "src/core/audio.js",
+  "src/art/materials.js",
+  "src/art/shop.js",
+  "src/systems/sim.js",
+  "src/systems/day.js",
+  "src/systems/story.js",
+  "src/ui/render.js",
+  "src/ui/hud.js",
+  "src/ui/panels.js",
+  "src/ui/desk.js",
+  "src/ui/input.js",
+  "src/core/boot.js"
+]

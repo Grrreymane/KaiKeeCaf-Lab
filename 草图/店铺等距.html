@@ -1,0 +1,777 @@
+<!doctype html>
+<html lang="zh"><head><meta charset="utf-8"><title>街记冰室 · 等距店铺</title>
+<style>
+@font-face { font-family: FP; src: url(fp.ttf); }
+@font-face { font-family: SR; src: url(fonts/serif.ttf); }   /* 标题字：思源宋体特粗（字体方案 F） */
+body { margin: 0; background: #2b2230; color: #f3e6cf; font-family: FP, sans-serif; font-size: 12px; }
+.row { display: flex; gap: 28px; padding: 24px; align-items: flex-start; }
+.col { display: flex; flex-direction: column; gap: 10px; width: 420px; }
+canvas { image-rendering: pixelated; display: block; }
+#shop { filter: saturate(1.18) contrast(1.05); touch-action: none; cursor: grab; }   /* 整体调色：不发灰 */
+h2 { font-size: 24px; font-weight: normal; margin: 6px 0 0; }
+ul { margin: 0; padding-left: 16px; line-height: 20px; }
+</style></head><body><div class="row">
+<canvas id="shop" width="720" height="1280"></canvas>
+<div class="col">
+<h2>细像素版</h2><ul><li>店铺和人物都是 2 倍细像素（画布 720×1280，同样大小、像素点小一半）。</li></ul>
+<h2>人怎么走</h2>
+<ul>
+<li>地面按格子走：一格 16 世界单位 = 屏幕 32×16 像素。货架、柜台占的格子不能走，只走过道。</li>
+<li>四个朝向：右下、左下看到正脸，右上、左上看到后脑；左右靠镜像，每个人只画 2 个方向 × 4 帧走路。</li>
+<li>前后遮挡：每帧把人和家具按「谁在谁前面」排一次（世界里 x 或 y 更大的在前）。人走到货架后面就被货架挡住。</li>
+<li>街上两条人流（往左、往右）；往右走的人有一部分在门口拐进来，变成顾客。</li>
+<li>排队：顾客走同一条路，前面的人停下（看货、付钱），后面的人隔一个身位停住，自然排成队；等太久头旁才出黄色耐心条。</li>
+<li>感言气泡：头上冒一句，金边的是「提醒」（排队长、货架空），白边的是夸奖；同时最多两个，几秒就消失。</li>
+<li>柜台后面是高一级的平台，员工站上去，肩膀以上露出来。</li>
+</ul>
+</div></div>
+<script>const STYLE = (location.hash.match(/style=(\w)/) || [])[1] || 'b'; if (STYLE === 'b') window.CHAR_OUTLINE = 'color';</script>
+<script src="lib.js"></script>
+<script src="chars.js"></script>
+<script src="food2.js"></script>
+<script src="plants.js"></script>
+<script>
+// 等距（2:1）店铺草图：逻辑 360×640，一格 16 世界单位 = 32×16 像素。人物见 chars.js（人物风格.html）。
+const ROOM = 320, WALL_H = 200, OX = 180, OY = 140, PLAT = 14;   // PLAT：柜台后面平台的高度
+const K = 2, FOOT2 = FOOT * 2, WW = 1120, CAM_MAX = WW - 720;   // WW：世界画布宽，手指左右拖看右边（烘焙间、隔壁）
+let camX = +((location.hash.match(/cam=(\d+)/) || [])[1] || 0), MODE = location.hash.includes('edit') ? 'edit' : 'play';   // 细像素：世界画布 2 倍
+// 店里的白色压暖、降一档亮度（云石、墙砖、地板、不锈钢），不再刺眼
+Object.assign(C, { marble: '#efe2c8', marbleS: '#d5c09c', marbleD: '#b9a17c', vein: '#e3d0ae', tile: '#eadcc0', tileL: '#d2c09e', floorA: '#e8d4ab', floorB: '#d8bd8e',
+  steel: '#d3d8d6', steelS: '#b4bbba', steelD: '#959d9e', cream: '#f6e8c8' });
+const OUT2 = '#4a3236';
+const RETRO = { marble: '#e4dac8', marbleS: '#c9bba3', marbleD: '#ad9d84', vein: '#d6c9b2', brass: '#d2a95a', brassD: '#a07e3c', steel: '#cfd1cc', steelS: '#b0b3ad', steelD: '#91958f', cream: '#efe2c4', gold: '#e9c46a' };
+const PALS = {
+  1: { name: '旧时薄荷', ...RETRO, wall: '#9cc4ad', wallD: '#8bb59d', trim: '#6b4a35', trimL: '#8a6448', tile: '#e6dccb', tileL: '#cbbfa8', floorA: '#d8c5a0', floorB: '#c6ae86', dot: '#5f8f7e', board: '#a8483c', stool: '#b8483c', wood: '#a8754a', woodL: '#c49568', woodD: '#7d5436' },
+  2: { name: '奶茶旧铺', ...RETRO, wall: '#d6c39c', wallD: '#c9b48b', trim: '#5b3a2e', trimL: '#7a5242', tile: '#e8dcc6', tileL: '#cfc0a4', floorA: '#d9c4a0', floorB: '#9a7a5e', dot: null, board: '#3f5f50', stool: '#4a7a66', wood: '#9a6a44', woodL: '#b88a60', woodD: '#6e4a30' },
+  3: { name: '褪色港蓝', ...RETRO, wall: '#a3bcc2', wallD: '#93aeb5', trim: '#7a3b32', trimL: '#9a5546', tile: '#e6e0d2', tileL: '#c9c2b2', floorA: '#d6c8ae', floorB: '#bfac8e', dot: '#7a3b32', board: '#a8503e', stool: '#c0683a', wood: '#9c6c48', woodL: '#bb8c64', woodD: '#704a30' },
+  4: { name: '薄荷冰室', floorA: '#e7bd96', floorB: '#dcac86', dot: '#4f9a7c' },
+};
+const PAL = +((location.hash.match(/pal=(\d)/) || [])[1] || 4);
+Object.assign(C, PALS[PAL] || {});   // 物件外面的粗描边
+const P1 = (x, y, z = 0) => [OX + (x - y), OY + (x + y) / 2 - z];
+const P = (x, y, z = 0) => [K * (OX + (x - y)), K * (OY + (x + y) / 2 - z)];
+function bx(g, Q, x, y, z, w, d, h, top, left, right, r) {
+  if (r === undefined) r = Math.min(4, w / 4, d / 4);
+  if (r < 1.5) {
+    g.quad(Q(x, y + d, z + h), Q(x + w, y + d, z + h), Q(x + w, y + d, z), Q(x, y + d, z), left);
+    g.quad(Q(x + w, y, z + h), Q(x + w, y + d, z + h), Q(x + w, y + d, z), Q(x + w, y, z), right);
+    g.quad(Q(x, y, z + h), Q(x + w, y, z + h), Q(x + w, y + d, z + h), Q(x, y + d, z + h), top);
+    return;
+  }
+  const pts = [];
+  for (const [cx, cy, a0] of [[x + w - r, y + d - r, 0], [x + r, y + d - r, 90], [x + r, y + r, 180], [x + w - r, y + r, 270]])
+    for (let k = 0; k <= 4; k++) { const a = (a0 + k * 22.5) * Math.PI / 180; pts.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r, Math.cos(a), Math.sin(a)]); }
+  const mid = mixHex(left, right, .5), rim = shade(top, 14);
+  for (let i = 0; i < pts.length; i++) {
+    const p = pts[i], q = pts[(i + 1) % pts.length], nx = p[2] + q[2], ny = p[3] + q[3];
+    if (nx + ny <= .05) continue;   // 背面看不到
+    const t = (nx - ny) / (Math.abs(nx) + Math.abs(ny) + 1e-6), col = t < -.4 ? left : t > .4 ? right : mid;
+    g.quad(Q(p[0], p[1], z + h), Q(q[0], q[1], z + h), Q(q[0], q[1], z), Q(p[0], p[1], z), col);
+  }
+  const c0 = Q(x + w / 2, y + d / 2, z + h);
+  for (let i = 0; i < pts.length; i++) { const a = Q(pts[i][0], pts[i][1], z + h), b = Q(pts[(i + 1) % pts.length][0], pts[(i + 1) % pts.length][1], z + h); g.tri(c0[0], c0[1], a[0], a[1], b[0], b[1], top); }
+  for (let i = 0; i < pts.length; i++) { const p = pts[i], q = pts[(i + 1) % pts.length]; if (p[2] + q[2] + p[3] + q[3] > .05) g.seg(Q(p[0], p[1], z + h), Q(q[0], q[1], z + h), rim); }   // 顶边一道亮线
+  if (w >= 20 && d >= 10) {   // 台面反光：左上两道斜光 + 一个亮点
+    const hi = mixHex(top, '#ffffff', .42), hi2 = mixHex(top, '#ffffff', .22), Z = z + h;
+    for (let k = 0; k < 3; k++) g.seg(Q(x + w * .1 + k, y + d * .8, Z), Q(x + w * .26 + k, y + d * .18, Z), k === 1 ? hi : hi2);
+    g.seg(Q(x + w * .3, y + d * .8, Z), Q(x + w * .4, y + d * .3, Z), hi2); { const [a, b] = Q(x + w * .16, y + d * .3, Z); g.set(R(a), R(b), '#ffffff'); g.set(R(a) + 1, R(b), hi); }
+  }
+}
+// 粗描边：外面两格，用旁边物件的颜色压深（不是纯黑）
+function texturize(g) {   // 方案 C：像角色一样左上提亮、右下压暗，大面加一点颗粒
+  g.autoShade();
+  for (let y = 0; y < g.h; y++) for (let x = 0; x < g.w; x++) { const c = g.d[y * g.w + x]; if (!c) continue; const r = ((x * 73856093) ^ (y * 19349663)) >>> 0; if (r % 23 === 0) g.d[y * g.w + x] = shade(c, -9); else if (r % 41 === 0) g.d[y * g.w + x] = shade(c, 8); }
+}
+function thickOut(g) {
+  const src = g.d.slice(), at = (x, y) => (x < 0 || y < 0 || x >= g.w || y >= g.h) ? null : src[y * g.w + x];
+  const near = [[0, 1], [-1, 0], [1, 0], [0, -1], [0, 2], [-2, 0], [2, 0], [0, -2], [-1, 1], [1, 1], [-1, -1], [1, -1]];
+  for (let y = 0; y < g.h; y++) for (let x = 0; x < g.w; x++) {
+    if (src[y * g.w + x]) continue;
+    for (const [dx, dy] of near) { const n = at(x + dx, y + dy); if (n) { g.set(x, y, STYLE === 'a' || STYLE === 'c' ? mixHex(n, '#2a1d26', .86) : mixHex(n, OUT2, .58)); break; } }
+  }
+}
+// 一个物件 = 世界里的占地框（排前后用）+ 预先画好的小画布；steps 依次是要描边的形状 g 和直接贴上去的 d
+function makeObj(Pj, ab, zTop, steps) {
+  const minX = Math.floor(Pj(ab.x0, ab.y1)[0]) - 24, maxX = Math.ceil(Pj(ab.x1, ab.y0)[0]) + 24;
+  const minY = Math.floor(Pj(ab.x0, ab.y0, zTop)[1]) - 48, maxY = Math.ceil(Pj(ab.x1, ab.y1)[1]) + 12;
+  const w = maxX - minX, h = maxY - minY, cv = mk(w, h), cx = cv.getContext('2d');
+  const Q = (x, y, z = 0) => { const p = Pj(x, y, z); return [p[0] - minX, p[1] - minY]; };
+  for (const s of steps) {
+    if (s.g) { const g = new Grid(w, h); s.g(g, Q); if (s.plain) { cx.save(); cx.globalAlpha = s.alpha || 1; cx.drawImage(g.canvas(), 0, 0); cx.restore(); } else { if (STYLE === 'c') texturize(g); thickOut(g); cx.drawImage(g.canvas(), 0, 0); } }
+    if (s.d) s.d(cx, Q);
+  }
+  return { ...ab, cv, sx: minX, sy: minY, bx0: minX, by0: minY, bx1: maxX, by1: maxY, draw(c) { c.drawImage(this.cv, this.sx, this.sy); } };
+}
+// 双层货架（参考图 3）：圆脚 + 木身 + 云石下层台面 + 黄铜柱 + 云石上层小台
+function displayTable(Pj, x0, y0, lower, upper) {
+  x0 += 9; y0 += 5; const w = 54, d = 26, x1 = x0 + w, y1 = y0 + d, ZU = 27;
+  const slab = (g, Q, x, y, z, ww, dd) => { bx(g, Q, x, y, z, ww, dd, 4, C.marble, C.marbleS, C.marbleD); g.seg(Q(x + 6, y + 4, z + 4), Q(x + ww * .6, y + dd - 3, z + 4), C.vein); };
+  return makeObj(Pj, { x0, x1, y0, y1 }, 50, [
+    { g: (g, Q) => {
+      for (const [fx, fy] of [[x0 + 2, y0 + 2], [x1 - 7, y0 + 2], [x0 + 2, y1 - 7], [x1 - 7, y1 - 7]]) bx(g, Q, fx, fy, 0, 5, 5, 3, '#e6c79a', '#b08a58', '#957242');
+      bx(g, Q, x0 + 4, y0 + 4, 3, w - 8, d - 8, 7, C.woodL, C.wood, C.woodD);
+      slab(g, Q, x0, y0, 10, w, d);
+      for (const [px_, py_] of [[x0 + 4, y0 + 4], [x1 - 6, y0 + 4], [x0 + 4, y1 - 12], [x1 - 6, y1 - 12]]) bx(g, Q, px_, py_, 14, 1.4, 1.4, ZU - 14, C.brass, C.brass, C.brassD);
+    } },
+    { d: (c, Q) => { if (lower) for (const ry of [y1 - 15, y1 - 4]) for (let i = 0; i < 3; i++) putB(c, lower, Q(x0 + 10 + i * 17, ry, 14)); } },
+    { g: (g, Q) => slab(g, Q, x0, y0, ZU, w, d) },
+    { d: (c, Q) => { if (upper) for (const ry of [y0 + 9, y0 + 20]) for (let i = 0; i < 3; i++) putB(c, upper, Q(x0 + 10 + i * 17, ry, ZU + 4)); } },
+  ]);
+}
+
+function glassFridge(Pj, x0, y0, low, up) {
+  x0 += 5; y0 += 3; const w = 62, d = 30, x1 = x0 + w, y1 = y0 + d, ZB = 12, ZT = 40;
+  const glass = (g, Q, a, b) => { g.quad(Q(x0, y1, a), Q(x1, y1, a), Q(x1, y1, b), Q(x0, y1, b), '#c9f0f2'); g.quad(Q(x1, y0, a), Q(x1, y1, a), Q(x1, y1, b), Q(x1, y0, b), '#a9dde3'); g.quad(Q(x0, y0, b), Q(x1, y0, b), Q(x1, y1, b), Q(x0, y1, b), '#e2fafb'); };
+  return makeObj(Pj, { x0, x1, y0, y1 }, 50, [
+    { g: (g, Q) => {
+      bx(g, Q, x0, y0, 0, w, d, ZB, C.woodL, C.wood, C.woodD);
+      woodGrain(g, Q, x0 + 4, x1 - 4, 1, ZB - 1, y1, 15);
+      g.quad(Q(x0 + 6, y1, 3), Q(x0 + 20, y1, 3), Q(x0 + 20, y1, 6), Q(x0 + 6, y1, 6), '#3b3135');   // 出风口
+      for (let t = x0 + 7; t < x0 + 20; t += 2) g.seg(Q(t, y1, 3), Q(t, y1, 6), '#6a6e72');
+      bx(g, Q, x0 + 1, y0 + 1, ZB, w - 2, d - 2, 1, '#e8f2f2', '#c9d6d8', '#b0bec0');
+      for (const [px_, py_] of [[x0, y0], [x1 - 1.4, y0], [x0, y1 - 1.4], [x1 - 1.4, y1 - 1.4]]) bx(g, Q, px_, py_, ZB, 1.4, 1.4, ZT - ZB, C.steel, C.steelS, C.steelD);
+    } },
+    { d: (c, Q) => { for (const ry of [y0 + 10, y0 + 22]) for (let i = 0; i < 3; i++) putB(c, low, Q(x0 + 12 + i * 19, ry, ZB + 1)); } },
+    { g: (g, Q) => bx(g, Q, x0 + 2, y0 + 2, ZB + 14, w - 4, d - 4, 1, '#dff6f8', '#bfe6ea', '#a9dbe0', 0), plain: true, alpha: .7 },
+    { d: (c, Q) => { for (let i = 0; i < 3; i++) putB(c, up, Q(x0 + 12 + i * 19, y0 + 16, ZB + 15)); } },
+    { g: (g, Q) => glass(g, Q, ZB, ZT), plain: true, alpha: .26 },
+    { g: (g, Q) => { const t = x0 + 8; g.quad(Q(t, y1, ZB + 1), Q(t + 9, y1, ZB + 1), Q(t + 19, y1, ZT - 1), Q(t + 10, y1, ZT - 1), '#ffffff'); g.quad(Q(t + 30, y1, ZB + 1), Q(t + 34, y1, ZB + 1), Q(t + 44, y1, ZT - 1), Q(t + 40, y1, ZT - 1), '#ffffff'); }, plain: true, alpha: .22 },
+    { g: (g, Q) => { bx(g, Q, x0, y0, ZT, w, d, 1.5, C.steel, C.steelS, C.steelD); for (const [a, b] of [[Q(x0, y1, ZB), Q(x0, y1, ZT)], [Q(x1, y1, ZB), Q(x1, y1, ZT)], [Q(x1, y0, ZB), Q(x1, y0, ZT)]]) g.seg(a, b, '#ffffff'); for (let t = x0 + 10; t < x1 - 10; t += 26) { g.seg(Q(t, y1, ZB + 4), Q(t + 7, y1, ZT - 4), '#ffffff'); g.seg(Q(t + 3, y1, ZB + 4), Q(t + 10, y1, ZT - 4), '#ffffff'); } }, plain: true, alpha: .8 },
+  ]);
+}
+
+// 左墙港式海报：荧光黄纸「是日推介 · 蛋挞 $8」，按左墙方向（往右上斜）贴
+function posterLeft(c) {
+  const w = 60, h = 116, tc = mk(w, h), x = tc.getContext('2d');
+  x.fillStyle = '#d9372a'; x.fillRect(0, 0, w, h); x.fillStyle = '#ffe14d'; x.fillRect(3, 3, w - 6, h - 6);
+  x.fillStyle = '#d9372a'; x.fillRect(3, 3, w - 6, 26);
+  x.textAlign = 'center'; x.textBaseline = 'top'; x.font = '900 18px SR'; x.fillStyle = '#fff4dc'; x.fillText('是日', w / 2, 6);
+  x.drawImage(FOOD_L.tart, (w - FOOD_L.tart.width) / 2, 34);
+  x.font = '900 16px SR'; x.fillStyle = '#d9372a'; x.fillText('推介', w / 2, 60);
+  x.font = '900 22px SR'; x.fillStyle = '#2f6e56'; x.fillText('$8', w / 2, 80);
+  x.fillStyle = '#2f6e56'; for (let i = 6; i < w - 6; i += 6) x.fillRect(i, h - 8, 3, 3);
+  const [sx, sy] = P(0, 176, 124); for (let i = 0; i < w; i++) c.drawImage(tc, i, 0, 1, h, R(sx) + i, R(sy - i / 2), 1, h);
+  px(c, R(sx) + 2, R(sy) - 2, 3, 3, '#c9cdd0'); px(c, R(sx) + w - 5, R(sy - w / 2) - 2, 3, 3, '#c9cdd0');   // 两颗图钉
+}
+// 墙上的字：先写在小画布上，再一列列往下错半格贴到右墙（y = 0）上
+function wallText(c, xa, z1, w, h, fn) {
+  const tc = mk(w, h), tx = tc.getContext('2d'); tx.textBaseline = 'top'; fn(tx);
+  const [sx, sy] = P(xa, 0, z1); for (let i = 0; i < w; i++) c.drawImage(tc, i, 0, 1, h, R(sx) + i, R(sy + i / 2), 1, h);
+}
+function menuHead(x, t, cx) { x.font = '900 14px SR'; x.fillStyle = C.gold; x.textAlign = 'center'; x.fillText(t, cx, 3); x.fillStyle = 'rgba(255,240,200,.45)'; x.fillRect(cx - 40, 18, 80, 1); x.textAlign = 'left'; }
+function menuRows(x, rows, l, r) { x.font = '12px FP'; rows.forEach(([n, p], i) => { const y = 22 + i * 14; x.fillStyle = '#f6ead0'; x.fillText(n, l, y); x.textAlign = 'right'; x.fillStyle = '#ffe08a'; x.fillText('$' + p, r, y); x.textAlign = 'left'; for (let d = l + x.measureText(n).width + 3; d < r - 22; d += 3) { x.fillStyle = 'rgba(255,240,200,.35)'; x.fillRect(d, y + 9, 1, 1); } }); }
+
+function contactShadows(c) {
+  const outer = new Grid(WW, 1280), inner = new Grid(WW, 1280), col = '#3a2418';
+  const box = (g, x0, y0, x1, y1, z) => g.quad(P(x0, y0, z), P(x1, y0, z), P(x1, y1, z), P(x0, y1, z), col);
+  for (const o of STATICS) {
+    if (o.x1 - o.x0 < 3 && o.y1 - o.y0 < 3) continue;
+    const z = (o.y1 <= 30 && o.x1 <= 320) ? PLAT : 0;
+    box(outer, o.x0 - 2, o.y0 - 2, o.x1 + 5, o.y1 + 5, z); box(inner, o.x0 - .5, o.y0 - .5, o.x1 + 2.5, o.y1 + 2.5, z);
+  }
+  box(outer, 0, 30, ROOM, 40, 0); box(inner, 0, 30, ROOM, 34, 0);       // 平台前沿
+  box(outer, 0, 30, 8, ROOM, 0); box(inner, 0, 30, 3, ROOM, 0);         // 左墙根
+  box(outer, 0, 0, ROOM, 6, PLAT); box(inner, 0, 0, ROOM, 2, PLAT);     // 后墙根（平台上）
+  c.save(); c.globalAlpha = .13; c.drawImage(outer.canvas(), 0, 0); c.globalAlpha = .16; c.drawImage(inner.canvas(), 0, 0); c.restore();
+}
+
+// ============================================================ 背景：地板、墙、窗、招牌、街、隔壁
+function drawBackground(c) {
+  px(c, 0, 0, WW, 1280, '#2b2230');
+  const g = new Grid(WW, 1280);
+  const tiles = (x0, y0, x1, y1, s, A, B, z = 0) => { for (let x = x0; x < x1; x += s) for (let y = y0; y < y1; y += s) g.quad(P(x, y, z), P(x + s, y, z), P(x + s, y + s, z), P(x, y + s, z), ((x + y) / s) & 1 ? B : A); };
+  // 街：人行道、马路、对面人行道
+  tiles(-400, 320, 800, 352, 16, '#d3ccc0', '#c7c0b4');
+  g.quad(P(-400, 352), P(800, 352), P(800, 356), P(-400, 356), '#8f887d');
+  g.quad(P(-400, 356), P(800, 356), P(800, 396), P(-400, 396), '#5d5856');
+  for (let x = -380; x < 800; x += 48) g.quad(P(x, 375), P(x + 24, 375), P(x + 24, 377), P(x, 377), '#d8d2c4');
+  g.quad(P(-400, 396), P(800, 396), P(800, 400), P(-400, 400), '#8f887d');
+  tiles(-400, 400, 800, 640, 16, '#cbc4b8', '#bfb8ac');
+  // 隔壁铺（空铺招租）：旧地砖，压暗
+  tiles(320, 0, 640, 320, 32, '#e4e0da', '#dedad3');   // 隔壁：未解锁，浅灰让人略过
+  g.quad(P(320, 0, 0), P(640, 0, 0), P(640, 0, WALL_H), P(320, 0, WALL_H), '#d9d5ce');
+  // 本铺地板：大格子 + 角上一点绿；柜台后面是高一级的平台（小砖）
+  tiles(0, 32, ROOM, ROOM, 16, C.floorA, C.floorB);
+  // 门口马赛克花砖：白底，红花绿叶，深绿镶边
+  for (let x = 248; x < 316; x += 4) for (let y = 264; y < 316; y += 4) {
+    const i = ((x - 248) / 4) | 0, j = ((y - 264) / 4) | 0, edge = i === 0 || j === 0 || i === 16 || j === 12;
+    const u = (i - 1) % 6, v = (j - 1) % 6, flower = (u === 2 || u === 3) && (v === 2 || v === 3), leaf = !flower && ((u === 2 || u === 3) && (v === 1 || v === 4) || (v === 2 || v === 3) && (u === 1 || u === 4));
+    g.quad(P(x, y), P(x + 4, y), P(x + 4, y + 4), P(x, y + 4), edge ? '#3f6b5a' : flower ? '#b8483c' : leaf ? '#5f9a80' : ((i + j) & 1 ? '#f1e8d6' : '#e8dcc6'));
+  }
+  if (C.dot) for (let x = 0; x <= ROOM; x += 32) for (let y = 32; y <= ROOM; y += 32) { const [sx, sy] = P(x, y); g.quad([sx, sy - 4], [sx + 8, sy], [sx, sy + 4], [sx - 8, sy], C.dot); }
+  // 两面后墙：右墙（y=0）亮一档，左墙（x=0）暗一档
+  const wR = (xa, xb, z0, z1, col) => g.quad(P(xa, 0, z0), P(xb, 0, z0), P(xb, 0, z1), P(xa, 0, z1), col);
+  const wL = (ya, yb, z0, z1, col) => g.quad(P(0, ya, z0), P(0, yb, z0), P(0, yb, z1), P(0, ya, z1), col);
+  wR(0, ROOM, 0, WALL_H, C.wall); wL(0, ROOM, 0, WALL_H, shade(C.wall, -18));
+  for (let t = 4; t < ROOM; t += 8) { g.seg(P(t, 0, 40), P(t, 0, WALL_H - 6), C.wallD); g.seg(P(0, t, 40), P(0, t, WALL_H - 6), shade(C.wallD, -18)); }
+  wR(0, ROOM, 0, 36, C.tile); wL(0, ROOM, 0, 36, shade(C.tile, -12));
+  for (let z = 6; z < 36; z += 6) { g.seg(P(0, 0, z), P(ROOM, 0, z), C.tileL); g.seg(P(0, 0, z), P(0, ROOM, z), shade(C.tileL, -12)); }
+  for (let t = 6; t < ROOM; t += 6) { g.seg(P(t, 0, 0), P(t, 0, 36), C.tileL); g.seg(P(0, t, 0), P(0, t, 36), shade(C.tileL, -12)); }
+  wR(0, ROOM, 36, 40, C.trim); wL(0, ROOM, 36, 40, shade(C.trim, -10)); wR(0, ROOM, 36, 37, C.trimL);
+  wR(0, ROOM, WALL_H - 6, WALL_H, C.trim); wL(0, ROOM, WALL_H - 6, WALL_H, shade(C.trim, -10));
+  // 柜台后面的平台：顶面小砖 + 正面木边
+  tiles(0, 0, ROOM, 30, 8, '#e3d6bc', '#d7c8aa', PLAT);
+  g.quad(P(0, 30, 0), P(ROOM, 30, 0), P(ROOM, 30, PLAT), P(0, 30, PLAT), C.wood); g.seg(P(0, 30, PLAT), P(ROOM, 30, PLAT), C.woodL);
+  // 右墙：红底菜单牌 ×2 + 店名木牌
+  let sd = 5; const rnd = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
+  for (const [xa, xb, z0, z1] of [[8, 62, 66, 102], [70, 176, 64, 96]]) {
+    wR(xa - 1, xb + 1, z0 - 1, z1 + 1, OUT); wR(xa, xb, z0, z1, C.board); wR(xa, xb, z1 - 1, z1, shade(C.board, 30));
+    for (const t of [xa + 3, xb - 4]) wR(t, t + 1, z1 + 1, z1 + 6, '#5a4a40');   // 挂绳
+  }
+  wR(69, 177, 103, 129, OUT); wR(70, 176, 104, 128, '#5a3524'); wR(70, 176, 127, 128, '#7a4a32');
+  // 左墙：大窗。窗外对街的唐楼按远处的比例画：一层约 9 高，窗只有 3–4 宽，有冷气机、晾衫竹、招牌
+  wL(38, 142, 40, 116, C.trimL);
+  wL(42, 138, 44, 112, '#a6dcf4'); wL(42, 138, 96, 112, '#c4e9f9');
+  const bld = (ya, yb, top, col, win, k) => {
+    wL(ya, yb, 44, top, col); wL(ya, yb, top - 2, top, shade(col, -26));
+    for (let z = 58; z < top - 4; z += 9) for (let y = ya + 2; y < yb - 3; y += 5) {
+      const lit = ((y * 7 + z * 3 + k) % 5) === 0;
+      wL(y, y + 3, z, z + 4, lit ? '#fff1b8' : win); wL(y, y + 3, z, z + 1, shade(col, -30));
+      if (((y + z + k) % 3) === 0) wL(y, y + 2, z - 2, z, '#c9cdd0');   // 冷气机
+    }
+    for (let z = 62; z < top - 6; z += 18) { g.seg(P(0, ya + 1, z), P(0, yb - 1, z), '#7a5a3a'); for (let y = ya + 3; y < yb - 2; y += 4) wL(y, y + 2, z - 3, z, ['#e5604f', '#3f86d6', '#ffffff', '#f0b43a'][(y + k) % 4]); }
+  };
+  bld(42, 68, 112, '#e9d6b4', '#6f8aa6', 1); bld(70, 104, 112, '#e2a796', '#5f7a96', 2); bld(106, 138, 100, '#cdbfd8', '#6a7f9a', 3);
+  wL(122, 130, 100, 106, '#9aa0a3');   // 天台水箱
+  // 街铺：底层铺面、招牌
+  wL(42, 138, 44, 54, '#5a4a48'); wL(44, 66, 52, 56, '#2f9e6e'); wL(72, 102, 52, 56, '#e5b23a'); wL(108, 136, 52, 56, '#d9372a');
+  for (let y = 44; y < 138; y += 3) wL(y, y + 1, 45, 51, '#8c8078');
+  wL(96, 100, 60, 96, '#ff4f6a'); for (let z = 64; z < 94; z += 6) wL(96, 100, z, z + 3, '#fff4dc');   // 竖招牌
+  wL(88, 92, 44, 112, C.trimL); wL(42, 138, 78, 81, C.trimL);
+  wL(36, 144, 38, 42, C.trim);
+  wL(146, 176, 66, 124, '#d9372a');   // 海报底（红边），字和图在 posterLeft 里贴
+  // 壁扇（窗上面）：墙上铁板 + 伸出的支架 + 圆马达壳 + 前后两层铁丝网，看得出厚度
+  { const fy = 92, fz = 134, F = (k, y, z) => P(k, fy + y, fz + z), C28 = [...Array(28).keys()].map(i => i / 28 * 6.283);
+    const disc = (k, r, col) => C28.forEach((a, i) => { const b = C28[(i + 1) % 28]; g.tri(...F(k, 0, 0), ...F(k, Math.cos(a) * r, Math.sin(a) * r), ...F(k, Math.cos(b) * r, Math.sin(b) * r), col); });
+    const ring = (k, r, col) => C28.forEach((a, i) => { const b = C28[(i + 1) % 28]; g.seg(F(k, Math.cos(a) * r, Math.sin(a) * r), F(k, Math.cos(b) * r, Math.sin(b) * r), col); });
+    g.quad(F(0, -3, -22), F(0, 3, -22), F(0, 3, -12), F(0, -3, -12), '#5a5e62');
+    for (let k = 0; k <= 5; k += .5) { g.seg(F(k, -1, -17), F(k, -1, -6), '#7a7f82'); g.seg(F(k, 0, -17), F(k, 0, -6), '#5a5e62'); }
+    for (let k = 1; k <= 6; k += .5) disc(k, 5.5, k < 6 ? '#8a9093' : '#c9cdd0');
+    ring(6.5, 13, '#6a7073'); for (let i = 0; i < 28; i += 4) g.seg(F(6.5, 0, 0), F(6.5, Math.cos(C28[i]) * 13, Math.sin(C28[i]) * 13), '#7a7f82');
+    for (let k = 0; k < 3; k++) { const a = k * 2.094 + .4; g.tri(...F(8, 0, 0), ...F(8, Math.cos(a) * 11, Math.sin(a) * 11), ...F(8, Math.cos(a + .75) * 11, Math.sin(a + .75) * 11), k === 0 ? '#9cd0bc' : '#7fb3a0'); }
+    for (const a of [0, 1.571, 3.142, 4.712, .785, 2.356, 3.927, 5.498]) g.seg(F(6.5, Math.cos(a) * 13, Math.sin(a) * 13), F(10, Math.cos(a) * 12, Math.sin(a) * 12), '#9aa0a3');   // 网罩侧面（厚度）
+    ring(10, 12, '#c9cdd0'); ring(10, 11.5, '#a4a9ac'); ring(10, 6, '#b4b9bc');
+    for (let i = 0; i < 28; i += 2) g.seg(F(10, Math.cos(C28[i]) * 3, Math.sin(C28[i]) * 3), F(10, Math.cos(C28[i]) * 12, Math.sin(C28[i]) * 12), '#d9dcd8');
+    disc(10.5, 3, '#e9c46a'); { const [a, b] = F(10.5, -1, 1); g.set(R(a), R(b), '#fff0b8'); } }
+  c.drawImage(g.canvas(), 0, 0);
+  posterLeft(c);
+  { const [a, b] = P(470, 150); c.save(); c.font = '24px FP'; c.textAlign = 'center'; c.fillStyle = '#b9b3aa'; c.fillText('隔壁 · 可扩建', a, b); c.restore(); }
+  wallText(c, 238, 132, 100, 28, (x) => { x.fillStyle = '#5a3524'; x.fillRect(0, 0, 100, 28); x.fillStyle = '#7a4a32'; x.fillRect(0, 0, 100, 2); x.font = '900 16px SR'; x.fillStyle = C.gold; x.textAlign = 'center'; x.textBaseline = 'top'; x.fillText('烘 焙 间', 50, 5); });
+  // 价目牌上的字
+  wallText(c, 8, 102, 108, 72, (x) => { menuHead(x, '饮 品', 54); menuRows(x, [['港式奶茶', '18'], ['鸳鸯', '18'], ['冻柠茶', '17']], 6, 102); });
+  wallText(c, 70, 96, 212, 64, (x) => { menuHead(x, '饼 食 · 糖 水', 106); menuRows(x, [['蛋挞', '8'], ['菠萝包', '9'], ['椰挞', '8']], 8, 98); menuRows(x, [['老婆饼', '10'], ['红豆布丁', '16'], ['杨枝甘露', '22']], 114, 204); });
+  // 隔壁压暗（空铺）
+  // 店名：「街记冰室」按右墙方向斜着贴（逐列往下错半格）
+  const tc = mk(212, 32), tx = tc.getContext('2d'); tx.font = '900 26px SR'; tx.textBaseline = 'top'; tx.fillStyle = C.gold;
+  [...'街记冰室'].forEach((ch, i) => tx.fillText(ch, 20 + i * 48, 4));
+  const [sx, sy] = P(70, 0, 124); for (let i = 0; i < 212; i++) c.drawImage(tc, i, 0, 1, 32, R(sx) + i, R(sy + i / 2), 1, 32);
+  // 窗光洒在地上
+  const lg = new Grid(WW, 1280); lg.quad(P(0, 44), P(0, 140), P(70, 150), P(70, 54), '#ffffff'); c.save(); c.globalAlpha = .13; c.drawImage(lg.canvas(), 0, 0); c.restore();
+}
+
+// ============================================================ 店里和街上的东西
+const STATICS = [], STAFF = [], SEATED = [], TABLES = {}, BOOTH_SEAT = [];
+// 木纹：正面（y = yF）上弯弯的深色纹 + 每 step 一道板缝
+function woodGrain(g, Q, xa, xb, z0, z1, yF, step) {
+  for (let x = xa; x < xb; x += .5) for (let z = z0; z < z1; z += .5) {
+    const v = Math.sin(z * 1.7 + Math.sin(x * .21 + Math.floor(x / step) * 2) * 2.4);
+    if (v > .9) { const [a, b] = Q(x, yF, z); g.set(R(a), R(b), shade(C.wood, -24)); }
+    else if (v < -.97) { const [a, b] = Q(x, yF, z); g.set(R(a), R(b), shade(C.wood, 14)); }
+  }
+  for (let x = xa + step; x < xb - 2; x += step) g.seg(Q(x, yF, z0), Q(x, yF, z1), shade(C.wood, -34));
+}
+function woodTop(g, Q, xa, xb, ya, yb, z) {   // 台面顺着 x 方向的长木纹
+  for (let y = ya + 2; y < yb - 1; y += 3) for (let x = xa + 2; x < xb - 2; x += .5) if (Math.sin(x * .35 + y * 1.3) > .55) { const [a, b] = Q(x, y + Math.sin(x * .2) * .6, z); g.set(R(a), R(b), '#c4844a'); }
+}
+function buildStatics() {
+  const add = o => (STATICS.push(o), o), Z = PLAT;
+  // 后厨（都放在平台上）：烤炉、蒸笼、晾架、水吧
+  add(makeObj(P, { x0: 16, x1: 48, y0: 2, y1: 18 }, 44 + Z, [{ g: (g, Q) => {
+    bx(g, Q, 16, 2, Z, 32, 16, 44, C.steel, C.steelS, C.steelD);
+    g.quad(Q(20, 18, Z + 8), Q(44, 18, Z + 8), Q(44, 18, Z + 30), Q(20, 18, Z + 30), C.dark); g.quad(Q(22, 18, Z + 11), Q(42, 18, Z + 11), Q(42, 18, Z + 17), Q(22, 18, Z + 17), '#ff9a3c'); g.quad(Q(22, 18, Z + 17), Q(42, 18, Z + 17), Q(42, 18, Z + 18), Q(22, 18, Z + 18), '#ffd27a');
+    g.quad(Q(20, 18, Z + 33), Q(44, 18, Z + 33), Q(44, 18, Z + 35), Q(20, 18, Z + 35), C.steelD); for (const t of [24, 32, 40]) g.quad(Q(t, 18, Z + 38), Q(t + 3, 18, Z + 38), Q(t + 3, 18, Z + 41), Q(t, 18, Z + 41), C.dark);
+  } }]));
+  add(makeObj(P, { x0: 56, x1: 78, y0: 3, y1: 17 }, 44 + Z, [{ g: (g, Q) => {
+    bx(g, Q, 56, 3, Z, 22, 14, 16, '#6a6e72', '#55595d', '#45494d');
+    for (let k = 0; k < 3; k++) { bx(g, Q, 57, 4, Z + 16 + k * 8, 20, 12, 8, '#efcf98', '#ddb27a', '#c99a5e'); g.seg(Q(57, 16, Z + 20 + k * 8), Q(77, 16, Z + 20 + k * 8), '#b98a52'); }
+    bx(g, Q, 59, 6, Z + 40, 16, 8, 2, '#f6dcae', '#e2bf88', '#cfa772');
+  } }, { d: (c, Q) => { const [a, b] = Q(67, 10, Z + 50); c.fillStyle = 'rgba(255,255,255,.7)'; c.fillRect(R(a) - 4, R(b) - 8, 4, 4); c.fillRect(R(a) + 4, R(b) - 18, 4, 4); c.fillRect(R(a), R(b) - 28, 2, 2); } }]));
+  add(makeObj(P, { x0: 84, x1: 120, y0: 2, y1: 16 }, 60 + Z, [
+    { g: (g, Q) => { for (const [x, y] of [[84, 2], [119, 2]]) bx(g, Q, x, y, Z, .6, .6, 60, C.steelS, C.steelS, C.steelD); for (const z of [4, 24, 44]) bx(g, Q, 84, 2, Z + z, 36, 14, 2, C.steel, C.steelS, C.steelD); } },
+    { d: (c, Q) => { [[FOOD_L.bun, 6], [FOOD_L.tart, 26], [FOOD_L.wife, 46]].forEach(([f, z]) => { for (let i = 0; i < 2; i++) putB(c, f, Q(94 + i * 15, 9, Z + z)); }); } },
+    { g: (g, Q) => { for (const [x, y] of [[84, 15], [119, 15]]) bx(g, Q, x, y, Z, .6, .6, 60, C.steelS, C.steelS, C.steelD); } },
+  ]));
+  add(makeObj(P, { x0: 128, x1: 180, y0: 2, y1: 18 }, 62 + Z, [{ g: (g, Q) => {
+    bx(g, Q, 128, 2, Z, 52, 16, 30, C.steel, C.steelS, C.steelD);
+    for (const x of [132, 150]) { bx(g, Q, x, 4, Z + 30, 14, 12, 28, '#eef1f3', '#d3d8db', '#b6bcc0'); bx(g, Q, x + 2, 6, Z + 58, 10, 8, 3, C.steelS, C.steelD, C.steelD); bx(g, Q, x + 5, 16, Z + 36, 3, 3, 3, C.dark, C.dark, C.dark); g.quad(Q(x, 16, Z + 44), Q(x + 14, 16, Z + 44), Q(x + 14, 16, Z + 47), Q(x, 16, Z + 47), '#5d4a52'); }
+    bx(g, Q, 170, 8, Z + 30, 2, 2, 26, C.dark, C.dark, C.dark); bx(g, Q, 166, 8, Z + 54, 10, 2, 2, C.dark, C.dark, C.dark);
+    g.quad(Q(170, 10, Z + 52), Q(176, 10, Z + 52), Q(175, 10, Z + 38), Q(171, 10, Z + 38), '#7a4a2a');
+  } }]));
+  // ---- 烘焙台：接在玻璃柜右边，和前台一排（客人从店里看得到做点心）；后面平台上是层炉、墙上搁板
+  add(makeObj(P, { x0: 206, x1: 300, y0: 30, y1: 46 }, 56, [
+    { g: (g, Q) => {
+      bx(g, Q, 206, 30, 0, 94, 16, 30, C.woodL, C.wood, C.woodD); woodGrain(g, Q, 209, 297, 1, 29, 46, 16);
+      bx(g, Q, 205, 29, 30, 96, 18, 4, '#e2ad74', '#c08a54', '#9c6a3c');   // 木面
+      for (const [x, y] of [[214, 36], [219, 40], [211, 42], [224, 37]]) { const [a, b] = Q(x, y, 34); g.rect(R(a) - 3, R(b) - 1, 7, 3, '#fbf6ea'); }
+      { const [a, b] = Q(218, 38, 34); g.ell(a, b - 3, 9, 5.5, (xx, yy) => (xx - a) + (yy - b + 3) * 1.4 < -5 ? '#fff6e0' : (xx - a) + (yy - b + 3) < 5 ? '#f2dfb8' : '#ddc394'); }
+      bx(g, Q, 210, 43, 34, 18, 2.4, 2.4, '#e9b07a', '#c98e58', '#a87040', 0);
+      bx(g, Q, 234, 32, 34, 22, 12, 1, '#c9cdd0', '#aab0b3', '#90969a', 1);
+      for (let i = 0; i < 4; i++) for (let j = 0; j < 2; j++) { const [a, b] = Q(238 + i * 5, 35 + j * 6, 35); g.ell(a, b, 3.8, 2.1, '#e9c48a'); g.ell(a, b - .4, 2.3, 1.1, j ? '#ffe27a' : '#f6e2b4'); }
+      bx(g, Q, 262, 33, 34, 14, 10, 1, '#c9cdd0', '#aab0b3', '#90969a', 1);
+      for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) { const [a, b] = Q(266 + i * 6, 36 + j * 5, 35); g.ell(a, b - 2, 4.5, 3.4, '#f2c96a'); g.ell(a - 1, b - 3, 2, 1.2, '#ffe9a0'); }   // 刚出炉的菠萝包
+      bx(g, Q, 284, 34, 34, 9, 8, 3, '#c94a3e', '#b23e33', '#93322a', 1.5); bx(g, Q, 290, 35, 37, 2.5, 4, 12, '#c94a3e', '#b23e33', '#93322a', 0); bx(g, Q, 282, 35, 47, 11, 6, 4, '#d9564a', '#b23e33', '#93322a', 1.5);
+      { const [a, b] = Q(287, 38, 37); g.ell(a, b - 2, 6, 3.4, '#d3d8d6'); g.ell(a, b - 4, 4.6, 2, '#f2dfb8'); }
+    } },
+  ]));
+  add(makeObj(P, { x0: 236, x1: 288, y0: 0, y1: 4 }, 110, [{ g: (g, Q) => {   // 墙上搁板：面粉罐、挞模
+    for (const z of [70, 92]) { bx(g, Q, 236, 0, z, 52, 6, 2, C.woodL, C.wood, C.woodD, 0); for (const x of [238, 284]) g.seg(Q(x, 4, z), Q(x, 0, z - 6), '#5a3c2a'); }
+    for (const [x, col] of [[240, '#f1e8d6'], [250, '#e9dcc0'], [260, '#f1e8d6']]) { bx(g, Q, x, 1, 72, 7, 4, 10, col, shade(col, -18), shade(col, -34), 2); bx(g, Q, x, 1, 82, 7, 4, 1.5, '#b8483c', '#a03c32', '#8a3028', 1.5); }
+    for (let i = 0; i < 4; i++) bx(g, Q, 240 + i * 11, 1, 94, 9, 4, 2, '#c9cdd0', '#aab0b3', '#90969a', 1.5);
+  } }]));
+  add(makeObj(P, { x0: 290, x1: 316, y0: 2, y1: 28 }, 66 + Z, [{ g: (g, Q) => {   // 两层烤炉（层炉）
+    bx(g, Q, 290, 2, Z, 26, 26, 8, '#5a5e62', '#4a4e52', '#3a3e42', 2);
+    for (const z of [8, 30]) { bx(g, Q, 290, 2, Z + z, 26, 26, 22, C.steel, C.steelS, C.steelD, 2); g.quad(Q(292, 28, Z + z + 4), Q(312, 28, Z + z + 4), Q(312, 28, Z + z + 16), Q(292, 28, Z + z + 16), C.dark); g.quad(Q(294, 28, Z + z + 6), Q(310, 28, Z + z + 6), Q(310, 28, Z + z + 10), Q(294, 28, Z + z + 10), '#ff9a3c'); g.seg(Q(292, 28, Z + z + 18), Q(312, 28, Z + z + 18), C.steelD); }
+    bx(g, Q, 289, 1, Z + 52, 28, 28, 3, '#c9cdd0', '#aab0b3', '#90969a', 2); bx(g, Q, 300, 10, Z + 55, 4, 4, 14, '#8a9093', '#7a8083', '#6a7073', 0);
+  } }]));
+  add(makeObj(P, { x0: 206, x1: 228, y0: 4, y1: 20 }, 48 + Z, [{ g: (g, Q) => {
+    bx(g, Q, 206, 4, Z, 22, 16, 18, C.steel, C.steelS, C.steelD, 2); g.quad(Q(210, 20, Z + 6), Q(224, 20, Z + 6), Q(224, 20, Z + 12), Q(210, 20, Z + 12), C.dark); g.quad(Q(212, 20, Z + 7), Q(222, 20, Z + 7), Q(222, 20, Z + 9), Q(212, 20, Z + 9), '#ff8a3c');
+    const [a, b] = Q(217, 12, Z + 18); for (let t = 0; t < 26; t++) g.ell(a, b - t, 15 - (t > 22 ? (t - 22) * .6 : 0), 7, xx => xx < a - 5 ? '#e0aa62' : xx < a + 6 ? '#c98f3e' : '#a8742e');
+    g.ell(a, b - 26, 13, 6, '#e9b870'); g.ell(a, b - 27, 4, 2, '#7a5226'); g.rect(R(a) - 18, R(b) - 20, 4, 3, '#7a5226'); g.rect(R(a) + 15, R(b) - 20, 4, 3, '#7a5226');
+  } }, { d: (c, Q) => { const [a, b] = Q(217, 12, Z + 52); c.fillStyle = 'rgba(255,255,255,.6)'; c.fillRect(R(a) - 6, R(b) + 4, 4, 4); c.fillRect(R(a) + 2, R(b) - 6, 4, 4); c.fillRect(R(a) - 2, R(b) - 16, 2, 2); } }]));
+  // 平台上的员工：肩膀以上高过柜台
+  STAFF.push({ ch: STAFF_HD.kun, x: 250, y: 22, face: 'SW' }, { ch: STAFF_HD.lin, x: 52, y: 24, face: 'SW' }, { ch: STAFF_HD.yao, x: 116, y: 21, face: 'NE' }, { ch: STAFF_HD.wen, x: 156, y: 25, face: 'NE' });
+  // 收银台 + 玻璃冷柜（一整条柜台；冷柜没有背板，看得见后面的人）
+  add(makeObj(P, { x0: 40, x1: 200, y0: 30, y1: 46 }, 52, [
+    { g: (g, Q) => {
+      bx(g, Q, 40, 30, 0, 56, 16, 30, C.woodL, C.wood, C.woodD);
+      woodGrain(g, Q, 42, 94, 1, 29, 46, 14);
+      bx(g, Q, 38, 29, 30, 60, 18, 4, '#d99a5c', '#b8743c', '#93582c');
+      woodTop(g, Q, 40, 96, 30, 46, 34);
+      bx(g, Q, 42, 34, 34, 16, 10, 9, '#f2ead2', '#dccfab', '#c2b48c'); bx(g, Q, 43, 34, 43, 8, 3, 5, '#2f6a50', '#2f6a50', '#24533e');
+      bx(g, Q, 70, 35, 34, 14, 7, 8, '#a8754a', '#8a5a3a', '#6e4630', 1.5); g.quad(Q(72, 42, 36), Q(78, 42, 36), Q(78, 42, 40), Q(72, 42, 40), '#e9dcc0'); for (let x = 72.5; x < 78; x += 1.2) for (let z = 36.5; z < 40; z += 1.2) { const [a, b] = Q(x, 42, z); g.set(R(a), R(b), '#8a7a60'); }
+      { const [a, b] = Q(81, 42, 38); g.ell(a, b, 2.4, 2.4, '#e9c46a'); } g.seg(Q(82, 37, 42), Q(88, 37, 56), '#c9cdd0');   // 收音机
+      for (let t = 0; t < 3; t++) g.quad(Q(44 + t * 4, 44, 38), Q(46 + t * 4, 44, 38), Q(46 + t * 4, 44, 40), Q(44 + t * 4, 44, 40), '#a49671');
+      bx(g, Q, 96, 30, 0, 104, 16, 18, C.woodL, C.wood, C.woodD);
+      woodGrain(g, Q, 99, 198, 1, 17, 46, 17);
+      bx(g, Q, 96, 30, 18, 104, 16, 3, '#d99a5c', '#b8743c', '#93582c');
+    } },
+    { d: (c, Q) => { for (let i = 0; i < 5; i++) putB(c, FOOD_L.tart, Q(108 + i * 19.5, 41, 21)); } },
+    { g: (g, Q) => bx(g, Q, 96, 30, 34, 104, 16, 1, '#dff6f8', '#bfe6ea', '#a9dbe0'), plain: true, alpha: .75 },
+    { d: (c, Q) => { for (let i = 0; i < 5; i++) putB(c, FOOD_L.pudding, Q(110 + i * 19.5, 39, 35)); } },
+    { g: (g, Q) => { g.quad(Q(96, 46, 21), Q(200, 46, 21), Q(200, 46, 50), Q(96, 46, 50), '#c9f0f2'); g.quad(Q(200, 30, 21), Q(200, 46, 21), Q(200, 46, 50), Q(200, 30, 50), '#a9dde3'); g.quad(Q(96, 30, 50), Q(200, 30, 50), Q(200, 46, 50), Q(96, 46, 50), '#e2fafb'); }, plain: true, alpha: .28 },
+    { g: (g, Q) => { for (const t of [112, 160]) { g.quad(Q(t, 46, 22), Q(t + 9, 46, 22), Q(t + 19, 46, 49), Q(t + 10, 46, 49), '#ffffff'); g.quad(Q(t + 13, 46, 22), Q(t + 15, 46, 22), Q(t + 25, 46, 49), Q(t + 23, 46, 49), '#ffffff'); } }, plain: true, alpha: .22 },
+    { g: (g, Q) => { g.seg(Q(96, 46, 50), Q(200, 46, 50), '#ffffff'); g.seg(Q(200, 46, 21), Q(200, 46, 50), '#ffffff'); g.seg(Q(200, 30, 50), Q(200, 46, 50), '#ffffff'); g.seg(Q(96, 30, 50), Q(200, 30, 50), '#ffffff'); g.seg(Q(96, 46, 21), Q(96, 46, 50), '#ffffff'); for (let t = 110; t < 196; t += 34) { g.seg(Q(t, 46, 26), Q(t + 8, 46, 44), '#ffffff'); g.seg(Q(t + 3, 46, 26), Q(t + 11, 46, 44), '#ffffff'); } }, plain: true, alpha: .7 },
+  ]));
+  // 窗边长台 + 红凳
+  add(makeObj(P, { x0: 0, x1: 16, y0: 56, y1: 160 }, 36, [
+    { g: (g, Q) => { bx(g, Q, 2, 58, 0, 10, 100, 30, C.woodL, C.wood, C.woodD); bx(g, Q, 0, 56, 30, 16, 104, 4, C.marble, C.marbleS, C.marbleD); } },
+    { d: (c, Q) => { putB(c, FOOD_L.tea, Q(8, 78, 34)); putB(c, FOOD_L.tea, Q(8, 126, 34)); putB(c, FOOD_L.tart, Q(9, 136, 34)); } },
+  ]));
+  for (const y of [76, 100, 124, 148]) add(makeObj(P, { x0: 22, x1: 32, y0: y - 5, y1: y + 5 }, 26, [{ g: (g, Q) => {
+    const [a, b] = Q(27, y); g.ell(a, b, 12, 5.2, C.steelS); g.rect(R(a) - 1, R(b) - 42, 3, 40, '#d9dde0'); g.ell(a, b - 42, 11, 5.5, shade(C.stool, -30)); g.ell(a, b - 44, 11, 5.5, C.stool); g.ell(a - 3, b - 45, 5, 2, '#ff7a62'); g.ell(a, b - 20, 9, 4, (xx, yy) => ((xx - a) ** 2 / 81 + (yy - b + 20) ** 2 / 16 > .55) ? '#b4bbba' : null);
+  } }]));
+  SEATED.push({ ch: GUEST_HD[9], x: 27, y: 100 }, { ch: GUEST_HD[8], x: 27, y: 148 });
+  for (const { y } of SEATED) add(makeObj(P, { x0: 24, x1: 34, y0: y - 5, y1: y + 5 }, 26, [{ g: (g, Q) => {   // 凳前：排在坐着的人前面
+    const [a, b] = Q(27, y);
+    g.ell(a, b - 42, 11, 5.5, (xx, yy) => ((xx + .5 - a) ** 2 / 121 + (yy + .5 - b + 44) ** 2 / 30.25 > 1) ? shade(C.stool, -30) : null);
+    g.rect(R(a) - 1, R(b) - 38, 3, 36, '#d9dde0'); g.set(R(a) - 1, R(b) - 30, '#ffffff');
+    g.ell(a, b - 20, 9, 4, (xx, yy) => ((xx - a) ** 2 / 81 + (yy - b + 20) ** 2 / 16 > .55) ? '#b4bbba' : null);
+  } }]));
+  // 六张双层货架
+  TABLES.T1 = add(displayTable(P, 88, 76, FOOD_L.tart, FOOD_L.bun));
+  TABLES.T2 = add(glassFridge(P, 184, 76, FOOD_L.pudding, FOOD_L.mango));   // 这一张换成玻璃冷柜
+  TABLES.T3 = add(displayTable(P, 88, 144, FOOD_L.coco, FOOD_L.wife));
+  TABLES.T4 = add(displayTable(P, 184, 144, FOOD_L.wife, null));
+  // 冰室卡座：靠左墙两组，绿皮高背长凳 + 云石台（台上留着奶茶、布丁）
+  const LEATHER = ['#4f9a7c', '#3f8a6e', '#2f6e56'];
+  const W_B = 46;
+  const bench = (X, y0, backAtFar) => makeObj(P, { x0: X, x1: X + W_B, y0, y1: y0 + 8 }, 30, [{ g: (g, Q) => {
+    const yb = backAtFar ? y0 + 5 : y0;
+    bx(g, Q, X, y0, 0, W_B, 8, 10, C.woodL, C.wood, C.woodD, 1.5); bx(g, Q, X + 1, y0, 10, W_B - 2, 8, 3, ...LEATHER, 2);
+    bx(g, Q, X, yb, 10, W_B, 3, backAtFar ? 12 : 18, ...LEATHER, 1.5); bx(g, Q, X, yb, backAtFar ? 22 : 28, W_B, 3, 2, C.woodL, C.wood, C.woodD, 0);
+    for (let x = X + 6; x < X + W_B - 2; x += 8) g.seg(Q(x, backAtFar ? yb + 3 : yb + 3, 12), Q(x, backAtFar ? yb + 3 : yb + 3, backAtFar ? 20 : 26), shade(LEATHER[1], -16));   // 皮面竖缝
+  } }]);
+  const booth = (X, y0, food) => {
+    const a = add(bench(X, y0, false));
+    const b = add(makeObj(P, { x0: X + 4, x1: X + W_B - 4, y0: y0 + 11, y1: y0 + 29 }, 26, [
+      { g: (g, Q) => { bx(g, Q, X + W_B / 2 - 1.5, y0 + 18, 0, 3, 3, 16, C.steelS, C.steelS, C.steelD, 0); bx(g, Q, X + W_B / 2 - 9, y0 + 15, 0, 18, 10, 1.5, C.steelS, C.steelS, C.steelD, 3); bx(g, Q, X + 4, y0 + 11, 16, W_B - 8, 18, 2.5, C.marble, C.marbleS, C.marbleD, 4); } },
+      { d: (c, Q) => food.forEach(([f, x, y]) => putB(c, f, Q(X + x, y0 + y, 18.5))) },
+    ]));
+    return [a, b, add(bench(X, y0 + 32, true))];
+  };
+  const BO1 = booth(268, 136, [[FOOD_L.tea, 14, 17], [FOOD_L.pudding, 32, 22]]), BO2 = booth(268, 192, [[FOOD_L.tea, 32, 17], [FOOD_L.bun, 16, 23]]);
+  TABLES.T5 = add(displayTable(P, 88, 212, FOOD_L.bun, FOOD_L.coco));
+  TABLES.T6 = add(displayTable(P, 184, 212, FOOD_L.coco, FOOD_L.tart));
+  BOOTH_SEAT.push({ ch: GUEST_HD[3], x: 291, y: 197, face: 'SW' });
+  // 门口外卖窗：对着街的玻璃柜，一盘盘蛋挞，立一块「外卖」牌
+  add(makeObj(P, { x0: 150, x1: 232, y0: 300, y1: 314 }, 46, [
+    { g: (g, Q) => { bx(g, Q, 150, 300, 0, 82, 14, 16, C.woodL, C.wood, C.woodD, 2); woodGrain(g, Q, 153, 229, 1, 15, 314, 19); bx(g, Q, 150, 300, 16, 82, 14, 2, '#d99a5c', '#b8743c', '#93582c', 2); } },
+    { d: (c, Q) => { for (let i = 0; i < 4; i++) for (const y of [304, 310]) putB(c, i % 2 ? FOOD_L.coco : FOOD_L.tart, Q(159 + i * 19, y, 18)); } },
+    { g: (g, Q) => { g.quad(Q(151, 314, 18), Q(231, 314, 18), Q(231, 314, 30), Q(151, 314, 30), '#c9f0f2'); g.quad(Q(151, 301, 30), Q(231, 301, 30), Q(231, 314, 30), Q(151, 314, 30), '#e2fafb'); g.quad(Q(231, 301, 18), Q(231, 314, 18), Q(231, 314, 30), Q(231, 301, 30), '#a9dde3'); }, plain: true, alpha: .3 },
+    { g: (g, Q) => { g.seg(Q(151, 314, 30), Q(231, 314, 30), '#ffffff'); g.seg(Q(231, 301, 30), Q(231, 314, 30), '#ffffff'); g.seg(Q(231, 314, 18), Q(231, 314, 30), '#ffffff'); }, plain: true, alpha: .8 },
+    { g: (g, Q) => { for (const x of [178, 204]) bx(g, Q, x, 306, 30, 1, 1, 6, C.brass, C.brass, C.brassD, 0); g.quad(Q(174, 307, 34), Q(208, 307, 34), Q(208, 307, 46), Q(174, 307, 46), '#b8483c'); } },
+    { d: (c, Q) => { const tc = mk(68, 24), x = tc.getContext('2d'); x.font = '900 16px SR'; x.fillStyle = '#ffe9a8'; x.textAlign = 'center'; x.textBaseline = 'top'; x.fillText('外  卖', 34, 3); const [sx, sy] = Q(174, 307, 46); for (let i = 0; i < 68; i++) c.drawImage(tc, i, 0, 1, 24, R(sx) + i, R(sy + i / 2), 1, 24); } },
+  ]));
+  // 盆栽、主打小黑板
+  const plant = (x, y, kind, pot) => makeObj(P, { x0: x - 7, x1: x + 7, y0: y - 7, y1: y + 7 }, 50, [{ g: (g, Q) => { const [a, b] = Q(x, y); drawPlant(g, a, b, kind, pot); } }]);
+  const PK = (location.hash.match(/plant=(\w+)/) || [])[1] || 'monstera';
+  const PL1 = add(plant(10, 38, PK, 'cream')), PL2 = add(plant(304, 262, PK, 'charcoal'));
+  group('货架', [TABLES.T1]); group('冷柜', [TABLES.T2]); group('货架', [TABLES.T3]); group('货架', [TABLES.T4]); group('货架', [TABLES.T5]); group('货架', [TABLES.T6]);
+  group('卡座', BO1); group('卡座', BO2, BOOTH_SEAT); group('盆栽', [PL1]); group('盆栽', [PL2]);
+  add(makeObj(P, { x0: 236, x1: 248, y0: 296, y1: 304 }, 30, [{ g: (g, Q) => {
+    g.quad(Q(236, 300, 0), Q(248, 300, 0), Q(248, 300, 28), Q(236, 300, 28), C.woodD); g.quad(Q(237, 300, 9), Q(247, 300, 9), Q(247, 300, 26), Q(237, 300, 26), '#2f4a3e');
+  } }, { d: (c, Q) => putB(c, FOOD.tart, Q(242, 300, 12)) }]));
+  // 前面的矮墙（窗台）、门口；右边和隔壁之间的矮墙，中间封木板贴「招租」
+  add(makeObj(P, { x0: 0, x1: 252, y0: 316, y1: 320 }, 12, [{ g: (g, Q) => { bx(g, Q, 0, 316, 0, 252, 4, 8, C.trimL, C.trim, C.trim); bx(g, Q, 0, 316, 8, 252, 4, 3, '#c8eefc', '#9fdcf4', '#9fdcf4'); } }]));
+  add(makeObj(P, { x0: 304, x1: 320, y0: 316, y1: 320 }, 12, [{ g: (g, Q) => { bx(g, Q, 304, 316, 0, 16, 4, 8, C.trimL, C.trim, C.trim); bx(g, Q, 304, 316, 8, 16, 4, 3, '#c8eefc', '#9fdcf4', '#9fdcf4'); } }]));
+  add(makeObj(P, { x0: 316, x1: 320, y0: 0, y1: 246 }, 12, [{ g: (g, Q) => bx(g, Q, 316, 0, 0, 4, 246, 8, C.trimL, C.trim, C.trim) }]));
+  add(makeObj(P, { x0: 316, x1: 320, y0: 306, y1: 316 }, 12, [{ g: (g, Q) => bx(g, Q, 316, 306, 0, 4, 10, 8, C.trimL, C.trim, C.trim) }]));
+  add(makeObj(P, { x0: 314, x1: 321, y0: 246, y1: 306 }, 34, [{ g: (g, Q) => {
+    for (let k = 0; k < 5; k++) bx(g, Q, 315, 246, k * 6, 5, 60, 5, '#d6aa72', '#b58a5a', '#9e7748');
+    g.quad(Q(320, 270, 10), Q(320, 282, 10), Q(320, 282, 28), Q(320, 270, 28), '#d0453a');
+    for (const z of [14, 19, 24]) g.quad(Q(320, 272, z), Q(320, 280, z), Q(320, 280, z + 1), Q(320, 272, z + 1), C.cream);
+  } }]));
+  const FR = ['#6b4a35', '#5a3c2a', '#4a3020'];   // 窗框：深木
+  const pane = (xa, xb, posts) => add(makeObj(P, { x0: xa, x1: xb, y0: 316, y1: 320 }, 66, [
+    { g: (g, Q) => { g.quad(Q(xa, 318, 11), Q(xb, 318, 11), Q(xb, 318, 62), Q(xa, 318, 62), '#cdeff0'); }, plain: true, alpha: .16 },
+    { g: (g, Q) => { for (let t = xa + 6; t < xb - 10; t += 34) { g.quad(Q(t, 318, 13), Q(t + 7, 318, 13), Q(t + 17, 318, 60), Q(t + 10, 318, 60), '#ffffff'); g.quad(Q(t + 10, 318, 13), Q(t + 12, 318, 13), Q(t + 22, 318, 60), Q(t + 20, 318, 60), '#ffffff'); } }, plain: true, alpha: .2 },
+    { g: (g, Q) => { for (const x of posts) bx(g, Q, x, 316.5, 11, 1.6, 3, 51, ...FR, 0); bx(g, Q, xa, 316.5, 60, xb - xa, 3, 3, ...FR, 0); } },
+  ]));
+  pane(0, 150, [0, 36, 72, 108, 148.4]); pane(232, 252, [232, 250.4]); pane(304, 320, [304, 318.4]);
+  add(makeObj(P, { x0: 150, x1: 232, y0: 316, y1: 320 }, 66, [{ g: (g, Q) => bx(g, Q, 150, 316.5, 60, 82, 3, 3, ...FR, 0) }]));   // 外卖窗上沿（窗开着）
+  add(makeObj(P, { x0: 252, x1: 304, y0: 316, y1: 320 }, 70, [{ g: (g, Q) => { bx(g, Q, 252, 316.5, 0, 1.6, 3, 66, ...FR, 0); bx(g, Q, 302.4, 316.5, 0, 1.6, 3, 66, ...FR, 0); bx(g, Q, 252, 316.5, 64, 52, 3, 4, ...FR, 0); } }]));   // 门框
+  for (const xd of [254, 300]) add(makeObj(P, { x0: xd, x1: xd + 2, y0: 292, y1: 316 }, 66, [   // 两扇玻璃门往里折开
+    { g: (g, Q) => g.quad(Q(xd + 1, 293, 2), Q(xd + 1, 315, 2), Q(xd + 1, 315, 62), Q(xd + 1, 293, 62), '#cdeff0'), plain: true, alpha: .2 },
+    { g: (g, Q) => { g.quad(Q(xd + 1, 296, 10), Q(xd + 1, 300, 10), Q(xd + 1, 306, 58), Q(xd + 1, 302, 58), '#ffffff'); }, plain: true, alpha: .3 },
+    { g: (g, Q) => { for (const y of [292.5, 314]) bx(g, Q, xd, y, 0, 2, 1.5, 64, ...FR, 0); bx(g, Q, xd, 292.5, 0, 2, 23, 3, ...FR, 0); bx(g, Q, xd, 292.5, 61, 2, 23, 3, ...FR, 0); bx(g, Q, xd + 2, 296, 30, 1, 1, 10, C.brass, C.brass, C.brassD, 0); } },
+  ]));
+  // 隔壁空铺：未解锁，只留门口卷闸「旺铺招租」
+  add(makeObj(P, { x0: 324, x1: 640, y0: 316, y1: 320 }, 20, [{ g: (g, Q) => {
+    bx(g, Q, 324, 316, 0, 316, 4, 16, '#c0c6c9', '#a3aaae', '#8e959a');
+    for (let z = 2; z < 16; z += 3) g.seg(Q(324, 320, z), Q(640, 320, z), '#8e959a');
+    g.quad(Q(344, 320, 2), Q(374, 320, 2), Q(374, 320, 15), Q(344, 320, 15), '#d0453a'); g.quad(Q(346, 320, 9), Q(372, 320, 9), Q(372, 320, 12), Q(346, 320, 12), C.cream); g.quad(Q(350, 320, 4), Q(368, 320, 4), Q(368, 320, 6), Q(350, 320, 6), C.cream);
+  } }]));
+  // ---- 街边：报纸档、绿色邮筒、路灯、红的士；对面咏欣花店
+  add(makeObj(P, { x0: 206, x1: 222, y0: 324, y1: 334 }, 24, [{ g: (g, Q) => {
+    bx(g, Q, 206, 324, 0, 16, 10, 16, '#2f6a50', '#2a5e46', '#21503b'); bx(g, Q, 206, 324, 16, 16, 10, 2, '#e9e3d6', '#cfc8ba', '#b9b2a4');
+    for (const [x, col] of [[208, '#f4efe2'], [213, '#e5604f'], [218, '#f0b43a']]) bx(g, Q, x, 333, 6, 3, 1, 8, col, col, shade(col, -20));
+  } }]));
+  add(makeObj(P, { x0: 346, x1: 356, y0: 326, y1: 334 }, 30, [{ g: (g, Q) => { bx(g, Q, 346, 326, 0, 10, 8, 26, '#2f8a4f', '#277843', '#1f6637'); bx(g, Q, 345, 325, 26, 12, 10, 3, '#3aa05e', '#2f8a4f', '#277843'); g.quad(Q(348, 334, 18), Q(354, 334, 18), Q(354, 334, 20), Q(348, 334, 20), '#1a3a28'); } }]));
+  add(makeObj(P, { x0: 398, x1: 404, y0: 348, y1: 354 }, 120, [{ g: (g, Q) => { bx(g, Q, 400, 350, 0, 2, 2, 104, '#3f5a4a', '#344c3e', '#2a3e32'); bx(g, Q, 400, 351, 104, 2, 14, 1.5, '#3f5a4a', '#344c3e', '#2a3e32'); bx(g, Q, 398, 362, 98, 6, 6, 6, '#fff1b8', '#ffd76a', '#e8b84a'); } }]));
+  add(makeObj(P, { x0: 290, x1: 350, y0: 362, y1: 384 }, 34, [{ g: (g, Q) => {
+    const y0 = 363, y1 = 383, red = ['#d64a3a', '#c23a2e', '#9c2c24'], glass = '#3f5566', glassL = '#7c97a8';
+    bx(g, Q, 290, y0, 3, 60, y1 - y0, 9, red[0], red[1], red[2], 3);                         // 车身下半
+    bx(g, Q, 289, y0 + 1, 3, 2, y1 - y0 - 2, 3, '#c9cdd0', '#b0b5b8', '#9aa0a3', 0);         // 后保险杠
+    bx(g, Q, 349, y0 + 1, 3, 2, y1 - y0 - 2, 3, '#c9cdd0', '#b0b5b8', '#9aa0a3', 0);         // 前保险杠
+    g.quad(Q(304, y0 + 1, 12), Q(304, y1 - 1, 12), Q(310, y1 - 1, 21), Q(310, y0 + 1, 21), '#b9c3c9');   // 后挡风（斜）
+    bx(g, Q, 310, y0 + 1, 12, 20, y1 - y0 - 2, 9, '#e6e8ea', red[1], red[2], 2);              // 车厢
+    g.quad(Q(330, y0 + 1, 21), Q(330, y1 - 1, 21), Q(338, y1 - 1, 12), Q(338, y0 + 1, 12), glass);       // 前挡风（斜）
+    g.seg(Q(331, y0 + 3, 20), Q(336, y0 + 6, 14), glassL); g.seg(Q(332, y0 + 3, 20), Q(337, y0 + 6, 14), glassL);
+    g.tri(...Q(330, y1 - 1, 21), ...Q(338, y1 - 1, 12), ...Q(330, y1 - 1, 12), glass);                   // 侧面三角窗
+    g.tri(...Q(310, y1 - 1, 21), ...Q(304, y1 - 1, 12), ...Q(310, y1 - 1, 12), glass);
+    for (const [a, b] of [[311, 319], [321, 329]]) { g.quad(Q(a, y1 - 1, 20), Q(b, y1 - 1, 20), Q(b, y1 - 1, 13), Q(a, y1 - 1, 13), glass); g.seg(Q(a + 1, y1 - 1, 19), Q(a + 3, y1 - 1, 14), glassL); }
+    g.seg(Q(320, y1, 4), Q(320, y1, 12), red[2]); g.seg(Q(304, y1, 4), Q(304, y1, 12), red[2]);
+    g.seg(Q(290, y1, 9), Q(350, y1, 9), '#e8e2d8');                                            // 车身腰线
+    for (const x of [314, 330]) g.rect(...Q(x, y1, 10).map(R), 3, 1, '#e8e2d8');               // 门把手
+    bx(g, Q, 316, y0 + 7, 21, 8, 6, 4, '#fff1b8', '#f0d27a', '#d9b85a', 1.5);                   // 顶灯
+    g.quad(Q(350, y1 - 3, 6), Q(350, y1 - 1, 6), Q(350, y1 - 1, 9), Q(350, y1 - 3, 9), '#fff6c8');   // 车头灯
+    g.quad(Q(350, y0 + 1, 6), Q(350, y0 + 3, 6), Q(350, y0 + 3, 9), Q(350, y0 + 1, 9), '#fff6c8');
+    for (const x of [300, 338]) { const [a, b] = Q(x, y1, 4); g.ell(a, b - 1, 11, 9, (xx, yy) => yy < b - 2 ? red[2] : null); g.ell(a, b + 1, 8.5, 8.5, '#2e2a30'); g.ell(a, b + 1, 4, 4, '#b0b5b8'); g.set(R(a) - 1, R(b), '#e6e8ea'); }
+  } }]));
+  // 咏欣花店：门口三层木花架，一桶桶花
+  add(makeObj(P, { x0: 300, x1: 340, y0: 404, y1: 418 }, 30, [
+    { g: (g, Q) => { for (let k = 0; k < 3; k++) bx(g, Q, 300, 404 + k * 4, 0, 40, 14 - k * 4, 6 + k * 6, '#b88a5a', '#9a7048', '#7e5a38', 1.5); } },
+    { d: (c, Q) => {
+      const cols = ['#e05a6a', '#f2c14e', '#f6f0e6', '#b07ad0', '#ff8a5a', '#e05a6a', '#7ab0e0'];
+      let n = 0; for (let k = 0; k < 3; k++) for (let i = 0; i < 5; i++) {
+        const [a, b] = Q(304 + i * 8, 412 - k * 4 + 2, 6 + (2 - k) * 6), col = cols[n++ % cols.length];
+        c.fillStyle = '#5d7a8a'; c.fillRect(R(a) - 4, R(b) - 8, 9, 8); c.fillStyle = '#7b98a8'; c.fillRect(R(a) - 4, R(b) - 8, 9, 2);   // 铁桶
+        c.fillStyle = '#4f8a4a'; c.fillRect(R(a) - 3, R(b) - 13, 7, 5);
+        for (const [dx, dy] of [[-3, -16], [1, -18], [3, -14], [-1, -13], [-4, -12]]) { c.fillStyle = col; c.fillRect(R(a) + dx, R(b) + dy, 3, 3); c.fillStyle = 'rgba(255,255,255,.55)'; c.fillRect(R(a) + dx, R(b) + dy, 1, 1); }
+      }
+    } },
+  ]));
+  add(makeObj(P, { x0: 344, x1: 350, y0: 404, y1: 412 }, 30, [{ g: (g, Q) => {   // 花店小黑板
+    g.quad(Q(344, 404, 0), Q(344, 412, 0), Q(344, 410, 24), Q(344, 406, 24), '#6b4a35'); g.quad(Q(344, 405, 3), Q(344, 411, 3), Q(344, 409.5, 22), Q(344, 406.5, 22), '#2f4a3e');
+  } }, { d: (c, Q) => { const [a, b] = Q(344, 410, 18); c.font = '12px FP'; c.fillStyle = '#ffd0d8'; c.fillText('花', R(a) - 1, R(b) + 1); } }]));
+}
+
+// ============================================================ 顾客：沿一条路走，前面的人停下后面的人就排队
+// 从街上往右走 → 门口拐进来 → 右边过道 → 中间横过道看货 → 左边排队付钱 → 柜台前横过去 → 中间竖过道出门 → 往右走掉
+const PATH = [[-140, 338], [259, 338], [259, 128], [220, 128], [64, 128], [64, 58], [172, 58], [172, 284], [292, 284], [292, 338], [640, 338]];
+const PAUSE = { 3: 1.0, 5: 2.6 }, PAY = 5, BROWSE = 3;   // 点号 → 停几秒
+const DIST = [0]; for (let i = 1; i < PATH.length; i++) DIST.push(DIST[i - 1] + Math.hypot(PATH[i][0] - PATH[i - 1][0], PATH[i][1] - PATH[i - 1][1]));
+const LEN = DIST[DIST.length - 1], SPEED = 30, GAP = 26;
+let simSeed = 42; const rndSim = () => (simSeed = (simSeed * 16807) % 2147483647) / 2147483647;
+const CUST = [0, 6, 4, 11, 13, 7, 2].map((k, i) => ({ ch: GUEST_HD[k], s: -i * 58 - 20, hold: 0, done: new Set(), wait: 0, moved: 0, dist: 0 }));
+const POPS = [];
+function posAt(s) {
+  if (s <= 0) return { x: PATH[0][0] + s, y: PATH[0][1], seg: 0 };
+  for (let i = 1; i < PATH.length; i++) if (s <= DIST[i]) { const t = (s - DIST[i - 1]) / (DIST[i] - DIST[i - 1]); return { x: PATH[i - 1][0] + (PATH[i][0] - PATH[i - 1][0]) * t, y: PATH[i - 1][1] + (PATH[i][1] - PATH[i - 1][1]) * t, seg: i - 1 }; }
+  return { x: PATH[PATH.length - 1][0], y: PATH[PATH.length - 1][1], seg: PATH.length - 2 };
+}
+function faceOf(seg) { const a = PATH[seg], b = PATH[seg + 1], dx = b[0] - a[0], dy = b[1] - a[1]; return Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'SE' : 'NW') : (dy > 0 ? 'SW' : 'NE'); }
+const queueLen = () => CUST.filter(c => c.s > DIST[BROWSE] + 1 && c.s <= DIST[PAY]).length;
+function stepCustomers(dt) {
+  const order = CUST.slice().sort((a, b) => b.s - a.s);
+  order.forEach((c, i) => {
+    const prev = c.s;
+    if (c.hold > 0) { c.hold -= dt; if (c.hold <= 0 && c.payAt) { const [x, y] = P1(50, 38, 62); POPS.push({ x, y, t: 0 }); c.payAt = false; c.wait = 0; } c.moved = 0; return; }
+    let want = c.s + SPEED * dt;
+    for (const k in PAUSE) { const dk = DIST[k]; if (!c.done.has(k) && c.s < dk && want >= dk) { want = dk; c.hold = PAUSE[k]; c.done.add(k); if (+k === PAY) c.payAt = true; } }
+    const lead = order[i - 1];
+    if (lead && lead.s < LEN && lead.s > c.s) want = Math.min(want, lead.s - GAP);
+    c.s = Math.max(c.s, want); c.moved = c.s - prev; c.dist += c.moved;
+    if (c.moved < SPEED * dt * .3 && c.s > DIST[BROWSE] && c.s < DIST[PAY]) c.wait += dt;
+    if (c.s >= LEN) { c.s = Math.min(...CUST.map(o => o.s)) - 50 - rndSim() * 30; c.done = new Set(); c.wait = 0; }
+  });
+}
+// 街上路过的人：两条道，往右（靠马路）和往左（靠店）；不进店
+const WALK = [
+  { ch: GUEST_HD[12], y: 348, dir: 1, v: 26, x: -60 }, { ch: GUEST_HD[10], y: 326, dir: -1, v: 14, x: 520 }, { ch: PART_HD[7], y: 326, dir: -1, v: 30, x: 300 },
+  { ch: GUEST_HD[15], y: 348, dir: 1, v: 32, x: 120 }, { ch: GUEST_HD[5], y: 326, dir: -1, v: 22, x: 760 }, { ch: GUEST_HD[1], y: 326, dir: -1, v: 26, x: 800 }, { ch: GUEST_HD[14], y: 348, dir: 1, v: 28, x: 360 },
+].map(w => ({ ...w, dist: 0 }));
+function stepWalkers(dt) { for (const w of WALK) { w.x += w.dir * w.v * dt; w.dist += w.v * dt; if (w.dir > 0 && w.x > 620) w.x = -120 - rndSim() * 80; if (w.dir < 0 && w.x < -140) w.x = 640 + rndSim() * 120; } }
+
+// ============================================================ 感言气泡：金边 = 提醒（怎么改善），白边 = 夸奖
+const BUBBLES = [];
+let bubbleClock = 0, bubbleTurn = 0;
+function say(who, text, hint) { if (BUBBLES.some(b => b.who === who) || BUBBLES.length >= 2) return; BUBBLES.push({ who, text, hint, t: 0 }); }
+function stepBubbles(dt) {
+  for (let i = BUBBLES.length - 1; i >= 0; i--) if ((BUBBLES[i].t += dt) > 2.8) BUBBLES.splice(i, 1);
+  if ((bubbleClock += dt) < 1.6) return; bubbleClock = 0; bubbleTurn++;
+  const nearDoor = WALK.filter(w => w.x > 200 && w.x < 330);
+  if (bubbleTurn % 2) {   // 门口路人：看队伍长短决定说什么
+    const w = nearDoor[0]; if (!w) return;
+    if (queueLen() >= 4) say(w, '排好长…下次再来', true); else say(w, '好香！一阵入去睇下', false);
+  } else {   // 店里的顾客
+    const browsing = CUST.find(c => c.hold > 0 && !c.payAt), waiting = CUST.find(c => c.wait > 4);
+    if (waiting && bubbleTurn % 4 === 0) say(waiting, '收银好慢呀…', true);
+    else if (browsing) say(browsing, bubbleTurn % 3 ? '上层空了喔' : '有冻柠茶就好了', true);
+    else { const c = CUST.find(c => c.s > 0 && c.s < DIST[2]); if (c) say(c, '蛋挞好正！', false); }
+  }
+}
+function whereIs(who) { if (who.ch && who.s !== undefined) { const p = posAt(who.s); return P1(p.x, p.y); } return P1(who.x, who.y); }
+function drawBubbles(c) {
+  c.font = '12px FP';
+  for (const b of BUBBLES) {
+    const [a, y0] = whereIs(b.who), w = R(c.measureText(b.text).width) + 12, h = 18, x = clamp(R(a - w / 2), 2, 358 - w), y = R(y0 - FOOT - h - 6);
+    c.save(); c.globalAlpha = Math.min(1, b.t * 5, (2.8 - b.t) * 3);
+    px(c, x - 1, y - 1, w + 2, h + 2, b.hint ? '#c99428' : OUT); px(c, x, y, w, h, '#fffaf0');
+    c.fillStyle = '#fffaf0'; c.beginPath(); c.moveTo(R(a) - 3, y + h); c.lineTo(R(a) + 3, y + h); c.lineTo(R(a), y + h + 5); c.fill();
+    if (b.hint) px(c, x, y, 3, h, C.gold);
+    T(c, b.text, x + (b.hint ? 8 : 6), y + 3, '#3a2a2e', 'left', null);
+    c.restore();
+  }
+}
+
+// ============================================================ 前后排序：谁在谁后面（世界里 x 或 y 更小的在后）
+function behind(a, b) {
+  if (a.x1 <= b.x0 || a.y1 <= b.y0) return true;
+  if (b.x1 <= a.x0 || b.y1 <= a.y0) return false;
+  return a.x0 + a.x1 + a.y0 + a.y1 < b.x0 + b.x1 + b.y0 + b.y1;
+}
+function depthSort(items) {
+  const n = items.length, back = items.map(() => []);
+  for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) {
+    const a = items[i], b = items[j];
+    if (a.bx1 <= b.bx0 || b.bx1 <= a.bx0 || a.by1 <= b.by0 || b.by1 <= a.by0) continue;
+    if (behind(a, b)) back[j].push(i); else back[i].push(j);
+  }
+  const out = [], st = new Uint8Array(n);
+  const visit = i => { if (st[i]) return; st[i] = 1; for (const k of back[i]) visit(k); out.push(items[i]); };
+  for (let i = 0; i < n; i++) visit(i);
+  return out;
+}
+function personItem(img, x, y, z = 0, anchor = FOOT2, extra) {
+  const [sx, sy] = P(x, y, z), l = R(sx - img.width / 2), t = R(sy - anchor);
+  return Object.assign({ x0: x - 5, x1: x + 5, y0: y - 5, y1: y + 5, bx0: l, by0: t, bx1: l + img.width, by1: t + img.height, draw(c) { c.drawImage(img, l, t); } }, extra);
+}
+
+// ============================================================ 界面
+const ICON = {
+  move: paint(26, 20, G => { G.rect(6, 9, 14, 3, '#f7f2ea'); G.rect(8, 12, 10, 5, '#c07a3e'); G.rect(12, 1, 2, 5, '#3f8f74'); G.tri(9, 4, 17, 4, 13, 0, '#3f8f74'); G.rect(1, 9, 4, 2, '#3f8f74'); G.tri(3, 6, 3, 14, 0, 10, '#3f8f74'); G.rect(21, 9, 4, 2, '#3f8f74'); G.tri(23, 6, 23, 14, 26, 10, '#3f8f74'); }),
+  shelf: paint(26, 20, G => { G.rect(2, 9, 22, 3, '#f7f2ea'); G.rect(5, 12, 16, 5, '#c07a3e'); G.rect(5, 3, 16, 2, '#f7f2ea'); G.rect(7, 5, 1, 4, '#f2c64c'); G.rect(18, 5, 1, 4, '#f2c64c'); [[5, 7], [10, 7], [15, 7], [20, 7]].forEach(([x, y]) => G.ell(x, y, 2.4, 1.6, '#ffd21f')); [[9, 1.5], [16, 1.5]].forEach(([x, y]) => G.ell(x, y, 2.4, 1.4, '#e0901f')); }),
+  basket: paint(26, 20, G => { G.rect(6, 3, 2, 6, '#8a512a'); G.rect(18, 3, 2, 6, '#8a512a'); G.rect(6, 2, 14, 2, '#8a512a'); G.rect(2, 8, 22, 4, '#e0a466'); G.rect(4, 12, 18, 6, '#c07a3e'); for (let x = 6; x < 22; x += 4) G.rect(x, 12, 1, 6, '#e0a466'); G.ell(9, 7, 2.4, 2, '#e5412f'); G.ell(15, 6, 2.6, 2.2, '#ffd21f'); }),
+  staff: paint(26, 20, G => { G.ell(13, 6, 5, 5, '#f6c9a2'); G.ell(13, 4, 5.4, 3.6, (x, y) => y < 5 ? '#4a3040' : null); G.rect(6, 11, 14, 8, '#e76f8f'); G.rect(9, 12, 8, 7, '#3f8f74'); }),
+  book: paint(26, 20, G => { G.rect(2, 3, 10, 14, '#d93a2f'); G.rect(14, 3, 10, 14, '#d93a2f'); G.rect(3, 4, 8, 12, '#fff4dc'); G.rect(15, 4, 8, 12, '#fff4dc'); for (let y = 6; y < 15; y += 3) { G.rect(4, y, 6, 1, '#c9b9a0'); G.rect(16, y, 6, 1, '#c9b9a0'); } G.rect(12, 3, 2, 14, '#962f2a'); }),
+};
+const COIN_HK = paint(14, 14, G => { G.ell(7, 7, 6.5, 6.5, '#b97e30'); G.ell(7, 7, 5.2, 5.2, '#e0aa52'); G.ell(7, 7, 3.6, 3.6, (x, y) => ((x + .5 - 7) ** 2 + (y + .5 - 7) ** 2 > 9) ? '#c98f3e' : '#e9b860'); G.set(5, 5, '#fff0b8'); G.set(6, 4, '#fff0b8'); }, false);
+const BAR_Y = 588, DAY = 240;
+const ALARM = paint(19, 20, G => {   // 红色双铃闹钟
+  G.ell(4, 3.5, 3, 2.6, '#d9534a'); G.ell(15, 3.5, 3, 2.6, '#d9534a'); G.rect(8, 1, 3, 2, '#c9cdd0');
+  G.ell(9.5, 11, 8, 8, '#d9534a'); G.ell(9.5, 11, 6.2, 6.2, '#fbf3e0'); G.rect(3, 18, 2, 2, '#8a2a24'); G.rect(14, 18, 2, 2, '#8a2a24');
+  for (const [x, y] of [[9, 5], [9, 16], [4, 11], [14, 11]]) G.set(x, y, '#8a7a68');
+}, false);
+function clockText(t) { const m = 7 * 60 + ((t % DAY) / DAY) * 14 * 60, h = Math.floor(m / 60), mm = Math.floor((m % 60) / 10) * 10; return String(h).padStart(2, '0') + ':' + String(mm).padStart(2, '0'); }   // 底栏顶边（1 倍坐标）
+function drawUI(c, t) {
+  // 顶栏：深木招牌
+  px(c, 0, 0, 360, 34, '#5a3a28'); for (let y = 5; y < 32; y += 6) for (let x = (y * 37) % 50; x < 360; x += 60) px(c, x, y, 34, 1, '#4e3222');
+  px(c, 0, 0, 360, 1, '#7a5238'); px(c, 0, 32, 360, 2, '#3a2418');
+  const p = (t % DAY) / DAY; px(c, 0, 33, R(360 * p), 1, C.gold);   // 一天走到哪：底边一道金线
+  c.drawImage(ALARM, 84, 7); { const m = 7 * 60 + p * 14 * 60, cx = 93, cy = 18, ha = (m / 720) * 6.283 - 1.571, ma = (m % 60) / 60 * 6.283 - 1.571;
+    for (let k = 1; k <= 3; k++) px(c, R(cx + Math.cos(ha) * k), R(cy + Math.sin(ha) * k), 1, 1, '#3a2a2e'); for (let k = 1; k <= 4; k++) px(c, R(cx + Math.cos(ma) * k), R(cy + Math.sin(ma) * k), 1, 1, '#b8342c'); px(c, cx, cy, 1, 1, '#3a2a2e'); }
+  c.drawImage(COIN_HK, 8, 10); px(c, 76, 8, 1, 18, '#3a2418');
+  // 撕页月历（挂在招牌中间）
+  px(c, 159, 3, 42, 41, OUT); px(c, 160, 4, 40, 39, '#fbf3e0'); px(c, 160, 4, 40, 11, '#b8483c'); px(c, 160, 42, 40, 1, '#e3d6bc'); px(c, 161, 44, 38, 2, '#e9dcc0');
+  for (const x of [163, 195]) { px(c, x, 0, 2, 6, '#c9c4b8'); px(c, x, 0, 2, 1, '#ffffff'); }
+  // 暂停、声音：奶白小方块
+  for (const x of [300, 326]) { px(c, x - 1, 7, 22, 20, OUT); px(c, x, 8, 20, 18, '#f3e2bf'); px(c, x, 24, 20, 2, '#d9c49a'); }
+  px(c, 306, 12, 3, 10, '#5a3a28'); px(c, 311, 12, 3, 10, '#5a3a28');
+  // 收银小票：提示条
+  px(c, 12, 552, 338, 26, 'rgba(40,24,20,.25)');
+  px(c, 10, 548, 338, 26, '#fbf3e0'); for (let x = 10; x < 348; x += 4) px(c, x, 574, 2, 2, '#fbf3e0');
+  for (let x = 14; x < 344; x += 3) px(c, x, 571, 1, 1, '#e3d6bc');
+  px(c, 10, 548, 3, 26, '#e7d9bd'); c.drawImage(ICON.shelf, 16, 550);
+  // 底栏：墨绿窄条 + 四个奶白小砖（图标 + 小字）
+  px(c, 0, BAR_Y, 360, 640 - BAR_Y, '#2f4a3e'); px(c, 0, BAR_Y, 360, 2, '#4f7a64'); px(c, 0, BAR_Y + 2, 360, 1, '#1e3028');
+  for (let i = 0; i < 5; i++) { const x = 6 + i * 70, on = i === 4 && MODE === 'edit'; px(c, x - 1, BAR_Y + 6, 68, 44, OUT); px(c, x, BAR_Y + 7, 66, 42, on ? '#ffe08a' : '#f3e2bf'); px(c, x, BAR_Y + 7, 66, 1, '#fff6dc'); px(c, x, BAR_Y + 46, 66, 3, on ? '#e0b84a' : '#d9c49a'); c.drawImage(ICON[['shelf', 'basket', 'staff', 'book', 'move'][i]], x + 20, BAR_Y + 9); }
+  if (camX < CAM_MAX - 20 && MODE === 'play') { const a = .6 + .4 * Math.sin(t * 4); c.save(); c.globalAlpha = a; px(c, 336, 300, 20, 40, '#3a2418'); c.restore(); T(c, '›', 346, 312, C.gold, 'center'); }   // 右边还有东西：拖过去看
+}
+function drawUIText(c) {
+  T(c, '1,240', 26, 11); T(c, clockText(time), 106, 11);
+  T(c, '1月', 180, 5, '#fff4dc', 'center', null); T(c, '春', 148, 11, C.cream, 'center');
+  c.save(); c.font = '900 20px SR'; c.fillStyle = '#3a2a2e'; c.textAlign = 'center'; c.textBaseline = 'top'; c.fillText('3', 180, 17); c.restore();
+  c.fillStyle = '#5a3a28'; c.fillRect(331, 14, 3, 6); c.beginPath(); c.moveTo(334, 14); c.lineTo(339, 10); c.lineTo(339, 24); c.lineTo(334, 20); c.fill();
+  if (MODE === 'edit') { T(c, EDIT.msg || '按住家具拖到新位置', 46, 554, '#5a3f2e', 'left', null); T(c, '绿=能放 红=挡路', 340, 554, '#2f6e56', 'right', null); }
+  else { T(c, '货架上层空了', 46, 554, '#5a3f2e', 'left', null); T(c, '点亮着的货架 ↑', 340, 554, '#b8342c', 'right', null); }
+  ['摆货', '进货', '员工', '账本', MODE === 'edit' ? '完成' : '摆放'].forEach((s, i) => T(c, s, 39 + i * 70, BAR_Y + 31, '#5a3f2e', 'center', null));
+}
+
+// ============================================================ 摆放模式：按住家具拖到新位置（吸附半格），挡路或贴太近就是红的
+const MOV = [], WALK_GAP = 12, EDIT = { pick: null, msg: '' };
+const HARD = [{ x0: 205, x1: 301, y0: 29, y1: 47 }, { x0: 0, x1: 16, y0: 56, y1: 160 }, { x0: 22, x1: 32, y0: 71, y1: 153 }, { x0: 38, x1: 200, y0: 29, y1: 47 }, { x0: 150, x1: 232, y0: 300, y1: 314 }, { x0: 236, x1: 248, y0: 296, y1: 304 }];
+function group(name, objs, seats = []) { const g = { name, objs, seats }; objs.forEach(o => { o.grp = g; o.dx = o.dy = 0; }); MOV.push(g); return g; }
+function moveGroup(g, dx, dy) {
+  for (const o of g.objs) { const dsx = K * (dx - dy), dsy = (dx + dy) * K / 2; o.x0 += dx; o.x1 += dx; o.y0 += dy; o.y1 += dy; o.sx += dsx; o.sy += dsy; o.bx0 += dsx; o.bx1 += dsx; o.by0 += dsy; o.by1 += dsy; o.dx += dx; o.dy += dy; }
+  for (const st of g.seats) { st.x += dx; st.y += dy; }
+}
+const near = (a, b, gap) => a.x0 < b.x1 + gap && b.x0 < a.x1 + gap && a.y0 < b.y1 + gap && b.y0 < a.y1 + gap;
+function segHit(a, p, q, m) { const x0 = Math.min(p[0], q[0]) - m, x1 = Math.max(p[0], q[0]) + m, y0 = Math.min(p[1], q[1]) - m, y1 = Math.max(p[1], q[1]) + m; return a.x0 < x1 && x0 < a.x1 && a.y0 < y1 && y0 < a.y1; }
+function canPlace(g) {
+  for (const o of g.objs) {
+    if (o.x0 < 2 || o.x1 > 314 || o.y0 < 50 || o.y1 > 312) return '靠墙太近';
+    for (const h of HARD) if (near(o, h, 4)) return '碰到柜台了';
+    for (const og of MOV) if (og !== g) for (const b of og.objs) if (near(o, b, WALK_GAP)) return '太挤，人过不去';
+    for (let i = 1; i < PATH.length; i++) if (segHit(o, PATH[i - 1], PATH[i], 5)) return '挡住客人的路';
+  }
+  return '';
+}
+const floorAt = (sx, sy) => { const u = sx / K - OX, v = sy / K - OY; return [v + u / 2, v - u / 2]; };   // 屏幕点 → 地面世界坐标
+function hitObj(wx, sy) {   // 世界画布坐标下点到的可移动家具（前面的优先）
+  const cands = MOV.flatMap(g => g.objs).filter(o => wx >= o.sx && wx < o.sx + o.cv.width && sy >= o.sy && sy < o.sy + o.cv.height);
+  cands.sort((a, b) => (b.x0 + b.x1 + b.y0 + b.y1) - (a.x0 + a.x1 + a.y0 + a.y1));
+  for (const o of cands) { o.alpha = o.alpha || o.cv.getContext('2d').getImageData(0, 0, o.cv.width, o.cv.height).data; if (o.alpha[((R(sy - o.sy)) * o.cv.width + R(wx - o.sx)) * 4 + 3] > 0) return o; }
+  return null;
+}
+function footQuad(c, o, col, alpha) { const pts = [P(o.x0, o.y0), P(o.x1, o.y0), P(o.x1, o.y1), P(o.x0, o.y1)]; c.save(); c.globalAlpha = alpha; c.fillStyle = col; c.beginPath(); pts.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); c.closePath(); c.fill(); c.globalAlpha = 1; c.strokeStyle = col; c.lineWidth = 2; c.stroke(); c.restore(); }
+function drawEditFloor(c) {   // 地上的格子
+  c.save(); c.globalAlpha = .28; c.strokeStyle = '#ffffff'; c.lineWidth = 1; c.beginPath();
+  for (let x = 0; x <= ROOM; x += 16) { const a = P(x, 48), b = P(x, ROOM); c.moveTo(a[0], a[1]); c.lineTo(b[0], b[1]); }
+  for (let y = 48; y <= ROOM; y += 16) { const a = P(0, y), b = P(ROOM, y); c.moveTo(a[0], a[1]); c.lineTo(b[0], b[1]); }
+  c.stroke(); c.restore();
+  for (const g of MOV) for (const o of g.objs) footQuad(c, o, g === EDIT.pick?.g ? (EDIT.bad ? '#e0503a' : '#3fbf7a') : '#ffffff', g === EDIT.pick?.g ? .55 : .12);
+}
+function drawEditMarks(c) {   // 拿起来的家具：再画一层，半透明 + 抬高一点
+  if (!EDIT.pick) return; const g = EDIT.pick.g; c.save(); c.globalAlpha = .55; for (const o of g.objs) c.drawImage(o.cv, o.sx, o.sy - 8); c.restore();
+}
+function setupInput() {
+  const cv = document.getElementById('shop');
+  const pos = e => { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) * 720 / r.width, (e.clientY - r.top) * 1280 / r.height]; };
+  let pan = null;
+  cv.addEventListener('pointerdown', e => {
+    const [sx, sy] = pos(e); cv.setPointerCapture(e.pointerId);
+    if (sy > BAR_Y * K) { const i = Math.floor((sx / K - 6) / 70); if (i === 4) { MODE = MODE === 'edit' ? 'play' : 'edit'; EDIT.msg = ''; } return; }
+    if (MODE === 'edit') { const o = hitObj(sx + camX, sy); if (o) { const f = floorAt(sx + camX, sy); EDIT.pick = { g: o.grp, f0: f, dx: 0, dy: 0 }; EDIT.bad = false; EDIT.msg = '拿起：' + o.grp.name; return; } }
+    pan = { x: sx, cam: camX };
+  });
+  cv.addEventListener('pointermove', e => {
+    const [sx, sy] = pos(e);
+    if (EDIT.pick) {
+      const f = floorAt(sx + camX, sy), dx = Math.round((f[0] - EDIT.pick.f0[0]) / 8) * 8, dy = Math.round((f[1] - EDIT.pick.f0[1]) / 8) * 8, pk = EDIT.pick;
+      if (dx !== pk.dx || dy !== pk.dy) { moveGroup(pk.g, dx - pk.dx, dy - pk.dy); pk.dx = dx; pk.dy = dy; const why = canPlace(pk.g); EDIT.bad = !!why; EDIT.msg = why || '可以放这里'; }
+      return;
+    }
+    if (pan) camX = Math.max(0, Math.min(CAM_MAX, pan.cam - (sx - pan.x)));
+  });
+  cv.addEventListener('pointerup', () => {
+    if (EDIT.pick) { const pk = EDIT.pick; if (EDIT.bad) { moveGroup(pk.g, -pk.dx, -pk.dy); EDIT.msg = '放不下，退回原位'; } else { EDIT.msg = pk.g.name + '放好了'; redoShadows(); if (pk.g.objs.includes(TABLES.T4)) RING = ringOf(TABLES.T4); } EDIT.pick = null; EDIT.bad = false; }
+    pan = null;
+  });
+  cv.addEventListener('wheel', e => { camX = Math.max(0, Math.min(CAM_MAX, camX + (e.deltaX || e.deltaY))); e.preventDefault(); }, { passive: false });
+}
+
+// ============================================================ 每帧
+const shop = document.getElementById('shop').getContext('2d');
+const FAN = [0, 1, 2].map(k => {   // 三片扇叶，三帧转动
+  const g = new Grid(160, 120), cx = 80, cy = 70, Pf = (x, y, z) => [cx + 2 * (x - y), cy + (x + y) - 2 * z];
+  g.seg(Pf(0, 0, 30), Pf(0, 0, 4), '#6b5a4a'); g.seg([cx + 1, cy - 60], [cx + 1, cy - 8], '#4e4034');
+  for (let b = 0; b < 3; b++) { const a = (b * 120 + k * 40) * Math.PI / 180, d = [Math.cos(a), Math.sin(a)], n = [-d[1], d[0]];
+    g.quad(Pf(d[0] * 4 + n[0] * 2.2, d[1] * 4 + n[1] * 2.2, 0), Pf(d[0] * 26 + n[0] * 3.2, d[1] * 26 + n[1] * 3.2, 0), Pf(d[0] * 26 - n[0] * 3.2, d[1] * 26 - n[1] * 3.2, 0), Pf(d[0] * 4 - n[0] * 2.2, d[1] * 4 - n[1] * 2.2, 0), '#a8754a'); }
+  g.ell(cx, cy, 9, 5, '#d2a95a'); g.ell(cx, cy - 4, 6, 3.4, '#e9c46a'); g.ell(cx - 2, cy - 5, 2, 1, '#fff0b8');
+  thickOut(g); return g.canvas();
+});
+let BG, RING, SHADE, time = 0;
+function redoShadows() { const x = SHADE.getContext('2d'); x.clearRect(0, 0, WW, 1280); contactShadows(x); }
+function ringOf(o) {   // 金色描边：贴着货架外轮廓一圈
+  const w = o.cv.width, h = o.cv.height, src = o.cv.getContext('2d').getImageData(0, 0, w, h).data, out = mk(w, h), ox = out.getContext('2d'), im = ox.createImageData(w, h), D = im.data;
+  const a = (x, y) => x >= 0 && y >= 0 && x < w && y < h && src[(y * w + x) * 4 + 3] > 0;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (!a(x, y) && (a(x - 1, y) || a(x + 1, y) || a(x, y - 1) || a(x, y + 1))) D.set([255, 215, 94, 255], (y * w + x) * 4);
+  ox.putImageData(im, 0, 0); return out;
+}
+function step(dt) { time += dt; stepCustomers(dt); stepWalkers(dt); stepBubbles(dt); }
+function frame(dt) {
+  if (dt) step(dt);
+  const c = shop; c.save(); c.translate(-camX, 0); c.drawImage(BG, 0, 0); c.drawImage(SHADE, 0, 0);
+  if (MODE === 'edit') drawEditFloor(c);
+  // 人脚下的影子
+  c.save(); c.globalAlpha = .22; c.fillStyle = '#2a1a24';
+  const feet = [...CUST.map(o => posAt(o.s)), ...WALK.map(w => ({ x: w.x, y: w.y })), ...SEATED.map(s => ({ x: s.x, y: s.y }))];
+  for (const f of feet) { const [a, b] = P(f.x, f.y); c.beginPath(); c.ellipse(R(a), R(b), 18, 7, 0, 0, 7); c.fill(); }
+  c.restore();
+  const items = [...STATICS];
+  STAFF.forEach((s, i) => { const bob = Math.sin(time * 2 + i * 2) > .7 ? .5 : 0; items.push(personItem(s.ch[s.face][0], s.x, s.y, (s.z ?? PLAT) + bob)); });
+  SEATED.forEach(s => items.push(personItem(s.ch.seatNW, s.x, s.y, 22, s.ch.seatAnchor, { x0: s.x - 4, x1: s.x + 6 })));
+  BOOTH_SEAT.forEach(s => items.push(personItem(flipC(s.ch.seatSE), s.x, s.y, 12, s.ch.seatAnchor, { x0: s.x - 8, x1: s.x + 8, y0: s.y - 2, y1: s.y + 4 })));   // 卡座：面朝桌子坐   // 比凳子靠前一点，坐在凳上
+  for (const w of WALK) { const fr = Math.floor(w.dist / 7) % 4; items.push(personItem(w.ch[w.dir > 0 ? 'SE' : 'NW'][fr], w.x, w.y)); }
+  for (const o of CUST) {
+    const p = posAt(o.s), fr = o.moved > 0 ? (Math.floor(o.dist / 7) % 4) : 0;
+    const it = personItem(o.ch[faceOf(p.seg)][fr], p.x, p.y); it.cust = o; it.p = p; items.push(it);
+  }
+  for (const it of depthSort(items)) {
+    it.draw(c);
+    if (it.cust && it.cust.wait > 3) { const [a, b] = P(it.p.x, it.p.y); px(c, R(a) + 22, R(b) - 92, 24, 10, OUT); px(c, R(a) + 24, R(b) - 90, 20, 6, '#4a3a48'); px(c, R(a) + 24, R(b) - 90, 10, 6, '#e7c34a'); }
+  }
+  // 指示：中间那张货架 T4 上层空了 —— 金边（慢呼吸）+ 虚线空位 + 小手
+  const TG = TABLES.T4; if (MODE === 'play') {
+  c.save(); c.globalAlpha = .55 + .45 * Math.sin(time * 3); c.drawImage(RING, TG.sx, TG.sy); c.restore();
+  const q = [[197, 152], [243, 152], [243, 172], [197, 172]].map(([x, y]) => P(x + TG.dx, y + TG.dy, 31));
+  for (let k = 0; k < 4; k++) { const a = q[k], b = q[(k + 1) % 4], n = R(Math.hypot(b[0] - a[0], b[1] - a[1])); for (let i = 0; i <= n; i++) if ((i >> 1) % 2 === 0) px(c, R(a[0] + (b[0] - a[0]) * i / n), R(a[1] + (b[1] - a[1]) * i / n), 1, 1, C.gold); }
+  const [hx, hy] = P(248 + TG.dx, 178 + TG.dy, 26); c.drawImage(HAND, R(hx), R(hy + Math.abs(Math.sin(time * 4)) * -6), HAND.width * K, HAND.height * K); }
+  if (MODE === 'edit') drawEditMarks(c);
+  c.restore();
+  c.save(); c.scale(K, K); c.imageSmoothingEnabled = false;   // 界面和文字按 1 倍排版、整体放大 2 倍
+  c.save(); c.translate(-camX / K, 0);
+  const [kx, ky] = P1(220 + TG.dx, 162 + TG.dy, 52); if (MODE === 'play') T(c, '空', R(kx), R(ky), C.gold, 'center');
+  for (let i = POPS.length - 1; i >= 0; i--) { const pp = POPS[i]; pp.t += dt; if (pp.t > 1.2) { POPS.splice(i, 1); continue; } c.drawImage(COIN, R(pp.x) - 18, R(pp.y - pp.t * 14)); T(c, '+12', R(pp.x) + 2, R(pp.y - pp.t * 14) - 1, C.gold); }
+  drawBubbles(c);
+  c.restore();
+  drawUI(c, time);
+  drawUIText(c);
+  c.restore();
+}
+
+Promise.all([document.fonts.load('12px FP'), document.fonts.load('900 26px SR')]).then(() => {
+  BG = mk(WW, 1280); drawBackground(BG.getContext('2d'));
+  buildStatics(); RING = ringOf(TABLES.T4); SHADE = mk(WW, 1280); redoShadows(); setupInput();
+  if (location.hash.includes('demo')) { const g = TABLES.T6.grp; EDIT.pick = { g, f0: [0, 0], dx: 40, dy: 0 }; moveGroup(g, 40, 0); const w = canPlace(g); EDIT.bad = !!w; EDIT.msg = w || '可以放这里'; }   // 截图演示：拿起一张货架
+  // 先跑一段，让队伍排起来；#t=秒数 可以指定跑到哪一刻（截图对比用）
+  const simT = +((location.hash.match(/t=(\d+(\.\d+)?)/) || [])[1] || 40);
+  for (let i = 0; i < simT * 30; i++) step(1 / 30);
+  POPS.length = 0;
+  frame(0);
+  let last = performance.now();
+  const loop = now => { frame(Math.min(.05, (now - last) / 1000)); last = now; requestAnimationFrame(loop); };
+  requestAnimationFrame(loop);
+});
+</script></body></html>
