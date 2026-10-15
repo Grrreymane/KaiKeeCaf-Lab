@@ -59,7 +59,7 @@ const HIRE = {
   wen: { name: '雯姐', day: 2, wage: 70, note: '冲饮手稳 · 唔等钱使 · 六点准时放工' },
   shao: { name: '阿少', day: 4, wage: 70, note: '安静体贴 · 好识招呼人 · 好似喺边度见过' },
   yao: { name: '耀仔', day: 25, wage: 75, note: '惠姐外甥 · 读过烘焙课 · 帮坤伯焗多一盘' },
-  qing: { name: '阿晴', day: 13, wage: 55, note: '莲姨外甥女 · 中六 · 放学后上岗 · 冰饮快' },
+  qing: { name: '阿青', day: 13, wage: 55, note: '莲姨外甥女 · 中六 · 放学后上岗 · 冰饮快' },
   temp: { name: '', day: 1, wage: 50, note: '', temp: true },   // today's part-timer (filled in each morning from TEMPS)
 };
 // part-timers (打工人): a different one turns up each day; hired for today only, cheaper, no levels or affection
@@ -109,7 +109,7 @@ const PERKS = {
   shao: { 3: [['shao_lure', '招客', '客流 +8%'], ['shao_memo', '记性好', '卡座小费 +$2']], 5: [['shao_fans', '街坊人缘', '外卖客多一倍'], ['shao_run', '飞毛腿', '招待走快三成']] },
 };
 const SPECIALS = {   // [id, name, what it does, ★ cost] — needs Lv4
-  lin: ['lin_auto', '自动进货', '每天早上按今日安排自动补齐原料', 300],
+  lin: ['lin_auto', '自动进货', '原料快用完时随时自动补齐', 600],
   kun: ['kun_plan', '自动排产', '每天早上按昨天卖得好的自动定主打', 250],
   wen: ['wen_tidy', '收台快手', '卡座吃完自动收拾干净', 250],
   shao: ['shao_clean', '顺手打扫', '空闲时顺手打扫，店里脏得慢', 300],

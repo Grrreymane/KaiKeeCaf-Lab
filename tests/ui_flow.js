@@ -77,13 +77,13 @@ ok(HIRE.temp.name && STAFF_HD.temp, "today's part-timer: " + HIRE.temp.name); { 
 { ok(W.today.wx && W.today.fc && W.today.fc.n > 0, 'morning forecast: weather + expected guests');
   const p0 = priceOf('tart'); setTier('priceTier', 2); ok(priceOf('tart') > p0, '精品 raises prices'); setTier('priceTier', 1); ok(priceOf('tart') === p0, 'back to standard');
   setTier('stockTier', 0); ok(stockTier() === 0, 'stock tier set'); setTier('stockTier', 1); }
-// summer: students on contract, promotions, display add-ons, 阿晴
+// summer: students on contract, promotions, display add-ons, 阿青
 { const d0 = W.day; W.day = 14; setTemp(); ok(HIRE.temp.student && HIRE.temp.name.startsWith('学生'), 'summer part-timer is a student');
   signContract(); STORY_Q.length = 0; DIALOG = null; ok(W.staff.temp.hired && W.contract && W.contract.left === 5, 'six-day contract signed');
   for (let i = 0; i < 6; i++) { W.day++; setTemp(); } ok(!W.contract && !W.staff.temp.hired, 'contract ends after six days');
   W.day = d0; setTemp(); W.contract = null;
   const ph = PHASE; PHASE = 'prep'; const m0 = W.money; setPromo('ice'); ok(W.today.promo === 'ice' && W.money === m0 - 40, 'promo paid up front'); setPromo('none'); ok(W.money === m0, 'switching back refunds'); PHASE = ph;
-  ok(HIRE.qing && STAFF_HD.qing && NAMES.qing, '阿晴 can be hired');
+  ok(HIRE.qing && STAFF_HD.qing && NAMES.qing, '阿青 can be hired');
   W.known.redice = W.known.eggwaf = true; const st = W.shelves[SHELF_IDS[0]]; st.locked = false; st.layers[0].p = 'eggwaf'; st.layers[0].n = 3; st.layers[1].p = 'redice'; st.layers[1].n = 3;
   let added = 0; for (let i = 0; i < 40; i++) { const c = { got: { eggwaf: 1 }, wants: ['eggwaf'] }; addOn(c, SHELF_IDS[0]); if (c.got.redice) added++; st.layers[1].n = 3; }
   ok(added > 3 && added < 30, 'combo partner on the same shelf: some customers add it (' + added + '/40)'); FLY.length = 0; POPS.length = 0; }

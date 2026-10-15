@@ -245,7 +245,7 @@ function drawDecorPanel(c, P_) {   // 装修: better shelves, wallpaper, booth s
     else btn(c, x + 74, yy + 52, 80, 24, own[k] ? '换上' : money$(S.cost), () => buyDecor(tab, k), own[k] || W.money >= S.cost ? 'gold' : 'off');
   });
   { const d = W.decor, rows = Math.ceil(Object.keys(list).length / 2), yb = y + rows * 84 + 4;   // where today's beauty comes from
-    const parts = [['墙纸', (WALLS[d.wall] || WALLS.mint).beauty], ['卡座', (BOOTH_STYLES[d.booth] || BOOTH_STYLES.green).beauty], ['货架', SHELF_IDS.reduce((a, id) => a + (W.shelves[id].locked ? 0 : SHELF_TIERS[(d.tier || {})[id] || 0].beauty), 0)], ['摆设', Object.keys(DECOR_ITEMS).reduce((a, id) => a + (hasItem(id) ? DECOR_ITEMS[id].beauty : 0), 0)], ['音乐', 2 * upLv('music')], ['阿晴', hasPerk('qing_menu') ? 3 : 0]].filter(q => q[1]);
+    const parts = [['墙纸', (WALLS[d.wall] || WALLS.mint).beauty], ['卡座', (BOOTH_STYLES[d.booth] || BOOTH_STYLES.green).beauty], ['货架', SHELF_IDS.reduce((a, id) => a + (W.shelves[id].locked ? 0 : SHELF_TIERS[(d.tier || {})[id] || 0].beauty), 0)], ['摆设', Object.keys(DECOR_ITEMS).reduce((a, id) => a + (hasItem(id) ? DECOR_ITEMS[id].beauty : 0), 0)], ['音乐', 2 * upLv('music')], ['阿青', hasPerk('qing_menu') ? 3 : 0]].filter(q => q[1]);
     card(c, 14, yb, 332, 22, '#fff3d6'); T(c, '美观 ' + beauty() + (parts.length ? ' = ' + parts.map(q => q[0] + q[1]).join(' + ') : '：买墙纸、卡座、摆设都会加'), 22, yb + 5, INK, 'left', null); }
 }
 function drawPlanPanel(c) {
@@ -362,7 +362,7 @@ function drawSupPanel(c) {   // shop level + suppliers you can sign with
   btn(c, 14, BAR_Y - 40, 100, 30, '返去买料', () => { PANEL = { kind: 'shop', bar: 1 }; SFX.tap(); }, 'cream');
 }
 function drawPerkPanel(c, P_) {   // Lv3 / Lv5: choose one of two new abilities
-  const nm = { kun: '坤伯', lin: '莲姨', wen: '雯姐', shao: '阿少', qing: '阿晴', yao: '耀仔' }[P_.k];
+  const nm = { kun: '坤伯', lin: '莲姨', wen: '雯姐', shao: '阿少', qing: '阿青', yao: '耀仔' }[P_.k];
   let y = sheet(c, nm + ' 升到 ' + P_.lv + ' 级', '揀一样新本事', 300);
   PERKS[P_.k][P_.lv].forEach(([id, name, desc], i) => {
     const yy = y + 6 + i * 92; card(c, 24, yy, 312, 82, '#fffaf0'); TS(c, '★ ' + name, 40, yy + 10, 18, '#b8483c'); T(c, desc, 40, yy + 42, INK, 'left', null);

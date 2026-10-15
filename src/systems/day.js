@@ -235,13 +235,18 @@ function morningSpecials() {
     if (top.length) { for (const p of PIDS) if (W.plan[p] === 'pri') W.plan[p] = 'on'; for (const p of top) W.plan[p] = 'pri'; notice('坤伯定好主打：' + top.map(p => PRODUCTS[p].name).join('、')); }
   }
   if (hasSk('yao_rd')) { const L_ = researchable(); if (L_.length && canResearch()) { const p = L_[0]; W.known[p] = true; W.rdDay = W.day; applyDecor(); notice('耀仔研发好了「' + PRODUCTS[p].name + '」'); } }
-  if (hasSk('lin_auto')) { const m0 = W.money; quiet(() => restock(3)); if (m0 > W.money) notice('莲姨自动进货 -' + money$(m0 - W.money)); }
+  if (hasSk('lin_auto')) autoRestock();
   if (hasSk('qing_shelf')) {   // empty layers get what is planned and not on display yet (leads first)
     const shown = new Set(); for (const id of SHELF_IDS) for (const L_ of W.shelves[id].layers) if (L_.p) shown.add(L_.p);
     const want = PIDS.filter(p => unlocked(p) && W.plan[p] !== 'off' && !shown.has(p)).sort((a, b) => (W.plan[b] === 'pri') - (W.plan[a] === 'pri') || wantOf(b) - wantOf(a)); let n = 0;
     for (const id of SHELF_IDS) { const st = W.shelves[id]; if (st.locked) continue; st.layers.forEach((L_, li) => { if (L_.p) return; const i = want.findIndex(p => (PRODUCTS[p].where === 'fridge') === !!st.fridge); if (i < 0) return; if (assignLayer(id, li, want[i])) { want.splice(i, 1); n++; } }); }
-    if (n) notice('阿晴摆好了 ' + n + ' 层货架');
+    if (n) notice('阿青摆好了 ' + n + ' 层货架');
   }
+}
+function autoRestock() {   // 莲姨: when anything today's plan needs is down to its last portion, buy enough for three
+  const low = PIDS.some(p => unlocked(p) && W.plan[p] !== 'off' && (offered(p) || p === 'tea') && RECIPE[p].some(k => (W.ing[k] || 0) < 1)); if (!low && PHASE !== 'prep') return;
+  const m0 = W.money, d = SFX.deny, b = SFX.buy; SFX.deny = SFX.buy = () => {}; try { restock(3); } finally { SFX.deny = d; SFX.buy = b; }
+  if (m0 > W.money) notice('莲姨自动进货 -' + money$(m0 - W.money));
 }
 function buySpecial(k) {   // unlock with ★ (Lv4+); later taps switch it on / off
   const [id, name, , cost] = SPECIALS[k]; W.sk = W.sk || {};
