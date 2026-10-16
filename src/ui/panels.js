@@ -529,8 +529,8 @@ function drawTitle(c) {
   c.save(); c.globalAlpha = .62; px(c, 0, 0, 360, 640, '#1c141c'); c.restore();
   card(c, 40, 150, 280, 120, '#5a3524');
   px(c, 40, 150, 280, 4, '#7a4a32');
-  TS(c, '街记冰室', 180, 168, 44, C.gold, 'center'); T(c, 'L a b', 180, 228, '#fbe9c0', 'center', null);
-  T(c, '摆点心 · 看街坊 · 慢慢做大', 180, 290, '#fbe9c0', 'center');
+  TS(c, '街记冰室', 180, 168, 44, C.gold, 'center'); TS(c, 'Lab', 180, 218, 28, '#fbe9c0', 'center');
+  T(c, '一起来制作卖点心，然后和街坊打好关系！', 180, 290, '#fbe9c0', 'center');
   const saved = hasSave() && !TITLE_NEW;
   if (saved && !TITLE_NEW) { btn(c, 90, 330, 180, 40, '继续开店', () => { audioUnlock(); startGame(false); }); btn(c, 90, 382, 180, 34, '从头开张', () => { TITLE_NEW = true; SFX.tap(); }, 'cream'); }
   else { T(c, '谁来开店？', 180, 324, '#fbe9c0', 'center'); c.drawImage(STAFF_HD.hero_f.SE[0], 96, 346, 30, 61); c.drawImage(STAFF_HD.hero_m.SE[0], 234, 346, 30, 61);
