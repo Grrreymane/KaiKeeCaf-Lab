@@ -107,7 +107,7 @@ function shelfCaps(id) { const t = (W.decor.tier || {})[id] || 0, base = isFridg
 let BG_WALL = 'mint', BOOTH_DONE = 'green';
 function applyDecor() {   // after loading / buying: wallpaper, booth style, shelf tiers + facing, plant facing
   const d = W.decor;
-  const bgKey = d.wall + ':' + expandLv() + ':' + upLv('ac') + ':' + Object.keys(DECOR_ITEMS).filter(id => DECOR_ITEMS[id].cat === 'wall' && hasItem(id)).join() + ':' + keepList('w').join() + ':' + JSON.stringify(W.wallSlot || {}) + ':' + PIDS.filter(p => unlocked(p)).map(p => p + priceOf(p)).join();
+  const bgKey = d.wall + ':' + (d.floor || '') + ':' + expandLv() + ':' + upLv('ac') + ':' + Object.keys(DECOR_ITEMS).filter(id => DECOR_ITEMS[id].cat === 'wall' && hasItem(id)).join() + ':' + keepList('w').join() + ':' + JSON.stringify(W.wallSlot || {}) + ':' + PIDS.filter(p => unlocked(p)).map(p => p + priceOf(p)).join();
   if (BG && BG_WALL !== bgKey) { drawBackground(BG.getContext('2d')); BG_WALL = bgKey; }
   applyExpand(); applyDoors(); applyRooms(); applyExtraShelves(); applyItems(); applyCounterGifts(); applyKeepsakes();
   W.sets = W.sets || {}; for (const S of DECOR_SETS) if (setDone(S) && !W.sets[S[0]]) { W.sets[S[0]] = W.day; if (PHASE !== 'title') notice('搭配完成「' + S[0] + '」舒适 +' + S[2]); }

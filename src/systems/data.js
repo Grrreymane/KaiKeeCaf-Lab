@@ -206,8 +206,26 @@ const WALLS = {
   cream: { name: '奶油条纹', cost: 300, wall: '#f2e2bc', wallD: '#e4cf9f', low: '#8a5a3a', lowWood: true, beauty: 2, stripe: true },
   rose: { name: '粉红碎花', cost: 450, wall: '#f4cdc8', wallD: '#e8b4ae', low: '#a84e5a', beauty: 3, floral: true },
   jade: { name: '墨绿金线', cost: 600, wall: '#e9dcba', wallD: '#ddcfa8', low: '#36604f', beauty: 4, rail: true },
+  tile: { name: '白瓷砖墙', cost: 500, wall: '#f6f3ec', wallD: '#ddd8cc', low: '#2f5a4a', beauty: 3, tiles: true },
   teak: { name: '柚木墙板', cost: 700, wall: '#f0dfb8', wallD: '#e3cfa2', low: '#a26a3c', lowWood: true, beauty: 5 },
 };
+const FLOORS = {   // 装修 → 地板: a different pattern / material each, not only a colour
+  peach: { name: '暖色格仔', cost: 0, A: '#e7bd96', B: '#dcac86', dots: true, beauty: 0 },
+  bw: { name: '黑白格', cost: 400, A: '#f2ede2', B: '#3a363c', beauty: 3 },
+  plank: { name: '柚木地板', cost: 550, A: '#b8824c', B: '#a87444', plank: true, beauty: 4 },
+  mosaic: { name: '小砖马赛克', cost: 500, A: '#f1ece0', B: '#5fa58a', mosaic: true, beauty: 4 },
+  terrazzo: { name: '水磨石地', cost: 800, A: '#e3dccf', B: '#e3dccf', chips: true, beauty: 5 },
+};
+// 整套搭配: wall + floor + counter + booth that go together; the whole set in the shop = beauty bonus
+const THEMES = [
+  { name: '黑白格茶餐厅', wall: 'tile', floor: 'bw', counter: 'terrazzo', booth: 'red', bonus: 4, note: '白瓷砖 · 黑白格 · 水磨石柜 · 红卡座' },
+  { name: '柚木老铺', wall: 'teak', floor: 'plank', counter: 'teak', booth: 'brown', bonus: 4, note: '柚木墙板 · 柚木地板 · 深色柜 · 啡卡座' },
+  { name: '粉红碎花', wall: 'rose', floor: 'mosaic', counter: 'mint', booth: 'deluxe', bonus: 5, note: '碎花墙 · 小砖马赛克 · 薄荷柜 · 高级卡座' },
+  { name: '墨绿金线', wall: 'jade', floor: 'terrazzo', counter: 'red', booth: 'green', bonus: 5, note: '墨绿金线 · 水磨石地 · 红漆金边 · 绿卡座' },
+];
+const DECOR_SRC = () => ({ wall: [WALLS, 'walls', 'mint'], booth: [BOOTH_STYLES, 'booths', 'green'], counter: [COUNTER_STYLES, 'counters', 'oak'], floor: [FLOORS, 'floors', 'peach'] });
+const themeOn = () => THEMES.find(T => ['wall', 'floor', 'counter', 'booth'].every(k => ((W && W.decor && W.decor[k]) || DECOR_SRC()[k][2]) === T[k])) || null;
+const themeCost = T => ['wall', 'floor', 'counter', 'booth'].reduce((a, k) => { const [L, o] = DECOR_SRC()[k]; return a + (((W.decor[o] || {})[T[k]]) ? 0 : L[T[k]].cost); }, 0);
 const BOOTH_STYLES = {
   green: { name: '绿皮卡座', cost: 0, leather: ['#4f9a7c', '#3f8a6e', '#2f6e56'], beauty: 0 },
   red: { name: '红皮卡座', cost: 300, leather: ['#d0574a', '#b8473c', '#963830'], beauty: 2 },
@@ -306,7 +324,7 @@ const ACH = [
   { id: 'aircon', name: '叹冷气', desc: '风扇换成冷气机', test: () => upLv('ac') >= 1, pts: 15 },
 ];
 function beauty() {
-  const d = (W && W.decor) || {}; let b = ((WALLS[d.wall] || WALLS.mint).beauty) + ((BOOTH_STYLES[d.booth] || BOOTH_STYLES.green).beauty) + ((COUNTER_STYLES[d.counter] || COUNTER_STYLES.oak).beauty) + 2 * upLv('music') + (hasPerk('qing_menu') ? 3 : 0);
+  const d = (W && W.decor) || {}; let b = ((WALLS[d.wall] || WALLS.mint).beauty) + ((BOOTH_STYLES[d.booth] || BOOTH_STYLES.green).beauty) + ((COUNTER_STYLES[d.counter] || COUNTER_STYLES.oak).beauty) + ((FLOORS[d.floor] || FLOORS.peach).beauty) + ((themeOn() || {}).bonus || 0) + 2 * upLv('music') + (hasPerk('qing_menu') ? 3 : 0);
   for (const id of SHELF_IDS) if (W.shelves[id] && !W.shelves[id].locked) b += SHELF_TIERS[(d.tier || {})[id] || 0].beauty;
   for (const id in DECOR_ITEMS) if (hasItem(id)) b += DECOR_ITEMS[id].beauty;
   if (W && W.showcase && W.stock && W.stock[W.showcase] > 0) b += 2;   // a full showcase looks good

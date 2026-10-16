@@ -116,7 +116,6 @@ function drawHUD(c) {
   }
   if (MODE === 'play') drawDeskButton(c);
   if (MODE === 'play') drawEpisodeBar(c);
-  drawGoalChip(c);
   // bottom bar: dark green strip, five cream tiles
   px(c, 0, BAR_Y, 360, 640 - BAR_Y, '#2f4a3e'); px(c, 0, BAR_Y, 360, 2, '#4f7a64'); px(c, 0, BAR_Y + 2, 360, 1, '#1e3028');
   [0, 1, 3, 6, 4, 5].forEach((i, j) => {   // 研发 (2) is not on the bar (its own button, top right); 6 = 装修 shop
@@ -191,14 +190,6 @@ function drawTour(c) {
   if (act) return;   // must-do: no skipping
   btn(c, 200, cy + 64, 60, 22, '跳过', () => { SFX.tap(); done(); }, 'cream');
   btn(c, 266, cy + 64, 74, 22, '不再提示', () => { SFX.tap(); W.tourOff = true; saveGame(); }, 'cream');
-}
-function drawGoalChip(c) {   // the current milestone, top right: a flag, how far along; tap for the whole list
-  if (!W || PHASE === 'title' || MODE !== 'play' || PANEL || DIALOG || DESK) return; const G_ = goalNow(), x = 296, y = labUnlocked() ? 92 : 68;
-  if (!G_) { px(c, x - 1, y - 1, 60, 20, OUT); px(c, x, y, 58, 18, '#e6f2ea'); T(c, '目标全达成', x + 29, y + 3, '#2f6e56', 'center', null, 12); return; }
-  const [a, b] = G_[2](), f = Math.max(0, Math.min(1, a / b));
-  px(c, x - 1, y - 1, 60, 30, OUT); px(c, x, y, 58, 28, '#fff3d6'); px(c, x + 3, y + 3, 2, 10, '#6b4a35'); px(c, x + 5, y + 3, 6, 4, '#d0453a');
-  T(c, G_[0].slice(0, 4), x + 13, y + 1, INK, 'left', null, 12); px(c, x + 3, y + 19, 52, 5, '#e3d6bc'); px(c, x + 3, y + 19, R(52 * f), 5, C.gold);
-  button(x - 2, y - 2, 62, 32, () => { PANEL = { kind: 'goals', bar: 4 }; SFX.tap(); });
 }
 function drawEpisodeBar(c) {   // 小剧场 invitation at the top: 看 to watch (the shop pauses while reading), or let it pass
   const B = EP_BANNER; if (!B || PANEL || DIALOG || DESK) return;

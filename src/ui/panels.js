@@ -9,6 +9,8 @@ function btn(c, x, y, w, h, label, fn, kind = 'gold') {
   T(c, label, x + w / 2, y + (h - 14) / 2, off ? '#9a8a78' : INK, 'center', null);
   button(x, y, w, h, off ? () => SFX.deny() : fn);
 }
+// a list opened from 账本 gets a way back to it (in the header, where the info line would be)
+const bookBack = y0 => { if (!PANEL || PANEL.from !== 'book') return null; button(220, y0, 100, 26, () => { PANEL = { kind: 'book', bar: 4 }; SFX.tap(); }); return '← 账本'; };
 function sheet(c, title, right, y0 = 292) {   // bottom sheet with a wood header and a close tab
   c.save(); c.globalAlpha = .35; px(c, 0, 34, 360, y0 - 34, '#1c141c'); c.restore();
   button(0, 34, 360, y0 - 34, () => { PANEL = null; });   // tapping the dimmed shop closes the sheet
@@ -144,11 +146,17 @@ function drawStaffPanel(c) {   // each row: who, what they do now, level + affec
 function decorSwatch(c, tab, S, x, y) {   // a small sample of a wallpaper / booth style
   px(c, x - 1, y - 1, 58, 74, OUT);
   if (tab === 'wall') {
-    px(c, x, y, 56, 56, S.wall); if (S.stripe) for (let t = 0; t < 56; t += 8) px(c, x + t, y, 3, 56, S.wallD); else if (!S.floral) for (let t = 2; t < 56; t += 4) px(c, x + t, y, 1, 56, S.wallD);
+    px(c, x, y, 56, 56, S.wall); if (S.tiles) for (let t = 0; t < 32; t += 6) { px(c, x, y + t, 56, 1, S.wallD); for (let u = (t / 6) % 2 ? 6 : 0; u < 56; u += 12) px(c, x + u, y + t, 1, 6, S.wallD); } else if (S.stripe) for (let t = 0; t < 56; t += 8) px(c, x + t, y, 3, 56, S.wallD); else if (!S.floral) for (let t = 2; t < 56; t += 4) px(c, x + t, y, 1, 56, S.wallD);
     if (S.floral) for (let i = 0; i < 9; i++) { const fx = x + 6 + (i % 3) * 18 + (Math.floor(i / 3) % 2) * 9, fy = y + 8 + Math.floor(i / 3) * 18; px(c, fx - 1, fy, 3, 1, '#ffffff'); px(c, fx, fy - 1, 1, 3, '#ffffff'); px(c, fx, fy, 1, 1, '#e07a8a'); }
     if (S.rail) px(c, x, y + 4, 56, 1, C.brass);
     px(c, x, y + 32, 56, 24, S.low || shade(S.wall, -40)); for (let t = 8; t < 56; t += 8) px(c, x + t, y + 32, 1, 24, shade(S.low || S.wall, -16)); px(c, x, y + 30, 56, 3, S.rail ? C.brass : C.trim);   // the dark lower panel and its rail
     px(c, x, y + 56, 56, 16, '#f7f3e7'); for (let t = 0; t < 56; t += 6) px(c, x + t, y + 56, 1, 16, '#ddd7c8');
+  } else if (tab === 'floor') {   // a patch of floor, seen from above
+    for (let i = 0; i < 7; i++) for (let j = 0; j < 9; j++) px(c, x + i * 8, y + j * 8, 8, 8, S.plank ? (((j + (i >> 1)) % 2) ? S.A : S.B) : S.mosaic ? (((i + j) % 6 === 0 || ((i - j) % 6 + 6) % 6 === 0) ? S.B : S.A) : S.chips ? S.A : (i + j) % 2 ? S.B : S.A);
+    if (S.plank) for (let j = 0; j < 9; j++) { px(c, x, y + j * 8 + 7, 56, 1, '#7a4e2c'); px(c, x + ((j * 24) % 48) + 4, y + j * 8, 1, 8, '#7a4e2c'); }
+    if (S.mosaic) for (let t = 0; t < 56; t += 8) { px(c, x + t, y, 1, 72, '#d8d0c0'); px(c, x, y + t, 56, 1, '#d8d0c0'); }
+    if (S.chips) { for (let k = 0; k < 90; k++) px(c, x + (k * 37) % 55, y + (k * 23 + (k >> 3) * 7) % 71, 1, 1, ['#b9a88c', '#8a9a8a', '#c88a6a', '#6a7a8a'][k % 4]); px(c, x + 28, y, 1, 72, '#c99428'); px(c, x, y + 36, 56, 1, '#c99428'); }
+    if (S.dots) for (const [dx, dy] of [[16, 16], [40, 48]]) px(c, x + dx - 2, y + dy - 2, 4, 4, '#4f9a7c');
   } else if (tab === 'counter') {   // a bit of counter: the top, the cabinet boards, a little till
     px(c, x, y, 56, 72, '#f1e8d6'); px(c, x, y + 52, 56, 20, '#e8dcc6');
     px(c, x + 2, y + 24, 52, 5, S.top[0]); px(c, x + 2, y + 29, 52, 2, S.top[2]); px(c, x + 4, y + 31, 48, 30, S.cab[1]); px(c, x + 4, y + 31, 48, 2, S.cab[0]);
@@ -166,7 +174,7 @@ function decorSwatch(c, tab, S, x, y) {   // a small sample of a wallpaper / boo
 function drawDecorPanel(c, P_) {   // 装修: better shelves, wallpaper, booth styles
   let y = sheet(c, '装修', money$(W.money) + ' · 美观 ' + beauty() + ' · 舒适 ' + comfort(), 150);
   const tab = P_.tab || 'shelf';
-  [['shelf', '货架'], ['wall', '墙纸'], ['booth', '卡座'], ['counter', '前台'], ['expand', '扩建'], ['items', '摆设']].forEach(([k, n], i) => btn(c, 14 + i * 55, y - 4, 52, 24, n, () => { P_.tab = k; SFX.tap(); }, tab === k ? 'gold' : 'cream'));
+  [['theme', '整套'], ['shelf', '货架'], ['wall', '墙纸'], ['floor', '地板'], ['booth', '卡座'], ['counter', '前台'], ['expand', '扩建'], ['items', '摆设']].forEach(([k, n], i) => btn(c, 14 + i * 41.5, y - 4, 39, 24, n, () => { P_.tab = k; SFX.tap(); }, tab === k ? 'gold' : 'cream'));
   { const lv = beautyLv(), nx = BEAUTY_STEPS[lv], b = beauty();   // milestone: what the next level of beauty gives
     T(c, nx ? '美观 ' + b + '/' + nx.at + ' → 下一级「' + nx.name + '」' : '已达「街知巷闻」，满级！', 14, y + 26, nx ? '#b8483c' : '#2f6e56', 'left', null);
     T(c, lv ? '美观奖励 ' + lv + ' 级：' + BEAUTY_STEPS.slice(0, lv).map(s => s.name).join('、') : '美观越高，客人越多', 14, y + 44, lv ? '#2f6e56' : SUB, 'left', null, 12); }
@@ -248,8 +256,22 @@ function drawDecorPanel(c, P_) {   // 装修: better shelves, wallpaper, booth s
 
     return;
   }
-  if (tab === 'counter') W.decor.counters = W.decor.counters || { oak: true };
-  const list = tab === 'wall' ? WALLS : tab === 'counter' ? COUNTER_STYLES : BOOTH_STYLES, own = tab === 'wall' ? W.decor.walls : tab === 'counter' ? W.decor.counters : W.decor.booths, cur = W.decor[tab] || (tab === 'counter' ? 'oak' : '');
+  if (tab === 'theme') {   // 整套搭配: one tap puts a whole look on; the full set gives extra beauty
+    const on = themeOn(); T(c, on ? '现在是「' + on.name + '」：美观 +' + on.bonus : '墙纸、地板、前台、卡座凑齐一套，美观有加成', 14, y - 2, on ? '#2f6e56' : SUB, 'left', null, 12); y += 16;
+    THEMES.forEach((Th, i) => { const yy = y + i * 80, cur = on === Th, cost = themeCost(Th), S = DECOR_SRC();
+      card(c, 14, yy, 332, 74, cur ? '#ffe9b0' : '#fffaf0');
+      { const x = 22, y0 = yy + 6, Wl = WALLS[Th.wall], F = FLOORS[Th.floor], Cs = COUNTER_STYLES[Th.counter], Bs = BOOTH_STYLES[Th.booth];   // a little corner of the shop in these colours
+        px(c, x - 1, y0 - 1, 64, 64, OUT); px(c, x, y0, 62, 26, Wl.wall); if (Wl.tiles) for (let t = 0; t < 26; t += 6) px(c, x, y0 + t, 62, 1, Wl.wallD); px(c, x, y0 + 20, 62, 8, Wl.low || shade(Wl.wall, -40));
+        for (let i2 = 0; i2 < 8; i2++) for (let j = 0; j < 4; j++) px(c, x + i2 * 8 - (i2 === 7 ? 2 : 0), y0 + 28 + j * 8 + (j === 3 ? -2 : 0), 8, 8, F.plank ? (j % 2 ? F.A : F.B) : F.mosaic ? ((i2 + j) % 3 ? F.A : F.B) : F.chips ? F.A : (i2 + j) % 2 ? F.B : F.A);
+        if (F.chips) for (let k = 0; k < 30; k++) px(c, x + (k * 37) % 60, y0 + 30 + (k * 23) % 30, 1, 1, ['#8a9a8a', '#c88a6a', '#6a7a8a'][k % 3]);
+        px(c, x + 4, y0 + 22, 30, 4, Cs.top[0]); px(c, x + 6, y0 + 26, 26, 16, Cs.cab[1]); px(c, x + 40, y0 + 30, 18, 12, Bs.leather[1]); px(c, x + 40, y0 + 30, 18, 3, Bs.leather[0]); px(c, x + 42, y0 + 42, 14, 4, C.wood); }
+      TS(c, Th.name, 94, yy + 6, 15, INK); T(c, Th.note, 94, yy + 27, SUB, 'left', null, 12); T(c, '整套 美观 +' + Th.bonus, 94, yy + 48, '#2f6e56', 'left', null, 12);
+      if (cur) T(c, '使用中', 290, yy + 48, '#2f6e56', 'center', null);
+      else btn(c, 236, yy + 42, 104, 26, cost ? '一键换 ' + money$(cost) : '一键换上', () => buyTheme(i), W.money >= cost ? 'gold' : 'off'); });
+    return;
+  }
+  const [list, ownKey, def] = DECOR_SRC()[tab]; W.decor[ownKey] = W.decor[ownKey] || { [def]: true };
+  const own = W.decor[ownKey], cur = W.decor[tab] || def;
   if (tab === 'booth' && SEATS.length) { const best = Math.max(...SEATS.map(boothEnv)); T(c, '贵宾要：高级卡座 + 环境 ≥ ' + VIP_NEED + '（最好一张 ' + best + '）', 14, y - 2, best >= VIP_NEED && W.decor.booth === 'deluxe' ? '#2f6e56' : '#b8483c', 'left', null, 12); y += 16; }
   Object.keys(list).forEach((k, i) => {
     const S = list[k], x = 14 + (i % 2) * 168, yy = y + Math.floor(i / 2) * 84;
@@ -259,7 +281,7 @@ function drawDecorPanel(c, P_) {   // 装修: better shelves, wallpaper, booth s
     else btn(c, x + 74, yy + 52, 80, 24, own[k] ? '换上' : money$(S.cost), () => buyDecor(tab, k), own[k] || W.money >= S.cost ? 'gold' : 'off');
   });
   { const d = W.decor, rows = Math.ceil(Object.keys(list).length / 2), yb = y + rows * 84 + 4;   // where today's beauty comes from
-    const parts = [['墙纸', (WALLS[d.wall] || WALLS.mint).beauty], ['卡座', (BOOTH_STYLES[d.booth] || BOOTH_STYLES.green).beauty], ['前台', (COUNTER_STYLES[d.counter] || COUNTER_STYLES.oak).beauty], ['货架', SHELF_IDS.reduce((a, id) => a + (W.shelves[id].locked ? 0 : SHELF_TIERS[(d.tier || {})[id] || 0].beauty), 0)], ['摆设', Object.keys(DECOR_ITEMS).reduce((a, id) => a + (hasItem(id) ? DECOR_ITEMS[id].beauty : 0), 0)], ['音乐', 2 * upLv('music')], ['阿青', hasPerk('qing_menu') ? 3 : 0]].filter(q => q[1]);
+    const parts = [['墙纸', (WALLS[d.wall] || WALLS.mint).beauty], ['卡座', (BOOTH_STYLES[d.booth] || BOOTH_STYLES.green).beauty], ['前台', (COUNTER_STYLES[d.counter] || COUNTER_STYLES.oak).beauty], ['地板', (FLOORS[d.floor] || FLOORS.peach).beauty], ['搭配', (themeOn() || {}).bonus || 0], ['货架', SHELF_IDS.reduce((a, id) => a + (W.shelves[id].locked ? 0 : SHELF_TIERS[(d.tier || {})[id] || 0].beauty), 0)], ['摆设', Object.keys(DECOR_ITEMS).reduce((a, id) => a + (hasItem(id) ? DECOR_ITEMS[id].beauty : 0), 0)], ['音乐', 2 * upLv('music')], ['阿青', hasPerk('qing_menu') ? 3 : 0]].filter(q => q[1]);
     card(c, 14, yb, 332, 22, '#fff3d6'); T(c, '美观 ' + beauty() + (parts.length ? '：' + parts.map(q => q[0] + q[1]).join(' ') : '：买墙纸、卡座、摆设都会加'), 22, yb + 6, INK, 'left', null); }
 }
 function drawPlanPanel(c) {
@@ -310,7 +332,7 @@ function drawSpecialPanel(c) {   // 特技: unlocked with ★ once someone is Lv
 }
 function drawGuestPanel(c, P_) {   // one kind of customer: portrait, who they are, what they like, how close they are
   const ci = P_.ci, kind = guestKind(ci), f = (W.fans || {})[kind] || 0, per = personaOf(ci);
-  let y = sheet(c, kind, '← 名册', 276); button(240, 276, 80, 26, () => { PANEL = { kind: 'guests', bar: 4 }; SFX.tap(); });
+  let y = sheet(c, kind, '← 名册', 276); button(240, 276, 80, 26, () => { PANEL = { kind: 'guests', bar: 4, from: P_.from }; SFX.tap(); });
   card(c, 14, y, 112, 132, '#fff3d6'); { const b = guestBust(ci); c.drawImage(b, 0, 0, 200, 230, 16, y + 2, 108, 124); }
   T(c, '财富 ' + '$'.repeat(wealthStars(ci)), 136, y + 2, '#2f6e56', 'left', null);
   T(c, '好感 ' + f + ' / ' + LOYAL_STORY, 136, y + 20, INK, 'left', null);
@@ -324,7 +346,7 @@ function drawGuestPanel(c, P_) {   // one kind of customer: portrait, who they a
   y += 84; if (LAB_FANS[kind]) T(c, LAB_FANS[kind] >= 1.5 ? '很喜欢港式 Lab 的新奇点心' : LAB_FANS[kind] < 1 ? '对新奇点心兴趣不大，偏爱老味道' : '新旧口味都可以', 180, y, SUB, 'center', null);
 }
 function drawGoalsPanel(c) {   // every milestone: done, the one now (with progress and reward), the ones ahead
-  let y = sheet(c, '目标', (W.goal || 0) + '/' + GOALS.length, 100) - 4; const rh = Math.min(28, Math.floor((BAR_Y - 6 - y) / GOALS.length));
+  let y = sheet(c, '目标 ' + (W.goal || 0) + '/' + GOALS.length, bookBack(100) || '', 100) - 4; const rh = Math.min(28, Math.floor((BAR_Y - 6 - y) / GOALS.length));
   GOALS.forEach((G_, i) => { const yy = y + i * rh, done = i < (W.goal || 0), now = i === (W.goal || 0);
     card(c, 14, yy, 332, rh - 3, done ? '#e6f2ea' : now ? '#fff1c8' : '#f4ecdc');
     T(c, (done ? '✓ ' : '') + G_[0], 22, yy + 3, done ? '#2f6e56' : now ? INK : '#9a8a78', 'left', null, now ? FS : 12);
@@ -333,7 +355,7 @@ function drawGoalsPanel(c) {   // every milestone: done, the one now (with progr
     else T(c, '+' + money$(G_[3]), 340, yy + 5, done ? '#2f6e56' : '#b0a08c', 'right', null, 12); });
 }
 function drawMenuPanel(c) {   // the shop's full menu: what is on sale (with price) and what is still to come
-  let y = sheet(c, '餐单', PIDS.filter(p => !PRODUCTS[p].lab && unlocked(p)).length + '/' + PIDS.filter(p => !PRODUCTS[p].lab).length, 70) - 2;
+  let y = sheet(c, '餐单 ' + PIDS.filter(p => !PRODUCTS[p].lab && unlocked(p)).length + '/' + PIDS.filter(p => !PRODUCTS[p].lab).length, bookBack(70) || '', 70) - 2;
   const grp = [['饮品', p => PRODUCTS[p].where === 'fridge' && !PRODUCTS[p].cake && !PRODUCTS[p].lab && !['pudding', 'mango', 'dpn'].includes(p)], ['饼食', p => !PRODUCTS[p].cake && !PRODUCTS[p].lab && (PRODUCTS[p].where === 'table' || ['pudding', 'mango', 'dpn'].includes(p))], ['蛋糕', p => PRODUCTS[p].cake], ['港式 Lab', p => PRODUCTS[p].lab && unlocked(p)]];
   for (const [title, f] of grp) { const L_ = PIDS.filter(p => f(p) && !(PRODUCTS[p].lab && !unlocked(p)) && (PRODUCTS[p].lab || PRODUCTS[p].day < 999)); if (!L_.length) continue;
     TS(c, title, 15, y, 13, '#b8483c'); px(c, 14, y + 18, 332, 1, '#e3d6bc'); y += 22;
@@ -344,13 +366,13 @@ function drawMenuPanel(c) {   // the shop's full menu: what is on sale (with pri
     y += Math.ceil(L_.length / 3) * 42 + 6; }
 }
 function drawGuestsPanel(c) {   // every kind of customer: who comes, how loyal they are (gift at 8, their story + keepsake at 14), wealth, favourite
-  let y = sheet(c, '客人', '好感 8 送礼 · 14 故事', 70) - 4;
+  let y = sheet(c, '客人', bookBack(70) || '好感 8 送礼 · 14 故事', 70) - 4;
   const dayOf = ci => (GUEST_UNLOCK.find(q => q[0] === ci) || [0, 99])[1], list = CUST_POOL.filter(guestOpen).concat(CUST_POOL.filter(ci => !guestOpen(ci)).sort((a, b) => dayOf(a) - dayOf(b)));   // regulars first, then who comes next
   list.forEach((ci, i) => {
     const x = 14 + (i % 3) * 112, yy = y + Math.floor(i / 3) * 59, kind = guestKind(ci), open = guestOpen(ci), f = (W.fans || {})[kind] || 0;
     card(c, x, yy, 108, 56, open ? '#fffaf0' : '#ece2cf');
     if (!open) { const u = GUEST_UNLOCK.find(q => q[0] === ci); T(c, '？？？', x + 54, yy + 10, '#b0a08c', 'center', null); T(c, '第' + u[1] + '天' + (u[2] ? '/店Lv' + u[2] : '') + '来', x + 54, yy + 30, '#b0a08c', 'center', null); return; }
-    { const b = guestBust(ci); c.drawImage(b, 0, 0, 200, 210, x + 2, yy + 3, 30, 32); } button(x, yy, 108, 56, () => { PANEL = { kind: 'guest', ci, bar: 4 }; SFX.tap(); });   // head and shoulders; tap: their story
+    { const b = guestBust(ci); c.drawImage(b, 0, 0, 200, 210, x + 2, yy + 3, 30, 32); } button(x, yy, 108, 56, () => { PANEL = { kind: 'guest', ci, bar: 4, from: PANEL.from }; SFX.tap(); });   // head and shoulders; tap: their story
     T(c, kind.length > 5 ? kind.slice(0, 5) : kind, x + 34, yy + 3, INK, 'left', null);
     T(c, '$'.repeat(wealthStars(ci)), x + 34, yy + 19, '#2f6e56', 'left', null);
     const fav = Object.entries(personaOf(ci).likes || {}).sort((a, b) => b[1] - a[1]).map(q => q[0]).find(p => PRODUCTS[p]); if (fav) half(c, PRODUCTS[fav].img, x + 96, yy + 24);
@@ -396,7 +418,7 @@ function drawPerkPanel(c, P_) {   // Lv3 / Lv5: choose one of two new abilities
 }
 function drawAchPanel(c) {   // achievements: done ones in gold with their day, the rest grey with what to do
   const n = ACH.filter(a => W.ach[a.id]).length;
-  let y = sheet(c, '成就 ' + n + '/' + ACH.length, '积分 ' + (W.pts || 0), 60) - 6;
+  let y = sheet(c, '成就 ' + n + '/' + ACH.length, bookBack(60) || '积分 ' + (W.pts || 0), 60) - 6;
   const per = 18, pages = Math.ceil(ACH.length / per), pg = Math.min(pages - 1, PANEL.page || 0);   // paged: the list grows with the content
   ACH.slice(pg * per, pg * per + per).forEach((a, i) => {
     const yy = y + i * 25, done = !!W.ach[a.id];
@@ -428,7 +450,7 @@ function drawBookPanel(c) {   // the books: today's numbers in a two-column tabl
   });
   y += Math.ceil(Object.keys(UPGRADES).length / 2) * 46 + 4;
   const H = W.history.slice(-7);   // last seven days: revenue (gold) and profit (green, red for a loss), with a scale, values and totals
-  { const ch = Math.max(112, Math.min(150, BAR_Y - 44 - y - 18)), k$ = v => (v < 0 ? '-' : '') + (Math.abs(v) >= 1000 ? (Math.abs(v) / 1000).toFixed(1) + 'k' : '' + Math.abs(R(v)));
+  { const ch = Math.max(96, Math.min(150, BAR_Y - 76 - y - 20)), k$ = v => (v < 0 ? '-' : '') + (Math.abs(v) >= 1000 ? (Math.abs(v) / 1000).toFixed(1) + 'k' : '' + Math.abs(R(v)));
     card(c, 14, y, 332, ch, '#fffaf0'); TS(c, '近 7 日', 22, y + 5, 15, INK);
     const lg = (x, col, t) => { px(c, x - 1, y + 8, 10, 10, OUT); px(c, x, y + 9, 8, 8, col); T(c, t, x + 11, y + 6, SUB, 'left', null, 12); };
     lg(206, '#e7c34a', '收入'); lg(250, '#3fbf7a', '净赚'); lg(294, '#e0603a', '亏本');
@@ -452,9 +474,14 @@ function drawBookPanel(c) {   // the books: today's numbers in a two-column tabl
     y += ch + 6; }
   const locked = SHELF_IDS.filter(id => W.shelves[id].locked && !W.shelves[id].extra).length;
   T(c, locked ? '开货架 ' + money$(SHELF_COST) + '：点盖布的货架（还有 ' + locked + ' 张）' : '货架全开了', 16, y, SUB, 'left', null);
-  btn(c, 14, BAR_Y - 34, 116, 28, '餐单 ' + PIDS.filter(p => !PRODUCTS[p].lab && unlocked(p)).length + '/' + PIDS.filter(p => !PRODUCTS[p].lab).length, () => { PANEL = { kind: 'menu', bar: 4 }; SFX.tap(); }, 'cream');   // the full menu
-  btn(c, 136, BAR_Y - 34, 104, 28, '客人 ' + CUST_POOL.filter(guestOpen).length + '/' + CUST_POOL.length, () => { PANEL = { kind: 'guests', bar: 4 }; SFX.tap(); }, 'cream');   // the customer list
-  btn(c, 246, BAR_Y - 34, 100, 28, '成就 ' + ACH.filter(a => W.ach[a.id]).length + '/' + ACH.length, () => { PANEL = { kind: 'ach', bar: 4 }; SFX.tap(); }, 'cream');
+  { const G_ = goalNow(), y0 = BAR_Y - 66;   // the milestone now: name, progress, tap for the whole list
+    card(c, 14, y0, 332, 28, '#fff3d6'); px(c, 22, y0 + 6, 2, 14, '#6b4a35'); px(c, 24, y0 + 6, 8, 6, '#d0453a');
+    if (G_) { const [a, b] = G_[2](), f = Math.max(0, Math.min(1, a / b)); T(c, '目标：' + G_[0], 38, y0 + 6, INK, 'left', null); px(c, 196, y0 + 11, 90, 6, '#e3d6bc'); px(c, 196, y0 + 11, R(90 * f), 6, C.gold); }
+    else T(c, '目标全部达成！', 38, y0 + 6, '#2f6e56', 'left', null);
+    T(c, (W.goal || 0) + '/' + GOALS.length + ' ›', 338, y0 + 6, '#b8483c', 'right', null); button(14, y0, 332, 28, () => { PANEL = { kind: 'goals', bar: 4, from: 'book' }; SFX.tap(); }); }
+  btn(c, 14, BAR_Y - 34, 116, 28, '餐单 ' + PIDS.filter(p => !PRODUCTS[p].lab && unlocked(p)).length + '/' + PIDS.filter(p => !PRODUCTS[p].lab).length, () => { PANEL = { kind: 'menu', bar: 4, from: 'book' }; SFX.tap(); }, 'cream');   // the full menu
+  btn(c, 136, BAR_Y - 34, 104, 28, '客人 ' + CUST_POOL.filter(guestOpen).length + '/' + CUST_POOL.length, () => { PANEL = { kind: 'guests', bar: 4, from: 'book' }; SFX.tap(); }, 'cream');   // the customer list
+  btn(c, 246, BAR_Y - 34, 100, 28, '成就 ' + ACH.filter(a => W.ach[a.id]).length + '/' + ACH.length, () => { PANEL = { kind: 'ach', bar: 4, from: 'book' }; SFX.tap(); }, 'cream');
 }
 function drawPause(c) {
   c.save(); c.globalAlpha = .55; px(c, 0, 0, 360, 640, '#1c141c'); c.restore(); button(0, 0, 360, 640, () => {});

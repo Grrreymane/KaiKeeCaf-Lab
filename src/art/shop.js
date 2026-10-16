@@ -193,6 +193,14 @@ function contactShadows(c) {
 function drawBackground(c) {
   px(c, 0, 0, WW, 1280, '#2b2230');
   const g = new Grid(WW, 1280);
+  const floor = (x0, y0, x1, y1) => {   // the shop floor in the chosen style
+    const FL = FLOORS[(W && W.decor && W.decor.floor) || 'peach'] || FLOORS.peach, q = (xa, ya, xb, yb, col) => g.quad(P(xa, ya), P(xb, ya), P(xb, yb), P(xa, yb), col);
+    if (FL.plank) { for (let y = y0; y < y1; y += 8) { const off = ((y / 8) % 3) * 16; for (let x = x0 - off; x < x1; x += 48) { const xa = Math.max(x, x0), xb = Math.min(x + 48, x1); q(xa, y, xb, y + 8, mhash(x, y) < .5 ? FL.A : FL.B); q(xa, y + 7.4, xb, y + 8, '#7a4e2c'); if (x >= x0) q(x, y, x + .6, y + 8, '#7a4e2c'); } } return; }
+    if (FL.mosaic) { for (let x = x0; x < x1; x += 8) for (let y = y0; y < y1; y += 8) { const i = (x / 8) | 0, j = (y / 8) | 0, d = ((i + j) % 6 + 6) % 6 === 0 || ((i - j) % 6 + 6) % 6 === 0; q(x, y, x + 8, y + 8, d ? FL.B : FL.A); q(x, y, x + 8, y + .5, '#d8d0c0'); q(x, y, x + .5, y + 8, '#d8d0c0'); } return; }
+    if (FL.chips) { q(x0, y0, x1, y1, FL.A); for (let k = 0; k < (x1 - x0) * (y1 - y0) / 14; k++) { const x = x0 + mhash(k, 7) * (x1 - x0), y = y0 + mhash(k, 13) * (y1 - y0); q(x, y, x + 1, y + 1, ['#b9a88c', '#8a9a8a', '#c88a6a', '#fbf9f4', '#6a7a8a', '#a8a090'][k % 6]); }
+      for (let x = x0; x <= x1; x += 64) q(x, y0, x + .6, y1, '#c99428'); for (let y = y0; y <= y1; y += 64) q(x0, y, x1, y + .6, '#c99428'); return; }   // brass strips between the pours
+    tiles(x0, y0, x1, y1, 16, FL.A, FL.B);
+  };
   const tiles = (x0, y0, x1, y1, s, A, B, z = 0) => { for (let x = x0; x < x1; x += s) for (let y = y0; y < y1; y += s) g.quad(P(x, y, z), P(x + s, y, z), P(x + s, y + s, z), P(x, y + s, z), ((x + y) / s) & 1 ? B : A); };
   // 街：人行道、马路、对面人行道
   tiles(-400, 320, 800, 360, 16, '#d3ccc0', '#c7c0b4');
@@ -208,14 +216,15 @@ function drawBackground(c) {
   tiles(320, 0, 640, 320, 32, '#e4e0da', '#dedad3');   // 隔壁：未解锁，浅灰让人略过
   g.quad(P(320, 0, 0), P(640, 0, 0), P(640, 0, WALL_H), P(320, 0, WALL_H), '#d9d5ce');
   // 本铺地板：大格子 + 角上一点绿；柜台后面是高一级的平台（小砖）
-  tiles(0, 32, ROOM, ROOM, 16, C.floorA, C.floorB);
+  const FL = FLOORS[(W && W.decor && W.decor.floor) || 'peach'] || FLOORS.peach; C.floorA = FL.A; C.floorB = FL.B;
+  floor(0, 32, ROOM, ROOM);
   // 门口马赛克花砖：白底，红花绿叶，深绿镶边
   for (let x = 248; x < 316; x += 4) for (let y = 264; y < 316; y += 4) {
     const i = ((x - 248) / 4) | 0, j = ((y - 264) / 4) | 0, edge = i === 0 || j === 0 || i === 16 || j === 12;
     const u = (i - 1) % 6, v = (j - 1) % 6, flower = (u === 2 || u === 3) && (v === 2 || v === 3), leaf = !flower && ((u === 2 || u === 3) && (v === 1 || v === 4) || (v === 2 || v === 3) && (u === 1 || u === 4));
     g.quad(P(x, y), P(x + 4, y), P(x + 4, y + 4), P(x, y + 4), edge ? '#3f6b5a' : flower ? '#b8483c' : leaf ? '#5f9a80' : ((i + j) & 1 ? '#f1e8d6' : '#e8dcc6'));
   }
-  if (C.dot) for (let x = 0; x <= ROOM; x += 32) for (let y = 32; y <= ROOM; y += 32) { const [sx, sy] = P(x, y); g.quad([sx, sy - 4], [sx + 8, sy], [sx, sy + 4], [sx - 8, sy], C.dot); }
+  if (C.dot && FL.dots) for (let x = 0; x <= ROOM; x += 32) for (let y = 32; y <= ROOM; y += 32) { const [sx, sy] = P(x, y); g.quad([sx, sy - 4], [sx + 8, sy], [sx, sy + 4], [sx - 8, sy], C.dot); }
   // 两面后墙：右墙（y=0）亮一档，左墙（x=0）暗一档
   const wR = (xa, xb, z0, z1, col) => g.quad(P(xa, 0, z0), P(xb, 0, z0), P(xb, 0, z1), P(xa, 0, z1), col);
   let XF = null;   // while a wall piece is drawn: its art moved into the slot the player chose
@@ -225,7 +234,8 @@ function drawBackground(c) {
     wR(ya, yb, 40, DADO, LOW); for (let t = ya + 16; t < yb; t += 16) g.seg(P(t, 0, 40), P(t, 0, DADO), shade(LOW, -16)); wR(ya, yb, DADO, DADO + 3, C.trim); wR(ya, yb, DADO + 2, DADO + 3, C.trimL);
     if (left) { wL(ya, yb, 40, DADO, shade(LOW, -18)); for (let t = ya + 16; t < yb; t += 16) g.seg(P(0, t, 40), P(0, t, DADO), shade(LOW, -32)); wL(ya, yb, DADO, DADO + 3, shade(C.trim, -10)); } };
   wR(0, ROOM, 0, WALL_H, C.wall); wL(0, ROOM, 0, WALL_H, shade(C.wall, -18));
-  for (let t = 4; t < ROOM; t += 8) { g.seg(P(t, 0, DADO + 3), P(t, 0, WALL_H - 6), C.wallD); g.seg(P(0, t, DADO + 3), P(0, t, WALL_H - 6), shade(C.wallD, -18)); }
+  if (WS.tiles) { for (let z = DADO + 3; z < WALL_H - 6; z += 8) { g.seg(P(0, 0, z), P(ROOM, 0, z), C.wallD); g.seg(P(0, 0, z), P(0, ROOM, z), shade(C.wallD, -18)); const o = ((z - DADO - 3) / 8) & 1 ? 8 : 0; for (let t = o; t < ROOM; t += 16) { g.seg(P(t, 0, z), P(t, 0, z + 8), C.wallD); g.seg(P(0, t, z), P(0, t, z + 8), shade(C.wallD, -18)); } } }   // 白瓷砖: staggered grout
+  else for (let t = 4; t < ROOM; t += 8) { g.seg(P(t, 0, DADO + 3), P(t, 0, WALL_H - 6), C.wallD); g.seg(P(0, t, DADO + 3), P(0, t, WALL_H - 6), shade(C.wallD, -18)); }
   if (WS.stripe) for (let t = 0; t < ROOM; t += 16) for (let k = 0; k < 6; k++) { g.seg(P(t + k, 0, DADO + 3), P(t + k, 0, WALL_H - 6), C.wallD); g.seg(P(0, t + k, DADO + 3), P(0, t + k, WALL_H - 6), shade(C.wallD, -18)); }
   dado(0, ROOM, true);   // the dark lower panel + rail
   if (WS.floral) for (let t = 8; t < ROOM; t += 16) for (let z = DADO + 10; z < WALL_H - 10; z += 18) { const zz = z + ((t / 16) & 1) * 9; for (const [pt, col] of [[P(t, 0, zz), '#ffffff'], [P(0, t, zz), '#f6e6e6']]) { const [a, b] = pt; g.set(R(a), R(b) - 1, col); g.set(R(a) - 1, R(b), col); g.set(R(a) + 1, R(b), col); g.set(R(a), R(b) + 1, col); g.set(R(a), R(b), '#e07a8a'); g.set(R(a) + 2, R(b) + 2, '#7ab07a'); } }
@@ -306,7 +316,7 @@ function drawBackground(c) {
   XF = null;
   if (hasItem('neon')) { wR(186, 232, 146, 172, '#1f1a24'); for (const z of [148, 170]) wR(188, 230, z, z + 1, '#ff5a9a'); for (const x of [188, 229]) wR(x, x + 1, 148, 171, '#ff5a9a'); wR(196, 222, 158, 160, '#7ff0ff'); wR(205, 207, 151, 167, '#7ff0ff'); }
   if (expandLv()) {   // next door opened up: same floor and wallpaper as the shop, a brass rail and two hanging lamps' worth of trim
-    tiles(320, 0, 640, 320, 16, C.floorA, C.floorB);
+    floor(320, 0, 640, 320);
     wR(320, 640, 0, WALL_H, C.wall); for (let t = 324; t < 640; t += 8) g.seg(P(t, 0, DADO + 3), P(t, 0, WALL_H - 6), C.wallD);
     if (WS.stripe) for (let t = 320; t < 640; t += 16) for (let k = 0; k < 6; k++) g.seg(P(t + k, 0, DADO + 3), P(t + k, 0, WALL_H - 6), C.wallD);
     dado(320, 640, false);

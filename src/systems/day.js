@@ -197,10 +197,16 @@ function buyShelfTier(id) {
   W.money -= T.cost; W.today.upCost += T.cost; W.decor.tier[id] = t; applyDecor(); SFX.ding(); saveGame(); return true;
 }
 function buyDecor(kind, k) {   // wallpaper / booth style: buy once, then switch freely
-  if (kind === 'counter') W.decor.counters = W.decor.counters || { oak: true };
-  const S = (kind === 'wall' ? WALLS : kind === 'counter' ? COUNTER_STYLES : BOOTH_STYLES)[k], own = kind === 'wall' ? W.decor.walls : kind === 'counter' ? W.decor.counters : W.decor.booths;
+  const [L, o, def] = DECOR_SRC()[kind]; W.decor[o] = W.decor[o] || { [def]: true };
+  const S = L[k], own = W.decor[o];
   if (!own[k]) { if (W.money < S.cost) { SFX.deny(); return false; } W.money -= S.cost; W.today.upCost += S.cost; own[k] = true; }
   W.decor[kind] = k; applyDecor(); SFX.buy(); saveGame(); return true;
+}
+function buyTheme(i) {   // 整套搭配: buy what's missing, put the whole set on
+  const T = THEMES[i], cost = themeCost(T); if (W.money < cost) { SFX.deny(); NOTICE = { text: '钱不够', t: 0 }; return false; }
+  W.money -= cost; W.today.upCost += cost;
+  for (const k of ['wall', 'floor', 'counter', 'booth']) { const [, o, def] = DECOR_SRC()[k]; W.decor[o] = W.decor[o] || { [def]: true }; W.decor[o][T[k]] = true; W.decor[k] = T[k]; }
+  applyDecor(); SFX.ding(); notice('换上「' + T.name + '」：美观 +' + T.bonus); saveGame(); return true;
 }
 function rotateGroup(g) {   // placement mode: turn a shelf / plant 90 degrees (booths keep their seats, so they don't turn)
   if (!g) return; if (g.id[0] === 'B') { EDIT.msg = '卡座唔转得'; SFX.deny(); return; }
