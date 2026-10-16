@@ -770,7 +770,7 @@ function drawDesk(c) {
     D.flow.forEach((q, i) => { const x = 150 + i * Math.min(14, 140 / n); px(c, x, 30, 9, 6, i < si ? '#6cb86c' : i === si ? C.gold : '#6a5a68'); });
     T(c, (Math.min(si + 1, n)) + '/' + n + ' ' + stepName(st, R0), 150, 12, C.gold, 'left', null); }
   ING_ORDER.forEach((k, i) => { const [x, y] = ingCell(i), need = D.mode === 'make' && litIngs(D).includes(k);
-    const hot = need; px(c, x / 2 + 4, y / 2 + 43, 52, 13, hot ? '#fff0b0' : '#f4ead6'); T(c, ING[k][0], x / 2 + 30, y / 2 + 43, hot ? '#b8342c' : '#6a5240', 'center', null, 12);
+    const hot = need; px(c, x / 2 + 4, y / 2 + 43, 52, 13, hot ? '#fff0b0' : '#f4ead6'); T(c, ING[k][0], x / 2 + 30, y / 2 + 43, hot ? '#b8342c' : '#6a5240', 'center', null, FS_S);
     if (D.step === 'add' && D.mode === 'make') button(x / 2 + 2, y / 2, 58, 58, () => { if (need) addIngredient(k); else { D.msg = ING[k][0] + '今次唔使用'; SFX.deny(); } }); });
   const S = D.s, TN = TAP_N[D.step], line = D.step === 'weigh' ? '按住倒' + ING[st.k][0] + '，到 ' + st.g + 'g 就松手' : D.step === 'add' ? '点亮着的材料放入盆 ' + (S.got || []).length + '/' + st.ks.length
     : D.step === 'sift' ? '按住摇筛 ' + R((S.v || 0) * 100) + '%' : D.step === 'roll' ? '按住碾皮 ' + R((S.v || 0) * 100) + '%' : D.step === 'stove' ? '按住搅 ' + R((S.v || 0) * 100) + '%'
@@ -780,7 +780,7 @@ function drawDesk(c) {
   if (D.msg) T(c, D.msg, 180, 274, '#7a6250', 'center', null);
   if (D.mode === 'make') { const L_ = litIngs(D); if (L_.length) { const i = ING_ORDER.indexOf(L_[0]), [x, y] = ingCell(i), ax = x / 2 + 30, tip = y / 2 - 1 - R(Math.abs(Math.sin(rtime * 5)) * 4);   // a bouncing arrow pointing down at the bin to tap
       px(c, ax - 4, tip - 20, 9, 12, OUT); px(c, ax - 3, tip - 19, 7, 11, C.gold); for (let k = 0; k < 8; k++) { px(c, ax - 8 + k, tip - 8 + k, 17 - 2 * k, 1, k ? C.gold : OUT); px(c, ax - 9 + k, tip - 8 + k, 1, 1, OUT); px(c, ax + 9 - k, tip - 8 + k, 1, 1, OUT); } } }
-  if (D.mode === 'make' && D.step === 'weigh') { const gr = R(S.grams || 0), dev = (S.grams || 0) / st.g; T(c, gr + 'g', 246, 421, dev > 1.1 ? '#b8342c' : '#1c3a24', 'center', null, 12); }   // on the scale's display
+  if (D.mode === 'make' && D.step === 'weigh') { const gr = R(S.grams || 0), dev = (S.grams || 0) / st.g; T(c, gr + 'g', 246, 421, dev > 1.1 ? '#b8342c' : '#1c3a24', 'center', null, FS_S); }   // on the scale's display
   if (D.mode === 'make' && D.step === 'brew') { const v = S.v || 0, bx = 60, bw = 240, by = 420; px(c, bx - 2, by - 2, bw + 4, 14, OUT); for (let i = 0; i < bw; i++) px(c, bx + i, by, 1, 10, mixHex('#e8c890', '#5a2a10', i / bw)); px(c, bx + bw * .45, by - 4, bw * .33, 2, '#6cb86c'); px(c, bx + bw * .45, by + 12, bw * .33, 2, '#6cb86c'); px(c, R(bx + bw * Math.min(1, v)) - 1, by - 5, 3, 20, '#2f2430'); }
   if (D.mode === 'make' && (TN || (D.step === 'rest' && !S.covered))) { button(20, 290, 320, 170, deskTap); if (!(S.tapT > 0)) c.drawImage(HAND, 250, 380 + R(Math.abs(Math.sin(gtime * 6)) * -4)); }
   if (D.step === 'fill' && R0.vessel === 'disc' && D.cur < 6 && !D.foldAnim) { const [mx, my] = moldXY(D.cur); button(mx / 2 - 30, my / 2 - 30, 60, 60, () => { D.foldAnim = { i: D.cur, t: 0 }; SFX.tap(); }); c.drawImage(HAND, mx / 2 + 10, my / 2 + R(Math.abs(Math.sin(gtime * 4)) * -4)); }

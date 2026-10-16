@@ -673,10 +673,10 @@ function decorObj(id, x, y, bare) {
 }
 // wall pieces on the left wall sit in six cells (3 along × 2 high); the player can move a piece to the next cell (swapping with what is there)
 // (two rows, under 坤伯's gift shelf)
-const WALL_CELLS = [[184, 28], [184, 78], [224, 28], [224, 78], [264, 28], [264, 78]], WALL_IDS = ['calendar', 'clock', 'card', 'banner', 'photo', 'board'];
+const WALL_CELLS = [[186, 14], [186, 46], [226, 14], [226, 46], [266, 14], [266, 46]], WALL_IDS = ['calendar', 'clock', 'card', 'banner', 'photo', 'board'];
 const wallSlotOf = id => { const S = (W && W.wallSlot) || {}; return S[id] !== undefined ? S[id] : WALL_IDS.indexOf(id); };
 function wallXF(id, ya, yb, za, zb) {   // map a piece's own art box into its cell (centred, shrunk only if it would not fit)
-  const [y0, z0] = WALL_CELLS[wallSlotOf(id)], w = yb - ya, h = zb - za, k = Math.min(1, 36 / w, 48 / h), oy = y0 + (38 - w * k) / 2, oz = z0 + (50 - h * k) / 2;
+  const [y0, z0] = WALL_CELLS[wallSlotOf(id)], w = yb - ya, h = zb - za, k = Math.min(1, 36 / w, 32 / h), oy = y0 + (38 - w * k) / 2, oz = z0 + (34 - h * k) / 2;   // cells are 38 x 34, under the shelf
   return (y, z) => [oy + (y - ya) * k, oz + (z - za) * k];
 }
 function moveWall(id) {   // to the next cell; whatever hangs there takes this one's place
@@ -721,13 +721,14 @@ function applyKeepsakes() {   // the regulars' small keepsakes stand in a row on
   STATICS.push(KEEP_OBJ);
 }
 // small gifts can stand on the front counter instead of the floor: two spots on the glass case, one on the till counter, one on the extended counter
-const COUNTER_SLOTS = [[164, 38, 50], [186, 38, 50], [91, 40, 34], [372, 40, 34], [158, 34, 60], [172, 34, 60], [186, 34, 60], [20, 40, 34], [32, 40, 34], [4, 192, 167, 1], [4, 212, 167, 1], [4, 232, 167, 1], [4, 252, 167, 1], [4, 272, 167, 1], [4, 292, 167, 1], [4, 192, 133, 1], [4, 212, 133, 1], [4, 232, 133, 1], [4, 252, 133, 1], [4, 272, 133, 1], [4, 292, 133, 1]],   // 9-20: 坤伯's two-tier gift shelf on the left wall   // 4-6: the display step on the glass case (前台 Lv1), 7-8: the counter extended toward the window (Lv2)
+const COUNTER_SLOTS = [[164, 38, 50], [186, 38, 50], [91, 40, 34], [372, 40, 34], [158, 34, 60], [172, 34, 60], [186, 34, 60], [20, 40, 34], [32, 40, 34], [4, 188, 155, 1], [4, 205, 155, 1], [4, 222, 155, 1], [4, 239, 155, 1], [4, 256, 155, 1], [4, 273, 155, 1], [4, 290, 155, 1], [4, 188, 123, 1], [4, 205, 123, 1], [4, 222, 123, 1], [4, 239, 123, 1], [4, 256, 123, 1], [4, 273, 123, 1], [4, 290, 123, 1], [4, 188, 91, 1], [4, 205, 91, 1], [4, 222, 91, 1], [4, 239, 91, 1], [4, 256, 91, 1], [4, 273, 91, 1], [4, 290, 91, 1]],   // 9-29: 坤伯's three-tier gift shelf on the left wall (7 a tier)   // 4-6: the display step on the glass case (前台 Lv1), 7-8: the counter extended toward the window (Lv2)
   COUNTER_UP = [['前台展示架', 600, '玻璃柜上加两层木架：多 3 个礼物位'], ['加长前台', 1200, '柜台往窗边接长：再多 2 个位'],], COUNTER_OK = Object.keys(DECOR_ITEMS).filter(k => DECOR_ITEMS[k].cat === 'gift');
-const SHELF_SPOTS = [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20], onGiftShelf = id => SHELF_SPOTS.some(i => (W.counter || {})[i] === id);
-const isSmallGift = id => GIFT_TABLETOP.includes(id), shelfFree = () => (W.giftShelf ? SHELF_SPOTS : []).filter(i => !(W.counter || {})[i]);
+const SHELF_SPOTS = Array.from({ length: 21 }, (_, i) => 9 + i), onGiftShelf = id => SHELF_SPOTS.some(i => (W.counter || {})[i] === id);
+const isSmallGift = id => !!(DECOR_ITEMS[id] && DECOR_ITEMS[id].cat === 'gift'),   // every present that isn't hung on the wall lives on the shelf
+  shelfFree = () => (W.giftShelf ? SHELF_SPOTS : []).filter(i => !(W.counter || {})[i]);
 function settleSmallGifts() {   // once the shelf is up, small presents live only there (off the counter and the floor)
   if (!W || !W.giftShelf) return; W.counter = W.counter || {};
-  for (const id of GIFT_TABLETOP) { if (!hasItem(id) || onGiftShelf(id)) continue; const f = shelfFree(); if (!f.length) break;
+  for (const id of Object.keys(DECOR_ITEMS).filter(isSmallGift)) { if (!hasItem(id) || onGiftShelf(id)) continue; const f = shelfFree(); if (!f.length) break;
     for (const k in W.counter) if (W.counter[k] === id) delete W.counter[k]; if (W.itemPos) delete W.itemPos[id]; W.counter[f[0]] = id; }
 }
 const counterSpots = () => [0, 1, 2].concat(W.xf && expandLv() ? [3] : [], (W.counterLv || 0) >= 1 ? [4, 5, 6] : [], (W.counterLv || 0) >= 2 ? [7, 8] : []);
@@ -735,7 +736,7 @@ const counterFree = () => counterSpots().filter(i => !(W.counter || {})[i]);
 function buyCounterUp() { const lv = W.counterLv || 0, U = COUNTER_UP[lv]; if (!U || W.money < U[1]) { SFX.deny(); return false; } W.money -= U[1]; W.today.upCost += U[1]; W.counterLv = lv + 1; COUNTER_KEY = ''; applyDecor(); SFX.ding(); notice(U[0] + '装好了！'); saveGame(); return true; }
 const onCounter = id => Object.values((W && W.counter) || {}).includes(id);
 function toggleCounter(id) {   // onto the counter (first free spot) or back onto the floor
-  if (W.giftShelf && isSmallGift(id)) { SFX.deny(); NOTICE = { text: '小礼物摆在墙上木架', t: 0 }; return false; }
+  if (W.giftShelf && isSmallGift(id)) { SFX.deny(); NOTICE = { text: '礼物摆在墙上木架', t: 0 }; return false; }
   W.counter = W.counter || {};
   if (onCounter(id)) { for (const k in W.counter) if (W.counter[k] === id) delete W.counter[k]; if (!(W.itemPos || {})[id]) { const pos = findItemSpot(); if (pos) (W.itemPos = W.itemPos || {})[id] = pos; } applyDecor(); SFX.tap(); saveGame(); return true; }
   const f = counterFree(); if (!f.length) { SFX.deny(); NOTICE = { text: '前台摆满了', t: 0 }; return false; }
@@ -749,10 +750,10 @@ function applyCounterGifts() {
   if (lv >= 1) { const o = makeObj(P, { x0: 150, x1: 198, y0: 30, y1: 37 }, 70, [{ g: (g, Q) => { bx(g, Q, 150, 30, 50, 48, 7, 10, C.woodL, C.wood, C.woodD, 1); bx(g, Q, 150, 30, 60, 48, 4, 2, '#e2ad74', '#c08a54', '#9c6a3c', 0); } }]); STATICS.push(o); COUNTER_OBJS.push(o); }   // the display step on the glass case
   if (lv >= 2) { const o = makeObj(P, { x0: 14, x1: 38, y0: 30, y1: 46 }, 40, [{ g: (g, Q) => { bx(g, Q, 14, 30, 0, 24, 16, 30, C.cabL, C.cab, C.cabD); bx(g, Q, 13, 29, 30, 26, 18, 4, C.ctopL, C.ctop, C.ctopD); } }]); STATICS.push(o); COUNTER_OBJS.push(o); }   // the counter, longer toward the window
   if (W && W.giftShelf) { const o = makeObj(P, { x0: 0, x1: 9, y0: 182, y1: 302 }, 170, [{ g: (g, Q) => {   // 坤伯's wooden shelf: a long ledge on brackets
-    for (const z of [130, 164]) { for (const y of [188, 242, 296]) { bx(g, Q, 0, y - 1, z - 10, 7, 2, 11, '#6b4a35', '#5a3c2a', '#4a3020', 0); g.seg(Q(1, y, z - 10), Q(7, y, z), '#4a3020'); }
+    for (const z of [88, 120, 152]) { for (const y of [188, 242, 296]) { bx(g, Q, 0, y - 1, z - 8, 7, 2, 9, '#6b4a35', '#5a3c2a', '#4a3020', 0); g.seg(Q(1, y, z - 8), Q(7, y, z), '#4a3020'); }
       bx(g, Q, 0, 182, z, 9, 120, 3, '#c08a54', '#a8703e', '#86562e', 0); bx(g, Q, 8, 182, z, 1, 120, 3, '#d9a066', '#b07a4a', '#86562e', 0); } } }]); STATICS.push(o); COUNTER_OBJS.push(o); }
   for (const i in (W.counter || {})) { const id = W.counter[i], S = COUNTER_SLOTS[i]; if (!S || !hasItem(id)) continue; const [x, y, z] = S;
-    if (S[3]) { if (!W.giftShelf) continue; const o = makeObj(P, { x0: 0, x1: 9, y0: y - 10, y1: y + 10 }, z + 64, [{ d: (c, Q) => { c.imageSmoothingEnabled = false; const im = itemThumb(id), k = Math.min(2, 60 / im.height), [a, b] = Q(x, y, z); c.drawImage(im, R(a - im.width * k / 2), R(b - im.height * k + 1), R(im.width * k), R(im.height * k)); } }]); STATICS.push(o); COUNTER_OBJS.push(o); continue; }
+    if (S[3]) { if (!W.giftShelf) continue; const o = makeObj(P, { x0: 0, x1: 9, y0: y - 10, y1: y + 10 }, z + 64, [{ d: (c, Q) => { c.imageSmoothingEnabled = false; const im = itemThumb(id), k = Math.min(2, 36 / im.width, 56 / im.height), [a, b] = Q(x, y, z); c.drawImage(im, R(a - im.width * k / 2), R(b - im.height * k + 1), R(im.width * k), R(im.height * k)); } }]); STATICS.push(o); COUNTER_OBJS.push(o); continue; }
     const o = makeObj(P, { x0: x - 6, x1: x + 6, y0: 30, y1: 46.7 }, z + 64, [{ d: (c, Q) => { c.imageSmoothingEnabled = false; const im = itemThumb(id), k = Math.min(2, 46 / im.width, 56 / im.height), [a, b] = Q(x, y, z); c.drawImage(im, R(a - im.width * k / 2), R(b - im.height * k + 2), R(im.width * k), R(im.height * k)); } }]);
     STATICS.push(o); COUNTER_OBJS.push(o); }
 }

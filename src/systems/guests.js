@@ -288,14 +288,14 @@ function pickEpisode(eve) {
 function specialSlot(eve) {
   const T = W.today; if (T[eve ? 'spEve' : 'spAm']) return false; T[eve ? 'spEve' : 'spAm'] = true;
   W.storyNext = W.storyNext || []; W.loyalQ = W.loyalQ || [];
-  if (!eve && W.giftShelfDue && !W.giftShelf) { W.giftShelf = true; W.giftShelfDue = false; STORY_Q.push({ key: 'giftshelf', lines: tonedLines(GIFT_SHELF_TALK) }); applyDecor(); return true; }
+  if (!eve && seasonIdx(W.day) >= 1 && !W.giftShelf) { W.giftShelf = true; W.giftShelfDue = false; STORY_Q.push({ key: 'giftshelf', lines: tonedLines(GIFT_SHELF_TALK) }); applyDecor(); return true; }   // first morning of summer: 坤伯 puts up the shelf, and the regulars' presents can start
   if (!eve && W.storyNext.length) { playScene(W.storyNext.shift()); return true; }
-  if (W.loyalQ.length) { const [kind, ci] = W.loyalQ.shift(); loyalStory(kind, ci, true); return true; }
+  if (W.loyalQ.length && W.giftShelf && (W.today.gifts || 0) < 2) { W.today.gifts = (W.today.gifts || 0) + 1; const [kind, ci] = W.loyalQ.shift(); loyalStory(kind, ci, true); return true; }   // from summer, two at most a day
   if (epDue()) { const ep = pickEpisode(eve); if (ep) { playEpisode(ep, eve); return true; } }
   return false;
 }
-const GIFT_SHELF_TALK = [[null, '早上，坤伯拎住一块木板同一盒钉入嚟。'], ['lin', '坤伯，你做咩？'], ['kun', '……熟客送嘅嘢，前台摆唔落喇。'], ['kun', '钉个木架上墙，摆得多啲。'],
-  ['hero', '坤伯你仲识做木工？'], ['kun', '……以前间铺啲架都系我钉嘅。'], [null, '墙上多咗两层木架。以后熟客送嘅小礼物，都摆喺上面。']];
+const GIFT_SHELF_TALK = [[null, '早上，坤伯拎住一块木板同一盒钉入嚟。'], ['lin', '坤伯，你做咩？'], ['kun', '……夏天嚟喇，熟客成日话要送嘢俾我哋。'], ['kun', '钉个木架上墙，到时摆上去。'],
+  ['hero', '坤伯你仲识做木工？'], ['kun', '……以前间铺啲架都系我钉嘅。'], [null, '墙上多咗三层木架。以后熟客送嘅礼物，都摆喺上面。']];
 function playEpisode(ep, eve) {
   EP_BANNER = null; W.eps = W.eps || {}; W.eps[ep.id] = W.day; W.epLast = W.day; W.epN = (W.epN || 0) + 1; if (ep.arc) (W.arcLast = W.arcLast || {})[ep.arc] = W.day + (eve ? .5 : 0);
   const ci = ep.ci != null ? ep.ci : pick(guestPool());   // who's in it: the episode's own customer, or one of today's kinds

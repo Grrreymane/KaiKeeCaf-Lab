@@ -87,7 +87,7 @@ function drawHUD(c) {
   // tear-off calendar hanging from the board
   px(c, 155, 1, 48, 32, OUT); px(c, 156, 2, 46, 30, '#fbf3e0'); px(c, 156, 2, 46, 12, '#b8483c'); px(c, 156, 31, 46, 1, '#e3d6bc');   // tear-off calendar, sitting inside the sign board
   const day = W ? (PHASE === 'ledger' && LEDGER ? LEDGER.day : W.day) : 1;
-  T(c, monthOf(day) + '月 ' + seasonOf(day).name, 179, 1, '#fff4dc', 'center', null, 12);
+  T(c, monthOf(day) + '月 ' + seasonOf(day).name, 179, 1, '#fff4dc', 'center', null, FS_S);
   TS(c, String(dayInMonth(day)), 179, 14, 16, '#3a2a2e', 'center');
   // pause / sound
   for (const x of [300, 326]) { px(c, x - 1, 7, 22, 20, OUT); px(c, x, 8, 20, 18, '#f3e2bf'); px(c, x, 24, 20, 2, '#d9c49a'); }

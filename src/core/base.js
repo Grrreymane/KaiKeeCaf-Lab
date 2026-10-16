@@ -45,7 +45,7 @@ function flipC(c) { const o = mk(c.width, c.height), x = o.getContext('2d'); x.t
 const px = (c, x, y, w, h, col) => { c.fillStyle = col; c.fillRect(x, y, w, h); };
 const putB = (c, img, p, dy = 0) => c.drawImage(img, R(p[0] - img.width / 2), R(p[1] - img.height + 1 + dy));
 // type scale: FS_T titles (sheets, pop-ups) · FS_H headings (cards, sections) · FS body · FS_S small notes; the story box uses its own 18
-const FS_T = 18, FS_H = 15, FS_S = 12;
+const FS_T = 18, FS_H = 15, FS_S = 13;
 function TC(d, s, cx, cy, col, size = FS, serif = false, align = 'center') {   // text centred vertically on cy (and on cx, or starting / ending there) by its real glyph box — font metrics differ between phones, so no fixed offsets
   d.font = serif ? sr(size) : fp(size); d.textAlign = 'left'; d.textBaseline = 'alphabetic'; const m = d.measureText(s);
   const L = m.actualBoundingBoxLeft || 0, Rt = m.actualBoundingBoxRight || m.width, A = m.actualBoundingBoxAscent || size * .8, D = m.actualBoundingBoxDescent || 0, w = Rt + L;

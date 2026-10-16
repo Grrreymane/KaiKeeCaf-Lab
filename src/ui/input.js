@@ -40,7 +40,7 @@ function drawEditFloor(c) {
 }
 // wall pieces in 摆放: each sits in one of six cells on the left wall; drag it onto another cell (they swap), or tap to step it along
 const wallOwned = id => id === 'board' ? keepList('w').length > 0 : hasItem(id);
-const wallCellBox = i => { const [y0, z0] = WALL_CELLS[i], pts = [P(0, y0, z0), P(0, y0 + 38, z0), P(0, y0 + 38, z0 + 50), P(0, y0, z0 + 50)], xs = pts.map(p => p[0]), ys = pts.map(p => p[1]); return { pts, x0: Math.min(...xs), x1: Math.max(...xs), y0: Math.min(...ys), y1: Math.max(...ys) }; };
+const wallCellBox = i => { const [y0, z0] = WALL_CELLS[i], pts = [P(0, y0, z0), P(0, y0 + 38, z0), P(0, y0 + 38, z0 + 34), P(0, y0, z0 + 34)], xs = pts.map(p => p[0]), ys = pts.map(p => p[1]); return { pts, x0: Math.min(...xs), x1: Math.max(...xs), y0: Math.min(...ys), y1: Math.max(...ys) }; };
 const wallCellAt = (wx, wy) => { for (let i = 0; i < WALL_CELLS.length; i++) { const b = wallCellBox(i); if (wx >= b.x0 && wx <= b.x1 && wy >= b.y0 && wy <= b.y1) return i; } return -1; };
 function dropWall(id, to) {   // put a wall piece into cell `to`; whatever was there moves into its old cell
   W.wallSlot = W.wallSlot || {}; for (const k of WALL_IDS) if (W.wallSlot[k] === undefined) W.wallSlot[k] = WALL_IDS.indexOf(k);

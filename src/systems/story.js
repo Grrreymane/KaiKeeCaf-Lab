@@ -206,7 +206,8 @@ function drawDialog(c) {
   const name = who ? (hero ? '店主' : who === 'temp' ? HIRE.temp.name : who === 'cust' ? D.cname || guestKind(D.ci) || '客人' : NAMES[who]) : '';
   if (name) { c.font = sr(16); const w = R(c.measureText(name).width) + 22, x = hero ? 340 - w : 14; px(c, x - 1, 441, w + 2, 26, OUT); { const tc = TAG_COL[hero ? 'hero' : who] || '#5a3524'; px(c, x, 442, w, 24, tc); px(c, x, 442, w, 1, shade(tc, 24)); } TS(c, name, x + w / 2, 445, 16, '#fbe9c0', 'center'); }
   const shown = L(text).slice(0, Math.floor(D.t * 40) + 1);   // typewriter: the whole line in the chosen language first, then typed out
-  wrapText(c, shown, 318, DLG_FS).slice(0, 4).forEach((l, i) => T(c, l, 21, 478 + i * 26, who ? '#3a2a2e' : '#7a6250', 'left', null, DLG_FS));   // story text a size bigger than the UI: it's what people actually read
+  { const n = Math.max(1, Math.min(4, wrapText(c, L(text), 318, DLG_FS).length)), top = 466 + (112 - ((n - 1) * 26 + DLG_FS)) / 2;   // the block sits in the middle of the box (sized by the whole line, so it doesn't move while typing)
+    wrapText(c, shown, 318, DLG_FS).slice(0, 4).forEach((l, i) => TC(c, l, 21, top + i * 26 + DLG_FS / 2, who ? '#3a2a2e' : '#7a6250', DLG_FS, false, 'left')); }   // story text a size bigger than the UI: it's what people actually read
   if (Math.sin(gtime * 6) > 0) T(c, '▼', 342, 566, '#b8342c', 'center', null);
   if (D.key !== 'ep') { px(c, 296, 42, 56, 24, OUT); px(c, 297, 43, 54, 22, '#4a3a48'); TC(c, '跳过', 324, 54, '#fbe9c0');
   button(292, 38, 64, 32, () => { DIALOG = null; STORY_Q.length = 0; SFX.tap(); }); }   // 小剧场 cannot be skipped

@@ -282,8 +282,8 @@ function fanOf(ci, st) {   // happy visits by this kind of customer add up; at t
 function giveGift(kind) {   // their own decor piece, once: onto 坤伯's shelf / the counter / the floor; returns the line that says where it went
   W.gifted = W.gifted || {}; if (W.gifted[kind]) return null; W.gifted[kind] = true;
   const id = GIFT_ITEM[kind], it = id && !hasItem(id) && DECOR_ITEMS[id]; if (!it) return null;
-  W.giftN = (W.giftN || 0) + 1; if (W.giftN >= 3 && !W.giftShelf) W.giftShelfDue = true;   // the third present: 坤伯 puts a shelf up on the wall (next morning)
-  if (W.giftShelf && isSmallGift(id) && shelfFree().length) { (W.items = W.items || {})[id] = true; (W.counter = W.counter || {})[shelfFree()[0]] = id; }   // after 坤伯's shelf: small ones only go up there
+  W.giftN = (W.giftN || 0) + 1;
+  if (isSmallGift(id) && shelfFree().length) { (W.items = W.items || {})[id] = true; (W.counter = W.counter || {})[shelfFree()[0]] = id; }   // after 坤伯's shelf: small ones only go up there
   else if (COUNTER_OK.includes(id) && counterFree().length) { (W.items = W.items || {})[id] = true; (W.counter = W.counter || {})[counterFree()[0]] = id; }
   else { let pos = null; if (it.cat !== 'wall') pos = findItemSpot(); (W.items = W.items || {})[id] = true; if (pos) { (W.itemPos = W.itemPos || {})[id] = pos; GIFT_PLACE = id; } }
   applyDecor(); NOTICES.push('熟客送礼：' + it.name);

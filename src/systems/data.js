@@ -218,10 +218,10 @@ const FLOORS = {   // 装修 → 地板: a different pattern / material each, no
 };
 // 整套搭配: wall + floor + counter + booth that go together; the whole set in the shop = beauty bonus
 const THEMES = [
-  { name: '黑白格茶餐厅', wall: 'tile', floor: 'bw', counter: 'terrazzo', booth: 'red', bonus: 4, note: '白瓷砖 · 黑白格 · 水磨石柜 · 红卡座' },
-  { name: '柚木老铺', wall: 'teak', floor: 'plank', counter: 'teak', booth: 'brown', bonus: 4, note: '柚木墙板 · 柚木地板 · 深色柜 · 啡卡座' },
-  { name: '粉红碎花', wall: 'rose', floor: 'mosaic', counter: 'mint', booth: 'deluxe', bonus: 5, note: '碎花墙 · 小砖马赛克 · 薄荷柜 · 高级卡座' },
-  { name: '墨绿金线', wall: 'jade', floor: 'terrazzo', counter: 'red', booth: 'green', bonus: 5, note: '墨绿金线 · 水磨石地 · 红漆金边 · 绿卡座' },
+  { name: '黑白格茶餐厅', wall: 'tile', floor: 'bw', counter: 'terrazzo', booth: 'red', bonus: 4, note: '白瓷砖·黑白格·水磨石柜·红卡座' },
+  { name: '柚木老铺', wall: 'teak', floor: 'plank', counter: 'teak', booth: 'brown', bonus: 4, note: '柚木墙板·柚木地板·深色柜·啡卡座' },
+  { name: '粉红碎花', wall: 'rose', floor: 'mosaic', counter: 'mint', booth: 'deluxe', bonus: 5, note: '碎花墙·马赛克·薄荷柜·高级卡座' },
+  { name: '墨绿金线', wall: 'jade', floor: 'terrazzo', counter: 'red', booth: 'green', bonus: 5, note: '墨绿金线·水磨石·红漆柜·绿卡座' },
 ];
 const DECOR_SRC = () => ({ wall: [WALLS, 'walls', 'mint'], booth: [BOOTH_STYLES, 'booths', 'green'], counter: [COUNTER_STYLES, 'counters', 'oak'], floor: [FLOORS, 'floors', 'peach'] });
 const themeOn = () => THEMES.find(T => ['wall', 'floor', 'counter', 'booth'].every(k => ((W && W.decor && W.decor[k]) || DECOR_SRC()[k][2]) === T[k])) || null;
