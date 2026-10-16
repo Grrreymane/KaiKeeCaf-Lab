@@ -185,7 +185,7 @@ function morningStory() {   // one scene per morning at most: affection first, o
 }
 
 // ---------------------------------------------------------------- the horizontal dialogue window
-function wrapText(c, s, w, size = FS) { c.font = fp(size); const out = []; let line = ''; for (const ch of s) { if (c.measureText(line + ch).width > w && !(line && '，。！？、…）」』：；~!?,.'.includes(ch))) { out.push(line); line = ch; }   // punctuation never starts a line else line += ch; } if (line) out.push(line); return out; }
+function wrapText(c, s, w, size = FS) { c.font = fp(size); const out = []; let line = ''; for (const ch of s) { if (c.measureText(line + ch).width > w && !(line && '，。！？、…）」』：；~!?,.'.includes(ch))) { out.push(line); line = ch; } else line += ch; } if (line) out.push(line); return out; }   // punctuation never starts a line
 function speakerBust(who, D) {   // whoever is talking: staff / suppliers (their bust), the part-timer, mum and dad, a customer (their sprite's upper body)
   if (who === 'hero') return bust('hero_' + (W.hero || 'f'));
   if (who && BUSTS[who]) return bust(who);
