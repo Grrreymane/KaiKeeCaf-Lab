@@ -658,7 +658,7 @@ let KEEP_OBJ = null, KEEP_KEY = '';
 function applyKeepsakes() {   // the regulars' small keepsakes stand in a row on top of the front glass case
   const L = keepList('c'), key = L.join(); if (key === KEEP_KEY) return; KEEP_KEY = key;
   if (KEEP_OBJ) { const k = STATICS.indexOf(KEEP_OBJ); if (k >= 0) STATICS.splice(k, 1); KEEP_OBJ = null; } if (!L.length) return;
-  KEEP_OBJ = makeObj(P, { x0: 96, x1: 200, y0: 30, y1: 46.6 }, 66, [{ g: (g, Q) => { L.slice(0, 11).forEach((k, i) => { const [, t, col] = KEEP_ART[k], [a0, b0] = Q(102 + i * 9, 39, 50), a = R(a0), b = R(b0);
+  KEEP_OBJ = makeObj(P, { x0: 96, x1: 200, y0: 30, y1: 46.6 }, 66, [{ g: (g, Q) => { L.slice(0, 6).forEach((k, i) => { const [, t, col] = KEEP_ART[k], [a0, b0] = Q(102 + i * 9, 39, 50), a = R(a0), b = R(b0);
     if (t === 'flask') { g.rect(a - 2, b - 10, 4, 10, col); g.rect(a - 2, b - 12, 4, 2, '#c9cdd0'); g.rect(a - 1, b - 8, 1, 6, shade(col, 30)); }
     else if (t === 'coaster') { g.ell(a, b - 1, 4.5, 2, col); g.ell(a, b - 1.5, 3, 1.2, '#f4d0a0'); }
     else if (t === 'jar') { g.rect(a - 3, b - 8, 6, 8, '#e8f4f0'); g.rect(a - 2, b - 6, 4, 5, col); g.rect(a - 3, b - 10, 6, 2, '#c8342c'); }
@@ -673,11 +673,29 @@ function applyKeepsakes() {   // the regulars' small keepsakes stand in a row on
   }); } }]);
   STATICS.push(KEEP_OBJ);
 }
+// small gifts can stand on the front counter instead of the floor: two spots on the glass case, one on the till counter, one on the extended counter
+const COUNTER_SLOTS = [[164, 38, 50], [186, 38, 50], [91, 40, 34], [372, 40, 34]], COUNTER_OK = ['luckycat', 'aroma', 'plane', 'bunny', 'globe', 'radio', 'vase', 'record', 'fishtank', 'basketball', 'chili', 'bonsai'];
+const counterFree = () => [0, 1, 2].concat(W.xf && expandLv() ? [3] : []).filter(i => !(W.counter || {})[i]);
+const onCounter = id => Object.values((W && W.counter) || {}).includes(id);
+function toggleCounter(id) {   // onto the counter (first free spot) or back onto the floor
+  W.counter = W.counter || {};
+  if (onCounter(id)) { for (const k in W.counter) if (W.counter[k] === id) delete W.counter[k]; if (!(W.itemPos || {})[id]) { const pos = findItemSpot(); if (pos) (W.itemPos = W.itemPos || {})[id] = pos; } applyDecor(); SFX.tap(); saveGame(); return true; }
+  const f = counterFree(); if (!f.length) { SFX.deny(); NOTICE = { text: '前台摆满了', t: 0 }; return false; }
+  W.counter[f[0]] = id; applyDecor(); SFX.buy(); saveGame(); return true;
+}
+let COUNTER_OBJS = [], COUNTER_KEY = '';
+function applyCounterGifts() {
+  const key = JSON.stringify((W && W.counter) || {}) + (W && W.xf ? 'x' : ''); if (key === COUNTER_KEY) return; COUNTER_KEY = key;
+  for (const o of COUNTER_OBJS) { const k = STATICS.indexOf(o); if (k >= 0) STATICS.splice(k, 1); } COUNTER_OBJS = [];
+  for (const i in (W.counter || {})) { const id = W.counter[i], S = COUNTER_SLOTS[i]; if (!S || !hasItem(id)) continue; const [x, y, z] = S;
+    const o = makeObj(P, { x0: x - 6, x1: x + 6, y0: 30, y1: 46.7 }, z + 36, [{ d: (c, Q) => { const im = itemThumb(id), k = Math.min(1, 40 / im.width, 46 / im.height), [a, b] = Q(x, y, z); c.drawImage(im, R(a - im.width * k / 2), R(b - im.height * k + 2), R(im.width * k), R(im.height * k)); } }]);
+    STATICS.push(o); COUNTER_OBJS.push(o); }
+}
 function applyItems() {   // create the floor pieces the player owns (once), at their saved spot
-  for (const id in DECOR_ITEMS) { const it = DECOR_ITEMS[id], gid = 'I_' + id; if (it.cat === 'wall' || !hasItem(id) || MOV.some(m => m.id === gid)) continue;
+  for (const id in DECOR_ITEMS) { const it = DECOR_ITEMS[id], gid = 'I_' + id; if (it.cat === 'wall' || !hasItem(id) || onCounter(id) || MOV.some(m => m.id === gid)) continue;
     const pos = (W.itemPos || {})[id]; if (!pos) continue; const o = decorObj(id, pos[0], pos[1]); STATICS.push(o); group(gid, it.name, [o]);
     const f = W.furn[gid]; if (f) moveGroup(o.grp, f[0], f[1]); }
-  for (let i = MOV.length - 1; i >= 0; i--) { const m = MOV[i]; if (m.id.startsWith('I_') && !hasItem(m.id.slice(2))) { for (const o of m.objs) { const k = STATICS.indexOf(o); if (k >= 0) STATICS.splice(k, 1); } MOV.splice(i, 1); } }
+  for (let i = MOV.length - 1; i >= 0; i--) { const m = MOV[i]; if (m.id.startsWith('I_') && (!hasItem(m.id.slice(2)) || onCounter(m.id.slice(2)))) { for (const o of m.objs) { const k = STATICS.indexOf(o); if (k >= 0) STATICS.splice(k, 1); } MOV.splice(i, 1); } }
 }
 function findItemSpot() {   // a free floor spot for a new piece: along the walls first, then anywhere it doesn't block anyone
   const cand = [];

@@ -100,7 +100,7 @@ function workProps() {
 }
 function drawWorld(c) {
   c.drawImage(BG, 0, 0); c.drawImage(SHADE, 0, 0);
-  if (MODE === 'edit') drawEditFloor(c);
+  if (MODE === 'edit') { drawEditFloor(c); drawEditWall(c); }
   const staff = staffList();
   c.save(); c.globalAlpha = .22; c.fillStyle = '#2a1a24';   // feet shadows
   const feet = [...CUST.filter(o => !o.sitting).map(custPos), ...WALKERS, ...DINERS.filter(d => d.state === 'in' || d.state === 'out'), ...LEAVERS, ...WAITERS, ...staff.filter(s => !s.z)];

@@ -36,6 +36,19 @@ function drawEditFloor(c) {
   c.stroke(); c.restore();
   for (const g of MOV) for (const o of g.objs) footQuad(c, o, g === (EDIT.pick && EDIT.pick.g) ? (EDIT.bad ? '#e0503a' : '#3fbf7a') : g === EDIT.sel ? C.gold : '#ffffff', g === (EDIT.pick && EDIT.pick.g) || g === EDIT.sel ? .55 : .12);
 }
+// wall pieces in 摆放: each sits in one of six cells on the left wall; drag it onto another cell (they swap), or tap to step it along
+const wallOwned = id => id === 'board' ? keepList('w').length > 0 : hasItem(id);
+const wallCellBox = i => { const [y0, z0] = WALL_CELLS[i], pts = [P(0, y0, z0), P(0, y0 + 38, z0), P(0, y0 + 38, z0 + 50), P(0, y0, z0 + 50)], xs = pts.map(p => p[0]), ys = pts.map(p => p[1]); return { pts, x0: Math.min(...xs), x1: Math.max(...xs), y0: Math.min(...ys), y1: Math.max(...ys) }; };
+const wallCellAt = (wx, wy) => { for (let i = 0; i < WALL_CELLS.length; i++) { const b = wallCellBox(i); if (wx >= b.x0 && wx <= b.x1 && wy >= b.y0 && wy <= b.y1) return i; } return -1; };
+function dropWall(id, to) {   // put a wall piece into cell `to`; whatever was there moves into its old cell
+  W.wallSlot = W.wallSlot || {}; for (const k of WALL_IDS) if (W.wallSlot[k] === undefined) W.wallSlot[k] = WALL_IDS.indexOf(k);
+  const from = W.wallSlot[id], o = WALL_IDS.find(k => k !== id && W.wallSlot[k] === to); if (o) W.wallSlot[o] = from; W.wallSlot[id] = to; applyDecor(); SFX.buy(); saveGame();
+}
+function drawEditWall(c) {   // the six wall cells, the dragged piece's target in gold
+  for (let i = 0; i < WALL_CELLS.length; i++) { const b = wallCellBox(i), occ = WALL_IDS.find(k => wallSlotOf(k) === i && wallOwned(k)), hot = EDIT.wall && EDIT.wall.over === i;
+    c.save(); c.globalAlpha = hot ? .55 : occ ? .22 : .12; c.fillStyle = hot ? C.gold : occ ? '#ffffff' : '#9fe0b8'; c.beginPath(); b.pts.forEach(([x, y], k) => k ? c.lineTo(x, y) : c.moveTo(x, y)); c.closePath(); c.fill();
+    c.globalAlpha = .7; c.strokeStyle = hot ? C.gold : '#ffffff'; c.lineWidth = 2; c.stroke(); c.restore(); }
+}
 function drawEditMarks(c) { if (!EDIT.pick) return; c.save(); c.globalAlpha = .55; for (const o of EDIT.pick.g.objs) c.drawImage(o.cv, o.sx, o.sy - 8); c.restore(); }
 
 function setupInput(cv) {
@@ -47,6 +60,8 @@ function setupInput(cv) {
     down = { x: sx, y: sy, cam: camX, moved: false };
     if (DESK) deskDown(sx / K, sy / K);
     if (MODE === 'edit' && !PANEL && sy < BAR_Y * K && sy > 34 * K) {
+      const ci = wallCellAt(sx + camX, sy), wid = ci >= 0 && WALL_IDS.find(k => wallSlotOf(k) === ci && wallOwned(k));
+      if (wid) { EDIT.wall = { id: wid, from: ci, over: ci }; EDIT.msg = '拖到墙上另一格（点一下换到下一格）'; down.drag = true; return; }
       const o = hitObj(sx + camX, sy, MOV.flatMap(g => g.objs));
       if (o) { EDIT.pick = { g: o.grp, f0: floorAt(sx + camX, sy), dx: 0, dy: 0 }; EDIT.sel = o.grp; EDIT.bad = false; EDIT.msg = '拿起：' + o.grp.name; down.drag = true; }
     }
@@ -54,6 +69,7 @@ function setupInput(cv) {
   cv.addEventListener('pointermove', e => {
     if (!down) return; const [sx, sy] = pos(e);
     if (Math.abs(sx - down.x) + Math.abs(sy - down.y) > 14) down.moved = true;
+    if (EDIT.wall) { EDIT.wall.over = wallCellAt(sx + camX, sy); return; }
     if (EDIT.pick) {
       const f = floorAt(sx + camX, sy), dx = Math.round((f[0] - EDIT.pick.f0[0]) / 8) * 8, dy = Math.round((f[1] - EDIT.pick.f0[1]) / 8) * 8, pk = EDIT.pick;
       if (dx !== pk.dx || dy !== pk.dy) { moveGroup(pk.g, dx - pk.dx, dy - pk.dy); pk.dx = dx; pk.dy = dy; const why = canPlace(pk.g); EDIT.bad = !!why; EDIT.msg = why || '可以放这里'; }
@@ -64,6 +80,7 @@ function setupInput(cv) {
   const up = e => {
     audioUnlock(); deskUp();
     if (!down) return; const [sx, sy] = pos(e), d = down; down = null;
+    if (EDIT.wall) { const w = EDIT.wall; EDIT.wall = null; if (!d.moved) { moveWall(w.id); EDIT.msg = '换到下一格了'; } else if (w.over >= 0 && w.over !== w.from) { dropWall(w.id, w.over); EDIT.msg = '挂好了'; } else EDIT.msg = '没动'; return; }
     if (EDIT.pick) {
       const pk = EDIT.pick; EDIT.pick = null;
       if (EDIT.bad) { moveGroup(pk.g, -pk.dx, -pk.dy); EDIT.msg = '放不下，退回原位'; SFX.deny(); }

@@ -140,7 +140,7 @@ function buyUpgrade(k) {
   W.money -= L[1]; W.up[k] = n + 1; if (k === 'ac' || k === 'music') applyDecor(); W.today.upCost += L[1]; SFX.buy(); if (!n) playScene('up_' + k); else NOTICE = { text: L[0] + ' 装好了！' + L[2], t: 0 }; checkAch(); saveGame(); return true;
 }
 function buyExtraShelf(id, fridge) {
-  const st = W.shelves[id], cost = EXTRA_SHELF[id]; if (!st || !st.locked || W.money < cost || PHASE === 'open' || PHASE === 'closing' || expandLv() < (EXTRA_NEED[id] || 0)) { SFX.deny(); if (expandLv() < (EXTRA_NEED[id] || 0)) NOTICE = { text: '先打通隔壁', t: 0 }; return false; }
+  const st = W.shelves[id], cost = EXTRA_SHELF[id]; if (!st || !st.locked || W.money < cost || PHASE === 'open' || PHASE === 'closing' || expandLv() < (EXTRA_NEED[id] || 0)) { SFX.deny(); NOTICE = { text: expandLv() < (EXTRA_NEED[id] || 0) ? '先打通隔壁' : W.money < cost ? '钱不够' : '营业中不能加货架，收工或开门前再买', t: 0 }; return false; }
   W.money -= cost; W.today.upCost += cost; st.locked = false; st.fridge = !!fridge; applyDecor(); computeStops(); redoShadows(); RINGS.clear(); SFX.ding(); saveGame(); return true;
 }
 function setShelfKind(id, fridge) {   // a display spot is a shelf (baked goods) or a glass fridge (drinks / desserts); switching clears what's on it

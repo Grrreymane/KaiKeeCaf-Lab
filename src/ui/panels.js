@@ -14,7 +14,7 @@ function sheet(c, title, right, y0 = 292) {   // bottom sheet with a wood header
   button(0, 34, 360, y0 - 34, () => { PANEL = null; });   // tapping the dimmed shop closes the sheet
   px(c, 4, y0 - 1, 352, BAR_Y - y0 + 1, OUT); px(c, 5, y0, 350, BAR_Y - y0 - 1, PAPER);
   px(c, 5, y0, 350, 26, '#5a3a28'); px(c, 5, y0 + 26, 350, 2, '#3a2418');
-  TS(c, title, 14, y0 + 4, 16, '#fbe9c0');
+  TS(c, title, 15, y0 + 4, 16, '#fbe9c0');
   if (right) T(c, right, 314, y0 + 7, '#fbe9c0', 'right', null);
   px(c, 324, y0 + 3, 26, 20, '#7a5238'); T(c, '×', 337, y0 + 6, '#fbe9c0', 'center', null); button(318, y0, 36, 26, () => { PANEL = null; SFX.tap(); });
   return y0 + 34;
@@ -44,7 +44,7 @@ function drawShelfPanel(c, P_) {
     px(c, 18, yy + 4, 34, 42, on ? '#5a3a28' : '#b8a48a'); T(c, LAYER_NAME[li], 35, yy + 18, '#fff4dc', 'center', null);
     if (!L.p) { for (let x = 60; x < 338; x += 7) { px(c, x, yy + 8, 4, 1, '#c9b48c'); px(c, x, yy + 41, 4, 1, '#c9b48c'); } for (let q = yy + 8; q < yy + 42; q += 7) { px(c, 60, q, 1, 4, '#c9b48c'); px(c, 338, q, 1, 4, '#c9b48c'); } T(c, '空着 · 点下面选一样点心摆上来', 199, yy + 18, '#a08a70', 'center', null); }
     else {
-      const img = PRODUCTS[L.p].img; full(c, img, 76, yy + 25); TS(c, PRODUCTS[L.p].name, 96, yy + 6, 14, INK);
+      const img = PRODUCTS[L.p].img; full(c, img, 76, yy + 25); TS(c, PRODUCTS[L.p].name, 96, yy + 6, 15, INK);
       for (let i = 0; i < L.cap; i++) {   // six slots: pieces on the shelf, faded outlines where one is missing
         const sx = 102 + i * Math.min(26, 190 / Math.max(1, L.cap - 1)), sy = yy + 34; px(c, sx - 11, sy + 6, 22, 3, '#e3d6bc');
         c.save(); if (i >= L.n) c.globalAlpha = .22; half(c, img, sx, sy); c.restore();
@@ -61,7 +61,7 @@ function drawShelfPanel(c, P_) {
   opts.forEach((p, i) => {
     const x = 14 + (i % per) * (tw + 6), cur = st.layers[sel].p === p, yy = y + 8 + Math.floor(i / per) * (th + 6);
     card(c, x, yy, tw, th, cur ? '#ffe9b0' : '#fffaf0');
-    if (p) { full(c, PRODUCTS[p].img, x + tw / 2, yy + 16); T(c, PRODUCTS[p].name, x + tw / 2 - 6, yy + th - 40, INK, 'center', null); T(c, speedTag(p)[0], x + tw - 8, yy + th - 40, speedTag(p)[1], 'right', null); T(c, '$' + PRODUCTS[p].price + ' 成本' + Math.round(unitCost(p)) + ' · 可做' + batchesOf(p), x + tw / 2, yy + th - 22, batchesOf(p) ? SUB : '#b8342c', 'center', null); }
+    if (p) { full(c, PRODUCTS[p].img, x + tw / 2, yy + 16); { const nm = PRODUCTS[p].name; T(c, nm.length > 4 ? nm.slice(0, 4) : nm, x + tw / 2 - 6, yy + th - 40, INK, 'center', null, nm.length > 3 ? 12 : FS); } T(c, speedTag(p)[0], x + tw - 8, yy + th - 40, speedTag(p)[1], 'right', null); T(c, '$' + PRODUCTS[p].price + ' 可做' + batchesOf(p), x + tw / 2, yy + th - 22, batchesOf(p) ? SUB : '#b8342c', 'center', null, 12); }
     else T(c, '空着', x + tw / 2, yy + th / 2 - 6, SUB, 'center', null);
     button(x, yy, tw, th, () => { assignLayer(id, sel, p); const other = 1 - sel; if (p && !st.layers[other].p) P_.sel = other; });
   });
@@ -91,13 +91,12 @@ function drawShopPanel(c) {   // 荣叔's: raw ingredients in a 2-column grid; o
     const x = 14 + (i % 2) * 168, yy = y + Math.floor(i / 2) * rh, have = W.ing[k] || 0, cost = bagCost(k);
     card(c, x, yy, 162, rh - 4, '#fffaf0'); drawFit(c, ingIcon(k), x + 4, yy + 4, 44, rh - 14);
     T(c, INGR[k].name, x + 52, yy + 4, INK, 'left', null); T(c, money$(cost) + '/份', x + 158, yy + 6, SUB, 'right', null, 12);
-    T(c, '有 ' + have + ' 份', x + 52, yy + 23, have ? '#2f6e56' : '#b8342c', 'left', null, 12);
-    { const u = (W.lastUsed || {})[k] || 0, days = u ? have / u : 0; T(c, '昨用' + u + (u ? ' · 够' + (days >= 9.5 ? '9+' : days.toFixed(1)) + '天' : ' · 每份' + BAG_N[k]), x + 52, yy + rh - 19, u && days < 1 ? '#b8342c' : '#a89480', 'left', null, 12); }
+    { const u = (W.lastUsed || {})[k] || 0, days = u ? have / u : 0; T(c, '有' + have + '份', x + 52, yy + 22, have ? '#2f6e56' : '#b8342c', 'left', null, 12); T(c, u ? '够' + (days >= 9.5 ? '9+' : days.toFixed(1)) + '天' : '每份' + BAG_N[k], x + 52, yy + 35, u && days < 1 ? '#b8342c' : '#a89480', 'left', null, 12); }
     btn(c, x + 106, yy + 21, 52, 20, '进货', () => buyIngr(k, 1), W.money >= cost ? 'gold' : 'off');
   });
 }
 const POST_SHORT = { bake: '烘焙', bar: '水吧', serve: '招待', take: '外卖', clean: '打扫' };
-const WORK_UNIT = { kun: '盘', lin: '件', hero: '单' }, workLine = id => { const n = ((W.today && W.today.work) || {})[id] || 0, y = (W.lastWork || {})[id] || 0, post = W.staff[id] && W.staff[id].post, u = WORK_UNIT[id] || ({ bake: '盘', bar: '杯', serve: '台', take: '份', clean: '处' })[post] || '次'; return '今日 ' + n + u + (y ? '（昨 ' + y + '）' : ''); };
+const WORK_UNIT = { kun: '盘', lin: '件', hero: '单' }, workLine = id => { const n = ((W.today && W.today.work) || {})[id] || 0, y = (W.lastWork || {})[id] || 0, post = W.staff[id] && W.staff[id].post, u = WORK_UNIT[id] || ({ bake: '盘', bar: '杯', serve: '台', take: '份', clean: '处' })[post] || '次'; return '今' + n + u + (y ? ' 昨' + y : ''); };
 function staffStatus(id) {
   if (id === 'kun') { const j = JOB.kun; if (j) return '在烤' + PRODUCTS[j.p].name + ' ' + R(100 * j.t / j.T) + '%'; if (TABLE_ALL.every(p => !shelfCap(p))) return '等你摆货'; if (TABLE_ALL.every(p => !shelfCap(p) || batchesOf(p) <= 0)) return '没料了，等进货'; return '货架满着，歇一歇'; }
   if (id === 'lin') { const j = JOB.lin; if (j && j.kind === 'pack') return '包装中'; if (j) return '在做' + PRODUCTS[j.p].name + ' ' + R(100 * j.t / j.T) + '%'; return postOf('bar') ? '帮店主包装' : '包装 · 有空做饮品'; }
@@ -122,7 +121,7 @@ function drawStaffPanel(c) {   // each row: who, what they do now, level + affec
       T(c, HIRE[id].note, 56, yy + 22, SUB, 'left', null, 12);
       if (HIRE[id].temp && HIRE[id].student) { T(c, '暑期学生 · 签 6 天每天平 $5', 20, b3 + 2, '#2f6e56', 'left', null, 12); btn(c, 236, yy + 4, 104, 22, '请今天 ' + money$(HIRE[id].wage), () => hireStaff(id), 'cream'); btn(c, 236, b3 - 2, 104, 20, '签 6 天 $40', () => signContract()); }
       else if (HIRE[id].temp) { T(c, '只做今天 · 每天换一个人', 20, b3 + 2, '#2f6e56', 'left', null, 12); btn(c, 236, yy + (rh - 34) / 2, 104, 28, '请今天 ' + money$(HIRE[id].wage), () => hireStaff(id), 'cream'); }
-      else if (W.day >= HIRE[id].day) btn(c, 236, yy + (rh - 34) / 2, 104, 28, '请 ' + money$(HIRE[id].wage) + '/天', () => hireStaff(id)); else T(c, '第 ' + HIRE[id].day + ' 天来应征', 338, yy + 22, SUB, 'right', null, 12);
+      else if (W.day >= HIRE[id].day) btn(c, 236, yy + (rh - 34) / 2, 104, 28, '请 ' + money$(HIRE[id].wage) + '/天', () => hireStaff(id)); else T(c, '第 ' + HIRE[id].day + ' 天来应征', 338, yy + 5, SUB, 'right', null, 12);
       return;
     }
     const posts = () => Object.keys(POSTS).forEach((post, k) => { const on = W.staff[id].post === post; btn(c, 150 + k * 38, yy + 20, 36, 20, POST_SHORT[post], () => setPost(id, post), on ? 'gold' : 'cream'); });
@@ -133,7 +132,7 @@ function drawStaffPanel(c) {   // each row: who, what they do now, level + affec
     }
     T(c, 'Lv' + lv, 98, yy + 5, '#b8483c', 'left', null, 12); T(c, '●'.repeat(lv - 1) + '○'.repeat(LV_MAX - lv), 122, yy + 5, '#c99428', 'left', null, 12);
     if (!HIRE[id]) {
-      T(c, role + ' · ' + staffStatus(id), 56, yy + 22, '#2f6e56', 'left', null, 12); T(c, workLine(id), 160, yy + 5, '#8a6a4a', 'left', null, 12);
+      T(c, role + ' · ' + staffStatus(id), 56, yy + 22, '#2f6e56', 'left', null, 12); T(c, workLine(id), 340, yy + 22, '#8a6a4a', 'right', null, 12);
       if (id === 'kun') btn(c, 250, yy + 4, 90, 22, '烘焙安排', () => { W.seen.planDay = W.day; openPanel({ kind: 'plan', bar: 3 }); }, W.seen.planDay !== W.day && W.day >= 2 ? 'gold' : 'cream');
     } else { T(c, staffStatus(id), 56, yy + 22, '#2f6e56', 'left', null, 12); T(c, workLine(id), 340, yy + 4, '#8a6a4a', 'right', null, 12); posts(); }
     const pk = ((W.perks || {})[id] || []).map(q => '★' + perkInfo(q)[1]).join(' ');
@@ -181,7 +180,7 @@ function drawDecorPanel(c, P_) {   // 装修: better shelves, wallpaper, booth s
     }
     if (cat === 'combo') {   // decor sets: which pieces, what's missing, the bonus
       DECOR_SETS.forEach((S, i) => { const yy = y + i * 38, done = setDone(S), gift = S[1].some(id => DECOR_ITEMS[id].cat === 'gift' || ['banner', 'card'].includes(id));
-        card(c, 14, yy, 332, 35, done ? '#fff1c8' : '#fffaf0'); TS(c, S[0], 22, yy + 2, 14, done ? '#b8483c' : INK); T(c, '舒适 +' + S[2] + (gift ? ' · 含礼物' : ''), 22, yy + 20, done ? '#2f6e56' : SUB, 'left', null, 12);
+        card(c, 14, yy, 332, 35, done ? '#fff1c8' : '#fffaf0'); TS(c, S[0], 22, yy + 2, 15, done ? '#b8483c' : INK); T(c, '舒适 +' + S[2] + (gift ? ' · 含礼物' : ''), 22, yy + 20, done ? '#2f6e56' : SUB, 'left', null, 12);
         S[1].forEach((id, k) => { const x = 150 + k * 64, im = itemThumb(id), kk = Math.min(1, 40 / im.width, 27 / im.height); px(c, x, yy + 3, 58, 29, hasItem(id) ? '#e6f2ea' : '#ece2cf');
           c.save(); if (!hasItem(id)) c.globalAlpha = .35; c.drawImage(im, R(x + 29 - im.width * kk / 2), R(yy + 31 - im.height * kk), R(im.width * kk), R(im.height * kk)); c.restore(); }); });
       return;
@@ -192,13 +191,13 @@ function drawDecorPanel(c, P_) {   // 装修: better shelves, wallpaper, booth s
         if (own) { const im = itemThumb(id), k = Math.min(1, 26 / im.width, 28 / im.height); c.drawImage(im, R(x + 15 - im.width * k / 2), R(yy + 32 - im.height * k), R(im.width * k), R(im.height * k)); }
         else T(c, '？', x + 15, yy + 10, '#b0a08c', 'center', null);
         T(c, own ? DECOR_ITEMS[id].name.slice(0, 5) : kind.slice(0, 5), x + 30, yy + 3, own ? INK : '#8a7a6a', 'left', null, 12);
-        if (!own) { px(c, x + 30, yy + 22, 72, 5, '#e3d6bc'); px(c, x + 30, yy + 22, R(72 * Math.min(1, f / GIFT_AT)), 5, '#3fbf7a'); } else if (WALL_IDS.includes(id)) btn(c, x + 64, yy + 17, 40, 16, '换位', () => moveWall(id), 'cream'); else T(c, '舒适+' + DECOR_ITEMS[id].comfort, x + 30, yy + 19, '#2f6e56', 'left', null, 12); });
+        if (!own) { px(c, x + 30, yy + 22, 72, 5, '#e3d6bc'); px(c, x + 30, yy + 22, R(72 * Math.min(1, f / GIFT_AT)), 5, '#3fbf7a'); } else if (WALL_IDS.includes(id)) btn(c, x + 64, yy + 17, 40, 16, '换位', () => moveWall(id), 'cream'); else if (COUNTER_OK.includes(id)) btn(c, x + 56, yy + 17, 48, 16, onCounter(id) ? '放地上' : '上前台', () => toggleCounter(id), onCounter(id) ? 'gold' : 'cream'); else T(c, '舒适+' + DECOR_ITEMS[id].comfort, x + 30, yy + 19, '#2f6e56', 'left', null, 12); });
       return;
     }
     Object.keys(DECOR_ITEMS).filter(id => DECOR_ITEMS[id].cat === cat && !DECOR_ITEMS[id].gift).forEach((id, i) => {
       const it = DECOR_ITEMS[id], x = 14 + (i % 2) * 168, yy = y + Math.floor(i / 2) * 76, own = hasItem(id);
       card(c, x, yy, 162, 70, own ? '#e6f2ea' : '#fffaf0'); px(c, x + 4, yy + 4, 48, 60, own ? '#d6eadc' : '#f3ead8'); { const im = itemThumb(id), k = Math.min(1, 44 / im.width, 56 / im.height); c.drawImage(im, R(x + 28 - im.width * k / 2), R(yy + 62 - im.height * k), R(im.width * k), R(im.height * k)); }
-      TS(c, it.name, x + 58, yy + 5, 14, INK);
+      TS(c, it.name, x + 58, yy + 5, 15, INK);
       T(c, it.note || ('舒适+' + it.comfort + ' 美观+' + it.beauty), x + 58, yy + 25, SUB, 'left', null, 12);
       if (it.season !== undefined) T(c, SEASONS[it.season].full + '摆 舒适×2' + (inSeason(it) ? ' ✓' : ''), x + 58, yy + 38, inSeason(it) ? '#2f6e56' : '#b0a08c', 'left', null, 12);
       if (own && it.cat === 'wall' && WALL_IDS.includes(id)) btn(c, x + 90, yy + 44, 66, 22, '换位置', () => moveWall(id), 'cream');
@@ -213,14 +212,14 @@ function drawDecorPanel(c, P_) {   // 装修: better shelves, wallpaper, booth s
     EXPAND.forEach((E, i) => {
       const yy = y + 26 + i * 50, done = i < n, next = i === n, early = E.day && W.day < E.day;
       card(c, 14, yy, 332, 46, done ? '#e6f2ea' : next ? '#fff3d6' : '#ece2cf');
-      TS(c, E.name, 22, yy + 4, 14, done ? '#2f6e56' : INK); T(c, E.desc, 22, yy + 25, SUB, 'left', null, 12);
+      TS(c, E.name, 22, yy + 4, 15, done ? '#2f6e56' : INK); T(c, E.desc, 22, yy + 25, SUB, 'left', null, 12);
       if (done) T(c, '已完成', 336, yy + 15, '#2f6e56', 'right', null);
       else if (!next) T(c, '先做上一步', 336, yy + 15, '#b0a08c', 'right', null);
       else if (early) T(c, '第 ' + E.day + ' 天开放', 336, yy + 15, SUB, 'right', null);
       else btn(c, 226, yy + 9, 112, 28, money$(E.cost), () => buyExpand(), W.money >= E.cost ? 'gold' : 'off');
     });
     ROOMS.forEach(([f, name, cost, desc], i) => { const yy = y + 26 + 4 * 50 + i * 50, done = !!W[f];   // the kitchen and the front counter grow too
-      card(c, 14, yy, 332, 46, done ? '#e6f2ea' : n ? '#fff3d6' : '#ece2cf'); TS(c, name, 22, yy + 4, 14, done ? '#2f6e56' : INK); T(c, desc, 22, yy + 25, SUB, 'left', null, 12);
+      card(c, 14, yy, 332, 46, done ? '#e6f2ea' : n ? '#fff3d6' : '#ece2cf'); TS(c, name, 22, yy + 4, 15, done ? '#2f6e56' : INK); T(c, desc, 22, yy + 25, SUB, 'left', null, 12);
       if (done) T(c, '已完成', 336, yy + 15, '#2f6e56', 'right', null); else if (!n) T(c, '先打通隔壁', 336, yy + 15, '#b0a08c', 'right', null); else btn(c, 226, yy + 9, 112, 28, money$(cost), () => buyRoom(i), W.money >= cost ? 'gold' : 'off'); });
     return;
   }
@@ -228,10 +227,10 @@ function drawDecorPanel(c, P_) {   // 装修: better shelves, wallpaper, booth s
     SHELF_IDS.forEach((id, i) => {   // one compact row per spot; extra spots can be bought here (as a shelf or a fridge)
       const rh = Math.min(35, Math.floor((BAR_Y - 6 - y) / SHELF_IDS.length)), yy = y + i * rh, t = W.decor.tier[id] || 0, nx = SHELF_TIERS[t + 1], st = W.shelves[id], locked = st.locked;
       card(c, 14, yy, 332, rh - 3, st.extra && locked ? '#ece2cf' : '#fffaf0');
-      if (st.extra && locked) { TS(c, '加买位 ' + SHELF_NO[id], 22, yy + 6, 13, SUB); const cost = EXTRA_SHELF[id], ok = W.money >= cost ? 'gold' : 'off'; if (expandLv() < (EXTRA_NEED[id] || 0)) { T(c, '打通隔壁后可买（放隔壁）', 336, yy + 8, '#b0a08c', 'right', null, 12); return; }
+      if (st.extra && locked) { TS(c, '加买位 ' + SHELF_NO[id], 22, yy + 6, 15, SUB); const cost = EXTRA_SHELF[id], ok = W.money >= cost ? 'gold' : 'off'; if (expandLv() < (EXTRA_NEED[id] || 0)) { T(c, '打通隔壁后可买（放隔壁）', 336, yy + 8, '#b0a08c', 'right', null, 12); return; }
         btn(c, 150, yy + 4, 92, 24, '货架 ' + money$(cost), () => buyExtraShelf(id, false), ok); btn(c, 246, yy + 4, 92, 24, '冷柜 ' + money$(cost), () => buyExtraShelf(id, true), ok); return; }
-      TS(c, shelfTitle(id), 22, yy + 7, 13, INK); T(c, SHELF_TIERS[t].name + ' ' + st.layers.map(L => L.cap).join('/'), 96, yy + 9, SUB, 'left', null);
-      if (locked) T(c, '未开张', 336, yy + 9, '#b0a08c', 'right', null);
+      TS(c, shelfTitle(id), 22, yy + 7, 15, INK); if (!locked) T(c, SHELF_TIERS[t].name + ' ' + st.layers.map(L => L.cap).join('/'), 96, yy + 9, SUB, 'left', null); else T(c, '盖着布', 96, yy + 9, '#b0a08c', 'left', null, 12);
+      if (locked) { btn(c, 150, yy + 4, 92, 24, '货架 ' + money$(SHELF_COST), () => unlockShelf(id, false), W.money >= SHELF_COST ? 'gold' : 'off'); btn(c, 246, yy + 4, 92, 24, '冷柜 ' + money$(SHELF_COST), () => unlockShelf(id, true), W.money >= SHELF_COST ? 'gold' : 'off'); }   // the covered spots can be opened here too
       else if (nx) btn(c, 214, yy + 4, 124, 24, '换' + nx.name + ' ' + money$(nx.cost), () => buyShelfTier(id), W.money >= nx.cost ? 'gold' : 'off');
       else T(c, '已是最好', 336, yy + 9, '#c99428', 'right', null);
     });
@@ -243,13 +242,13 @@ function drawDecorPanel(c, P_) {   // 装修: better shelves, wallpaper, booth s
   Object.keys(list).forEach((k, i) => {
     const S = list[k], x = 14 + (i % 2) * 168, yy = y + Math.floor(i / 2) * 84;
     card(c, x, yy, 162, 80, cur === k ? '#ffe9b0' : '#fffaf0'); c.save(); c.translate(x + 8, yy + 4); c.scale(.97, .97); decorSwatch(c, tab, S, 0, 0); c.restore();
-    TS(c, S.name, x + 72, yy + 6, 14, INK); T(c, '美观 +' + S.beauty, x + 72, yy + 26, SUB, 'left', null, 12); if (S.tip) T(c, '小费 +$' + S.tip, x + 72, yy + 39, '#2f6e56', 'left', null, 12);
+    TS(c, S.name, x + 72, yy + 6, 15, INK); T(c, '美观 +' + S.beauty, x + 72, yy + 26, SUB, 'left', null, 12); if (S.tip) T(c, '小费 +$' + S.tip, x + 72, yy + 39, '#2f6e56', 'left', null, 12);
     if (cur === k) T(c, '使用中', x + 116, yy + 58, '#2f6e56', 'center', null);
     else btn(c, x + 74, yy + 52, 80, 24, own[k] ? '换上' : money$(S.cost), () => buyDecor(tab, k), own[k] || W.money >= S.cost ? 'gold' : 'off');
   });
   { const d = W.decor, rows = Math.ceil(Object.keys(list).length / 2), yb = y + rows * 84 + 4;   // where today's beauty comes from
     const parts = [['墙纸', (WALLS[d.wall] || WALLS.mint).beauty], ['卡座', (BOOTH_STYLES[d.booth] || BOOTH_STYLES.green).beauty], ['货架', SHELF_IDS.reduce((a, id) => a + (W.shelves[id].locked ? 0 : SHELF_TIERS[(d.tier || {})[id] || 0].beauty), 0)], ['摆设', Object.keys(DECOR_ITEMS).reduce((a, id) => a + (hasItem(id) ? DECOR_ITEMS[id].beauty : 0), 0)], ['音乐', 2 * upLv('music')], ['阿青', hasPerk('qing_menu') ? 3 : 0]].filter(q => q[1]);
-    card(c, 14, yb, 332, 22, '#fff3d6'); T(c, '美观 ' + beauty() + (parts.length ? ' = ' + parts.map(q => q[0] + q[1]).join(' + ') : '：买墙纸、卡座、摆设都会加'), 22, yb + 5, INK, 'left', null); }
+    card(c, 14, yb, 332, 22, '#fff3d6'); T(c, '美观 ' + beauty() + (parts.length ? '：' + parts.map(q => q[0] + q[1]).join(' ') : '：买墙纸、卡座、摆设都会加'), 22, yb + 6, INK, 'left', null); }
 }
 function drawPlanPanel(c) {
   let y = sheet(c, '今日安排', '', 110);
@@ -272,7 +271,7 @@ function drawPlanPanel(c) {
     card(c, 14, yy, 332, rh, '#fffaf0'); half(c, PRODUCTS[p].img, 30, yy + rh / 2);
     { const ty = yy + rh / 2 - 7, last = W.history.length ? (W.history[W.history.length - 1].sold || {})[p] || 0 : 0;   // name, price, sold today (yesterday), on hand, speed
       { const nm = PRODUCTS[p].name; T(c, nm.length > 4 ? nm.slice(0, 3) + '…' : nm, 46, ty, INK, 'left', null, nm.length > 3 ? 12 : FS); } T(c, '$' + priceOf(p), 100, ty, '#2f6e56', 'left', null, 12);
-      T(c, (W.today.sold[p] || 0) + '/' + last, 124, ty, SUB, 'left', null, 12); T(c, '存' + (shelfHave(p) + (W.stock[p] || 0)), 146, ty, '#8a6a4a', 'left', null, 12); T(c, speedTag(p)[0], 176, ty, speedTag(p)[1], 'left', null, 12); }
+      T(c, (W.today.sold[p] || 0) + '/' + last, 122, ty, SUB, 'left', null, 12); T(c, '存' + (shelfHave(p) + (W.stock[p] || 0)), 154, ty, '#8a6a4a', 'left', null, 12); T(c, speedTag(p)[0], 190, ty, speedTag(p)[1], 'right', null, 12); }
     [['pri', '主打'], ['on', '照常'], ['off', '不做']].forEach(([v, lab], k) => btn(c, 192 + k * 51, yy + (rh - Math.min(24, rh)) / 2, 47, Math.min(24, rh), lab, () => setPlan(p, v), W.plan[p] === v ? (v === 'off' ? 'red' : 'gold') : 'cream'));
   });
 }
@@ -316,7 +315,7 @@ function drawMenuPanel(c) {   // the shop's full menu: what is on sale (with pri
   let y = sheet(c, '餐单', PIDS.filter(p => !PRODUCTS[p].lab && unlocked(p)).length + '/' + PIDS.filter(p => !PRODUCTS[p].lab).length, 70) - 2;
   const grp = [['饮品', p => PRODUCTS[p].where === 'fridge' && !PRODUCTS[p].cake && !PRODUCTS[p].lab && !['pudding', 'mango', 'dpn'].includes(p)], ['饼食', p => !PRODUCTS[p].cake && !PRODUCTS[p].lab && (PRODUCTS[p].where === 'table' || ['pudding', 'mango', 'dpn'].includes(p))], ['蛋糕', p => PRODUCTS[p].cake], ['港式 Lab', p => PRODUCTS[p].lab && unlocked(p)]];
   for (const [title, f] of grp) { const L_ = PIDS.filter(p => f(p) && !(PRODUCTS[p].lab && !unlocked(p)) && (PRODUCTS[p].lab || PRODUCTS[p].day < 999)); if (!L_.length) continue;
-    TS(c, title, 14, y, 13, '#b8483c'); px(c, 14, y + 18, 332, 1, '#e3d6bc'); y += 22;
+    TS(c, title, 15, y, 13, '#b8483c'); px(c, 14, y + 18, 332, 1, '#e3d6bc'); y += 22;
     L_.forEach((p, i) => { const x = 14 + (i % 3) * 112, yy = y + Math.floor(i / 3) * 42, on = unlocked(p); card(c, x, yy, 108, 38, on ? '#fffaf0' : '#ece2cf');
       const nm = PRODUCTS[p].name, short = nm.length > 4 ? nm.slice(0, 4) : nm;   // one line: picture, name, price — locked ones just greyed
       if (on) { half(c, PRODUCTS[p].img, x + 15, yy + 19); T(c, short, x + 30, yy + 11, INK, 'left', null, nm.length > 3 ? 12 : FS); T(c, '$' + priceOf(p), x + 104, yy + 12, '#2f6e56', 'right', null, 12); }
@@ -343,8 +342,10 @@ function drawPlaceAsk(c, P_) {   // just bought a floor piece: place it now, or 
   const it = DECOR_ITEMS[P_.id]; c.save(); c.globalAlpha = .5; px(c, 0, 0, 360, 640, '#1c141c'); c.restore(); button(0, 0, 360, 640, () => {});
   card(c, 50, 230, 260, 150, PAPER); TS(c, it.name + (P_.gift ? ' 收到' : ' 买咗'), 180, 244, 18, INK, 'center');
   T(c, '已经摆喺默认位置（靠墙、唔挡路）', 180, 276, SUB, 'center', null); T(c, '舒适 ' + comfort() + ' · 美观 ' + beauty(), 180, 294, '#2f6e56', 'center', null);
-  btn(c, 66, 322, 110, 36, '现在摆放', () => { SFX.tap(); placeNow(P_.id); }, 'gold');
-  btn(c, 184, 322, 110, 36, '就放默认位置', () => { SFX.tap(); PANEL = P_.back || null; }, 'cream');
+  const small = P_.gift && COUNTER_OK.includes(P_.id);   // a small gift can go on the front counter
+  btn(c, 58, 322, small ? 80 : 110, 36, '现在摆放', () => { SFX.tap(); placeNow(P_.id); }, 'gold');
+  if (small) btn(c, 142, 322, 76, 36, '摆前台', () => { if (toggleCounter(P_.id)) PANEL = P_.back || null; }, 'gold');
+  btn(c, small ? 222 : 176, 322, small ? 80 : 126, 36, small ? '放默认' : '就放默认位置', () => { SFX.tap(); PANEL = P_.back || null; }, 'cream');
 }
 function drawSupPanel(c) {   // shop level + suppliers you can sign with
   let y = sheet(c, '供应商', money$(W.money), 200);
@@ -352,11 +353,11 @@ function drawSupPanel(c) {   // shop level + suppliers you can sign with
   card(c, 14, y, 332, 52, '#fff3d6'); TS(c, '店铺 Lv' + lv, 22, y + 6, 16, '#b8483c'); T(c, '原料平 ' + (lv - 1) * 2 + '%', 336, y + 8, '#2f6e56', 'right', null);
   T(c, nx !== undefined ? '累计招呼 ' + served + '/' + nx + ' 位客人升下一级' : '已经满级', 22, y + 30, SUB, 'left', null);
   y += 62;
-  card(c, 14, y, 332, 52, '#fffaf0'); TS(c, '荣叔', 22, y + 6, 14, INK); T(c, '样样都有，照价', 22, y + 28, SUB, 'left', null); T(c, '一直合作', 336, y + 18, '#2f6e56', 'right', null);
+  card(c, 14, y, 332, 52, '#fffaf0'); TS(c, '荣叔', 22, y + 6, 15, INK); T(c, '样样都有，照价', 22, y + 28, SUB, 'left', null); T(c, '一直合作', 336, y + 18, '#2f6e56', 'right', null);
   y += 58;
   for (const k in SUPPLIERS) {
     const S = SUPPLIERS[k], has = (W.sup || {})[k], ok = lv >= S.lv;
-    card(c, 14, y, 332, 52, has ? '#e6f2ea' : ok ? '#fffaf0' : '#ece2cf'); TS(c, S.name, 22, y + 6, 14, INK); T(c, S.desc, 22, y + 28, SUB, 'left', null);
+    card(c, 14, y, 332, 52, has ? '#e6f2ea' : ok ? '#fffaf0' : '#ece2cf'); TS(c, S.name, 22, y + 6, 15, INK); T(c, S.desc, 22, y + 28, SUB, 'left', null);
     if (has) T(c, '已签约', 336, y + 18, '#2f6e56', 'right', null);
     else if (!ok) T(c, '店铺 Lv' + S.lv + ' 开放', 336, y + 18, '#b0a08c', 'right', null);
     else btn(c, 246, y + 12, 92, 28, '签约 ' + money$(S.cost), () => signSupplier(k), W.money >= S.cost ? 'gold' : 'off');
@@ -407,7 +408,7 @@ function drawBookPanel(c) {   // the books: today's numbers in a two-column tabl
   y += Math.ceil(Object.keys(UPGRADES).length / 2) * 46 + 4;
   const H = W.history.slice(-7);   // last seven days: revenue (gold) and profit (green, red for a loss), with a scale, values and totals
   { const ch = Math.max(112, Math.min(150, BAR_Y - 44 - y - 18)), k$ = v => (v < 0 ? '-' : '') + (Math.abs(v) >= 1000 ? (Math.abs(v) / 1000).toFixed(1) + 'k' : '' + Math.abs(R(v)));
-    card(c, 14, y, 332, ch, '#fffaf0'); TS(c, '近 7 日', 22, y + 5, 14, INK);
+    card(c, 14, y, 332, ch, '#fffaf0'); TS(c, '近 7 日', 22, y + 5, 15, INK);
     const lg = (x, col, t) => { px(c, x - 1, y + 8, 10, 10, OUT); px(c, x, y + 9, 8, 8, col); T(c, t, x + 11, y + 6, SUB, 'left', null, 12); };
     lg(206, '#e7c34a', '收入'); lg(250, '#3fbf7a', '净赚'); lg(294, '#e0603a', '亏本');
     if (!H.length) T(c, '收工后会有记录', 180, y + ch / 2, SUB, 'center', null);
@@ -464,7 +465,7 @@ function drawLedger(c) {   // end of the day: money in two columns (with ▲▼ 
   y += soldRows * 20 + 4;
   card(c, 32, y, 296, 42, '#fffaf0'); T(c, '明天：', 40, y + 5, '#b8483c', 'left', null); T(c, L.tip, 40, y + 23, INK, 'left', null); y += 50;
   T(c, (L.upCost ? '买升级 -' + money$(L.upCost) + ' · ' : '') + (L.pts ? '积分 +' + L.pts + ' · ' : '') + '现金 ' + money$(W.money), 180, y, W.money >= 0 ? INK : '#b8342c', 'center', null); y += 22;
-  if (L.month) { card(c, 32, y, 296, 44, '#fff3d6'); TS(c, L.month.m + '月盘点', 40, y + 4, 14, '#b8483c'); T(c, '收入 ' + money$(L.month.revenue) + ' · 净赚 ' + money$(L.month.profit) + ' · 客 ' + L.month.served, 40, y + 25, INK, 'left', null); y += 50; }
+  if (L.month) { card(c, 32, y, 296, 44, '#fff3d6'); TS(c, L.month.m + '月盘点', 40, y + 4, 15, '#b8483c'); T(c, '收入 ' + money$(L.month.revenue) + ' · 净赚 ' + money$(L.month.profit) + ' · 客 ' + L.month.served, 40, y + 25, INK, 'left', null); y += 50; }
   if (end) { TS(c, end + '过完啦，辛苦！', 180, y, 16, '#b8483c', 'center'); y += 22; T(c, '开张以来共收 ' + money$(W.total.revenue) + ' · 招呼 ' + W.total.served + ' 位', 180, y, INK, 'center', null); y += 20; btn(c, 80, y + 2, 200, 34, '继续经营', () => nextDay()); }
   else btn(c, 80, y + 4, 200, 34, '明天继续', () => nextDay());
 }
