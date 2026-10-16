@@ -80,11 +80,13 @@ function displayTable(Pj, x0, y0, tier = 0, rot = 0) {
     else for (const [px_, py_] of [[x0, y0], [x1 - 1.6, y0], [x0, y1 - 1.6], [x1 - 1.6, y1 - 1.6]]) bx(g, Q, px_, py_, 14, 1.6, 1.6, ZU - 14, C.brass, C.brass, C.brassD);
   } }]);
   const top = makeObj(Pj, ab, 50, [{ g: (g, Q) => slab(g, Q, x0, y0, ZU, w, d) }]);
-  const sheet = makeObj(Pj, ab, 50, [{ g: (g, Q) => {   // dust sheet over a locked table
-    bx(g, Q, x0 - 1, y0 - 1, 0, w + 2, d + 2, ZU + 5, '#e4ddd0', '#cfc6b5', '#b9af9d', 4);
-    for (let t = x0 + 8; t < x1 - 4; t += 11) g.seg(Q(t, y1 + 1, ZU + 3), Q(t - 2, y1 + 1, 2), '#cfc6b6');
-    for (let t = y0 + 7; t < y1 - 3; t += 9) g.seg(Q(x1 + 1, t, ZU + 3), Q(x1 + 1, t + 2, 2), '#bdb4a3');
-  } }]);
+  const sheet = makeObj(Pj, ab, 50, [   // an empty spot (no shelf yet): a light patch with a dashed outline and a little + sign, nothing tall
+    { g: (g, Q) => g.quad(Q(x0, y0, 0), Q(x1, y0, 0), Q(x1, y1, 0), Q(x0, y1, 0), '#fff8e8'), plain: true, alpha: .4 },
+    { g: (g, Q) => { const col = '#a8784a';
+      for (let t = x0; t < x1; t += 6) { const e = Math.min(t + 3, x1); g.seg(Q(t, y0, 0), Q(e, y0, 0), col); g.seg(Q(t, y1, 0), Q(e, y1, 0), col); }
+      for (let t = y0; t < y1; t += 6) { const e = Math.min(t + 3, y1); g.seg(Q(x0, t, 0), Q(x0, e, 0), col); g.seg(Q(x1, t, 0), Q(x1, e, 0), col); }
+      const [a, b] = Q((x0 + x1) / 2, (y0 + y1) / 2, 0); g.ell(a, b, 9, 4.5, '#e9c46a'); g.ell(a, b - 1, 8, 3.8, '#f6d986'); g.rect(R(a) - 4, R(b) - 2, 9, 2, '#8a5a10'); g.rect(R(a) - 1, R(b) - 4, 2, 6, '#8a5a10'); } },
+  ]);
   const ZT = ZU + 20, lid = T === 2 ? makeObj(Pj, ab, 70, [   // glass case over the top layer, brass frame, warm light strip
     { g: (g, Q) => { g.quad(Q(x0, y1, ZU + 4), Q(x1, y1, ZU + 4), Q(x1, y1, ZT), Q(x0, y1, ZT), '#d8f2f2'); g.quad(Q(x1, y0, ZU + 4), Q(x1, y1, ZU + 4), Q(x1, y1, ZT), Q(x1, y0, ZT), '#b8e2e6'); g.quad(Q(x0, y0, ZT), Q(x1, y0, ZT), Q(x1, y1, ZT), Q(x0, y1, ZT), '#e8fafa'); }, plain: true, alpha: .24 },
     { g: (g, Q) => { for (const t of [x0 + 10, x0 + 34]) g.quad(Q(t, y1, ZU + 5), Q(t + 4, y1, ZU + 5), Q(t + 10, y1, ZT - 1), Q(t + 6, y1, ZT - 1), '#ffffff'); }, plain: true, alpha: .45 },
@@ -785,7 +787,7 @@ function doorObjs(xa, xb) {
     { g: (g, Q) => { for (const y of [292.5, 314]) bx(g, Q, xd, y, 0, 2, 1.5, 64, ...FR, 0); bx(g, Q, xd, 292.5, 0, 2, 23, 3, ...FR, 0); bx(g, Q, xd, 292.5, 61, 2, 23, 3, ...FR, 0); bx(g, Q, xd + 2, 296, 30, 1, 1, 10, C.brass, C.brass, C.brassD, 0); } }])));
   return L;
 }
-const DOOR_UP = [['加开出口门', 900, '前面左边开一道门，买完的客人从这里走：客流 +6%'], ['隔壁开门', 1200, '隔壁临街开一道门（要先打通隔壁）：客流再 +6%']];
+const DOOR_UP = [['加开出口门', 900, '买完从这里走 · 客流 +6%'], ['隔壁开门', 1200, '隔壁临街开门 · 客流再 +6%']];
 const doorsOpen = () => Math.min((W && W.doors) || 0, expandLv() ? 2 : 1);
 function applyDoors() {   // swap the plain front for the one with the extra door(s)
   const swap = (A, B, on) => { for (const o of [].concat(on ? A : B)) { const k = STATICS.indexOf(o); if (k >= 0) STATICS.splice(k, 1); } for (const o of [].concat(on ? B : A)) if (STATICS.indexOf(o) < 0) STATICS.push(o); };

@@ -22,8 +22,8 @@
   STORY_Q.length = 0; W.tourOff = true;
   shot('hud', () => {});
   shot('hud-open', () => { PHASE = 'open'; });
-  for (const k of ['stock', 'shop', 'staff', 'ach', 'sup', 'guests', 'menu', 'book', 'plan', 'pause', 'showcase']) shot(k, () => { PANEL = { kind: k, bar: 1 }; });
-  for (const tab of ['shelf', 'wall', 'booth', 'expand', 'items']) shot('decor' + tab, () => { PANEL = { kind: 'decor', tab, bar: 6 }; });
+  for (const k of ['stock', 'shop', 'staff', 'ach', 'goals', 'specials', 'sup', 'guests', 'menu', 'book', 'plan', 'pause', 'showcase']) shot(k, () => { PANEL = { kind: k, bar: 1 }; });
+  for (const tab of ['theme', 'shelf', 'wall', 'floor', 'counter', 'booth', 'expand', 'items']) shot('decor' + tab, () => { PANEL = { kind: 'decor', tab, bar: 6 }; });
   for (const ci of CUST_POOL) shot('guest' + ci, () => { PANEL = { kind: 'guest', ci, bar: 4 }; });
   shot('shelf', () => { PANEL = { kind: 'shelf', id: SHELF_IDS[0], bar: 0 }; });
   shot('lab', () => { W.expand = Math.max(W.expand || 0, 1); PANEL = { kind: 'lab', bar: 2 }; });
@@ -31,6 +31,9 @@
   for (const k in PERKS) for (const lv in PERKS[k]) shot('perk-' + k + lv, () => { PANEL = { kind: 'perk', k, lv: +lv, bar: 3 }; });
   shot('ledger', () => { PHASE = 'ledger'; W.today.sold = Object.fromEntries(PIDS.slice(0, 12).map(p => [p, 9])); endDay(); STORY_Q.length = 0; });
   shot('title', () => { PHASE = 'title'; });
+  for (const cat of (typeof ITEM_CATS !== 'undefined' ? ITEM_CATS : []).map(q => q[0])) shot('items-' + cat, () => { PANEL = { kind: 'decor', tab: 'items', cat, bar: 6 }; });
+  shot('group-open', () => { PHASE = 'open'; W.today.group = { p: PIDS[0], n: 18, who: '诊所姑娘们', state: 'open' }; });
+  shot('dialog', () => { DIALOG = { key: 'x', lines: [['lin', '（举着照片）这间店……是这间店！门口站着一个老先生，还有一个年轻的……坤伯？！']], i: 0, t: 99 }; });
   P.fillText = f0; btn = btn0; card = card0; sheet = sheet0; PHASE = 'prep'; LEDGER = null; PANEL = null;
   return JSON.stringify(bad);
 })()

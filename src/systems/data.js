@@ -266,7 +266,7 @@ const DECOR_ITEMS = {
   lantern: { name: '中秋灯笼', cat: 'season', season: 2, cost: 200, comfort: 3, beauty: 3 },
   xmas: { name: '圣诞树', cat: 'season', season: 3, cost: 300, comfort: 4, beauty: 4 },
   bin: { name: '垃圾桶', cat: 'clean', cost: 120, comfort: 1, beauty: 0, note: '污糟慢两成半' },
-  doormat: { name: '门口地毯', cat: 'clean', cost: 150, comfort: 1, beauty: 1, note: '落雨带入嘅泥少六成' },
+  doormat: { name: '门口地毯', cat: 'clean', cost: 150, comfort: 1, beauty: 1, note: '雨天少六成泥' },
   vacuum: { name: '吸尘机', cat: 'clean', cost: 600, comfort: 0, beauty: 0, note: '营业时自己慢慢吸' },
   luckycat: { name: '招财猫', cat: 'gift', cost: 0, comfort: 2, beauty: 3, note: '熟客送嘅' },
   fishtank: { name: '小鱼缸', cat: 'gift', cost: 0, comfort: 3, beauty: 2 }, aroma: { name: '香薰烛台', cat: 'gift', cost: 0, comfort: 3, beauty: 2 },

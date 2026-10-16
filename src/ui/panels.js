@@ -1,7 +1,7 @@
 // ==== panels: bottom sheets (shelf, stock overview, ingredient shop, staff, books), pause, end-of-day books, title
 let PANEL = null, CONFIRM = 0;
 function openPanel(p) { PANEL = p; SFX.tap(); if (p.kind === 'shelf' && W.tut === 0 && p.id === 'T4') W.tut = 1; }
-const INK = '#3a2a2e', SUB = '#7a6250', PAPER = '#f6e8c8', GOLDB = '#ffd75e';
+const INK = '#3a2a2e', SUB = '#5f4a3c', PAPER = '#f6e8c8', GOLDB = '#ffd75e';
 function card(c, x, y, w, h, fill = PAPER) { px(c, x - 1, y - 1, w + 2, h + 2, OUT); px(c, x, y, w, h, fill); px(c, x, y + h - 2, w, 2, shade(fill, -22)); }
 function btn(c, x, y, w, h, label, fn, kind = 'gold') {
   const off = kind === 'off', fill = off ? '#d9cfbd' : kind === 'gold' ? GOLDB : kind === 'red' ? '#e9806a' : '#fffaf0';
@@ -10,6 +10,7 @@ function btn(c, x, y, w, h, label, fn, kind = 'gold') {
   button(x, y, w, h, off ? () => SFX.deny() : fn);
 }
 // a list opened from 账本 gets a way back to it (in the header, where the info line would be)
+const goalTabs = (c, y, cur) => { [['goals', '目标 ' + (W.goal || 0) + '/' + GOALS.length], ['ach', '成就 ' + ACH.filter(a => W.ach[a.id]).length + '/' + ACH.length]].forEach(([k, n], i) => btn(c, 14 + i * 168, y, 164, 24, n, () => { PANEL = { kind: k, bar: 4, from: PANEL.from }; SFX.tap(); }, cur === k ? 'gold' : 'cream')); return y + 30; };   // 目标 and 成就 share one sheet
 const bookBack = y0 => { if (!PANEL || PANEL.from !== 'book') return null; button(220, y0, 100, 26, () => { PANEL = { kind: 'book', bar: 4 }; SFX.tap(); }); return '← 账本'; };
 function sheet(c, title, right, y0 = 292) {   // bottom sheet with a wood header and a close tab
   c.save(); c.globalAlpha = .35; px(c, 0, 34, 360, y0 - 34, '#1c141c'); c.restore();
@@ -58,12 +59,12 @@ function drawShelfPanel(c, P_) {
   });
   y += 124;
   { const L0 = st.layers[sel]; if (L0.p && L0.n) T(c, '换走会丢掉 ' + L0.n + ' 个' + PRODUCTS[L0.p].name + '，亏 $' + Math.max(1, Math.round(L0.n * unitCost(L0.p))), 344, y - 8, '#b8342c', 'right', null); }
-  T(c, '摆什么到' + LAYER_NAME[sel] + '？' + (st.fridge ? '（冷柜放饮品糖水）' : ''), 16, y - 8, SUB, 'left', null);
+  { const L0 = st.layers[sel], warn = L0.p && L0.n; T(c, '摆什么到' + LAYER_NAME[sel] + '？' + (st.fridge && !warn ? '（冷柜放饮品糖水）' : ''), 16, y - 8, SUB, 'left', null); }   // the loss warning takes the right side
   const opts = [...(st.fridge ? FRIDGE_ALL : TABLE_ALL).filter(unlocked), null], per = Math.min(4, opts.length), tw = Math.min(104, Math.floor(332 / per) - 6), th = opts.length > 4 ? 66 : 76;   // wraps in rows of 4
   opts.forEach((p, i) => {
     const x = 14 + (i % per) * (tw + 6), cur = st.layers[sel].p === p, yy = y + 8 + Math.floor(i / per) * (th + 6);
     card(c, x, yy, tw, th, cur ? '#ffe9b0' : '#fffaf0');
-    if (p) { full(c, PRODUCTS[p].img, x + tw / 2, yy + 16); { const nm = PRODUCTS[p].name; T(c, nm.length > 4 ? nm.slice(0, 4) : nm, x + tw / 2 - 6, yy + th - 40, INK, 'center', null, nm.length > 3 ? 12 : FS); } T(c, speedTag(p)[0], x + tw - 8, yy + th - 40, speedTag(p)[1], 'right', null); T(c, '$' + PRODUCTS[p].price + ' 可做' + batchesOf(p), x + tw / 2, yy + th - 22, batchesOf(p) ? SUB : '#b8342c', 'center', null, 12); }
+    if (p) { full(c, PRODUCTS[p].img, x + tw / 2, yy + 16); { const nm = PRODUCTS[p].name; T(c, nm.length > 4 ? nm.slice(0, 4) : nm, x + tw / 2 - 6, yy + th - 40, INK, 'center', null, nm.length > 3 ? 12 : FS); } T(c, speedTag(p)[0], x + tw - 4, yy + 3, speedTag(p)[1], 'right', null, 12); T(c, '$' + PRODUCTS[p].price + ' 可做' + batchesOf(p), x + tw / 2, yy + th - 22, batchesOf(p) ? SUB : '#b8342c', 'center', null, 12); }
     else T(c, '空着', x + tw / 2, yy + th / 2 - 6, SUB, 'center', null);
     button(x, yy, tw, th, () => { assignLayer(id, sel, p); const other = 1 - sel; if (p && !st.layers[other].p) P_.sel = other; });
   });
@@ -174,11 +175,13 @@ function decorSwatch(c, tab, S, x, y) {   // a small sample of a wallpaper / boo
 function drawDecorPanel(c, P_) {   // 装修: better shelves, wallpaper, booth styles
   let y = sheet(c, '装修', money$(W.money) + ' · 美观 ' + beauty() + ' · 舒适 ' + comfort(), 150);
   const tab = P_.tab || 'shelf';
-  [['theme', '整套'], ['shelf', '货架'], ['wall', '墙纸'], ['floor', '地板'], ['booth', '卡座'], ['counter', '前台'], ['expand', '扩建'], ['items', '摆设']].forEach(([k, n], i) => btn(c, 14 + i * 41.5, y - 4, 39, 24, n, () => { P_.tab = k; SFX.tap(); }, tab === k ? 'gold' : 'cream'));
+  const LOOK = ['wall', 'floor', 'counter', 'booth'], look = LOOK.includes(tab);   // 店面 groups the four looks of the room
+  [['theme', '整套'], ['wall', '店面'], ['shelf', '货架'], ['expand', '扩建'], ['items', '摆设']].forEach(([k, n], i) => btn(c, 14 + i * 66.5, y - 4, 63, 24, n, () => { P_.tab = k === 'wall' && look ? tab : k; SFX.tap(); }, (k === 'wall' ? look : tab === k) ? 'gold' : 'cream'));
   { const lv = beautyLv(), nx = BEAUTY_STEPS[lv], b = beauty();   // milestone: what the next level of beauty gives
     T(c, nx ? '美观 ' + b + '/' + nx.at + ' → 下一级「' + nx.name + '」' : '已达「街知巷闻」，满级！', 14, y + 26, nx ? '#b8483c' : '#2f6e56', 'left', null);
     T(c, lv ? '美观奖励 ' + lv + ' 级：' + BEAUTY_STEPS.slice(0, lv).map(s => s.name).join('、') : '美观越高，客人越多', 14, y + 44, lv ? '#2f6e56' : SUB, 'left', null, 12); }
   y += 66;
+  if (look) { [['wall', '墙纸'], ['floor', '地板'], ['counter', '前台'], ['booth', '卡座']].forEach(([k, n], i) => btn(c, 14 + i * 84, y - 6, 80, 22, n, () => { P_.tab = k; SFX.tap(); }, tab === k ? 'gold' : 'cream')); y += 22; }
   if (tab === 'items') {   // 摆设: plants, wall pieces, festive pieces, the fan → air conditioner
     const cat = P_.cat || 'plant', cf = comfort();
     ITEM_CATS.forEach(([k, n], i) => btn(c, 14 + i * 47, y, 45, 20, n, () => { P_.cat = k; SFX.tap(); }, cat === k ? 'gold' : 'cream'));
@@ -346,7 +349,7 @@ function drawGuestPanel(c, P_) {   // one kind of customer: portrait, who they a
   y += 84; if (LAB_FANS[kind]) T(c, LAB_FANS[kind] >= 1.5 ? '很喜欢港式 Lab 的新奇点心' : LAB_FANS[kind] < 1 ? '对新奇点心兴趣不大，偏爱老味道' : '新旧口味都可以', 180, y, SUB, 'center', null);
 }
 function drawGoalsPanel(c) {   // every milestone: done, the one now (with progress and reward), the ones ahead
-  let y = sheet(c, '目标 ' + (W.goal || 0) + '/' + GOALS.length, bookBack(100) || '', 100) - 4; const rh = Math.min(28, Math.floor((BAR_Y - 6 - y) / GOALS.length));
+  let y = sheet(c, '目标 ' + (W.goal || 0) + '/' + GOALS.length, bookBack(70) || '', 70) - 4; y = goalTabs(c, y, 'goals'); const rh = Math.min(28, Math.floor((BAR_Y - 6 - y) / GOALS.length));
   GOALS.forEach((G_, i) => { const yy = y + i * rh, done = i < (W.goal || 0), now = i === (W.goal || 0);
     card(c, 14, yy, 332, rh - 3, done ? '#e6f2ea' : now ? '#fff1c8' : '#f4ecdc');
     T(c, (done ? '✓ ' : '') + G_[0], 22, yy + 3, done ? '#2f6e56' : now ? INK : '#9a8a78', 'left', null, now ? FS : 12);
@@ -418,8 +421,8 @@ function drawPerkPanel(c, P_) {   // Lv3 / Lv5: choose one of two new abilities
 }
 function drawAchPanel(c) {   // achievements: done ones in gold with their day, the rest grey with what to do
   const n = ACH.filter(a => W.ach[a.id]).length;
-  let y = sheet(c, '成就 ' + n + '/' + ACH.length, bookBack(60) || '积分 ' + (W.pts || 0), 60) - 6;
-  const per = 18, pages = Math.ceil(ACH.length / per), pg = Math.min(pages - 1, PANEL.page || 0);   // paged: the list grows with the content
+  let y = sheet(c, '成就 ' + n + '/' + ACH.length, bookBack(60) || '积分 ' + (W.pts || 0), 60) - 6; y = goalTabs(c, y, 'ach');
+  const per = 17, pages = Math.ceil(ACH.length / per), pg = Math.min(pages - 1, PANEL.page || 0);   // paged: the list grows with the content
   ACH.slice(pg * per, pg * per + per).forEach((a, i) => {
     const yy = y + i * 25, done = !!W.ach[a.id];
     px(c, 14, yy, 332, 23, done ? '#fff3d0' : '#f4ecdc'); px(c, 14, yy + 22, 332, 1, '#e3d6bc');

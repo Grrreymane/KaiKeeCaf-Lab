@@ -194,7 +194,7 @@ function speakerBust(who, D) {   // whoever is talking: staff / suppliers (their
   if ((who === 'cust' || !who) && D.ci != null && GUEST_HD[D.ci]) return guestBust(D.ci);   // a customer's scene: they stay on screen through the narration too
   return null;
 }
-const DLG_FS = 18;
+const DLG_FS = 18, TAG_COL = { hero: '#2f6e56', kun: '#6b5a44', lin: '#b0476a', wen: '#3f6e9a', shao: '#a8302a', qing: '#3a7ab0', yao: '#4a5a8a', rong: '#2f5a4a', temp: '#6a5a8a', cust: '#7a5a3a' };   // each speaker's name tag colour
 function drawDialog(c) {
   const D = DIALOG, [who, text] = D.lines[D.i], hero = who === 'hero', id = hero ? 'hero_' + (W.hero || 'f') : who;
   if (D.bg) { drawBackdrop(c, D.bg); c.save(); c.globalAlpha = .12; px(c, 0, 0, 360, 640, '#1c141c'); c.restore(); }   // a story moment with its own picture
@@ -204,7 +204,7 @@ function drawDialog(c) {
       c.drawImage(b, x, y, w, h); if (ex) drawExpr(c, ex, x, y, w, h); } }   // a customer's own scene (gift, keepsake): their bust, like the staff   // bust stands on the window
   px(c, 5, 465, 350, 118, OUT); px(c, 6, 466, 348, 116, '#fffaf0'); px(c, 6, 466, 348, 2, '#ffffff'); px(c, 6, 578, 348, 4, '#ead9b8');
   const name = who ? (hero ? '店主' : who === 'temp' ? HIRE.temp.name : who === 'cust' ? D.cname || guestKind(D.ci) || '客人' : NAMES[who]) : '';
-  if (name) { c.font = sr(16); const w = R(c.measureText(name).width) + 22, x = hero ? 340 - w : 14; px(c, x - 1, 441, w + 2, 26, OUT); px(c, x, 442, w, 24, '#5a3524'); px(c, x, 442, w, 1, '#7a4a32'); TS(c, name, x + w / 2, 445, 16, '#fbe9c0', 'center'); }
+  if (name) { c.font = sr(16); const w = R(c.measureText(name).width) + 22, x = hero ? 340 - w : 14; px(c, x - 1, 441, w + 2, 26, OUT); { const tc = TAG_COL[hero ? 'hero' : who] || '#5a3524'; px(c, x, 442, w, 24, tc); px(c, x, 442, w, 1, shade(tc, 24)); } TS(c, name, x + w / 2, 445, 16, '#fbe9c0', 'center'); }
   const shown = L(text).slice(0, Math.floor(D.t * 40) + 1);   // typewriter: the whole line in the chosen language first, then typed out
   wrapText(c, shown, 318, DLG_FS).slice(0, 4).forEach((l, i) => T(c, l, 21, 478 + i * 26, who ? '#3a2a2e' : '#7a6250', 'left', null, DLG_FS));   // story text a size bigger than the UI: it's what people actually read
   if (Math.sin(gtime * 6) > 0) T(c, '▼', 342, 566, '#b8342c', 'center', null);

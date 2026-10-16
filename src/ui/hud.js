@@ -38,6 +38,7 @@ function computeHint() {
   if (W.tut === 0) return { text: '点亮着的货架，摆上点心', shelf: 'T4', hand: true, tag: 'tut' };
   if (W.tut <= 2) return { text: W.tut === 1 ? '选一样点心摆上去' : '下层也摆上', shelf: 'T4', tag: 'tut' };
   if (PHASE === 'prep') {   // the open button is always there in the morning; the text says what is still worth doing
+    { const G_ = W.today.group; if (G_ && G_.state === 'new' && batchesOf(G_.p) * BATCH + W.stock[G_.p] < G_.n) return { text: '团体订单' + PRODUCTS[G_.p].name + '×' + G_.n + '：材料不够', btn: 1, open: true }; }
     const o = outOf(); if (o) return { text: '缺' + INGR[missingIngr(o)].name + '，' + PRODUCTS[o].name + '做不了', btn: 1, open: true };
     const h = hireable(); if (h) return { text: HIRE[h].name + '来应征 · 去员工', btn: 3, open: true };
     const up = regulars().find(k => lvOf(k) < LV_MAX && (W.pts || 0) >= LV_COST[lvOf(k) + 1]);
@@ -47,6 +48,7 @@ function computeHint() {
     const e = emptyLayer(); if (e && W.tut >= 4) return { text: '还有空层可以摆', shelf: e, open: true };
     return { text: W.tut === 3 ? '坤伯会自己烤，准备好就' : '九点自动开门，也可以提前开', open: true };
   }
+  { const G_ = W.today.group; if (G_ && G_.state === 'open') return { text: '团体订单 ' + PRODUCTS[G_.p].name + ' ' + Math.min(G_.n, W.stock[G_.p]) + '/' + G_.n + ' · 四点前' }; }
   if (dirtOf() > 50) return { text: '店里好污糟 · 客人少咗', act: postsOf('clean').length ? '加多个人打扫 →' : '派人打扫 →', btn: 3, warn: true };
   if (queueLen() >= 4) return { text: '排队好长 · 收银忙不过来', act: !W.up.till && W.money >= UPGRADES.till.lv[0][1] ? '账本换收银机 →' : '', btn: !W.up.till && W.money >= UPGRADES.till.lv[0][1] ? 4 : null, warn: true };
   if (DINERS.some(d => (d.state === 'wait' && d.t > 10) || (d.state === 'order' && d.t > 20))) return { text: '卡座客人等好耐', act: '主打出餐快的 →', btn: 3, warn: true };
@@ -62,7 +64,7 @@ function computeHint() {
 function drawInfoStrip(c) {   // one line under the sign: weather, today so far, comfort, reputation
   const D = W.today; if (!D) return; const st = D.stars.length ? D.stars.reduce((a, b) => a + b, 0) / D.stars.length : 0;
   c.save(); c.globalAlpha = .78; px(c, 0, 35, 290, 15, '#2a1d20'); c.restore();
-  const parts = [[wxOf().name, '#bfe0ff'], ['客 ' + D.served, '#fff4dc'], [money$(D.revenue), C.gold], ['★' + (st ? st.toFixed(1) : '-'), '#ffd75e'], ['舒适 ' + comfort(), '#9fe0b8'], ['清洁 ' + Math.round(100 - dirtOf()) + '%', dirtOf() > 50 ? '#ff9a8a' : '#c8f0d8'], ['名气 ' + W.rep.toFixed(1), '#f6c0a0']]; if (vipMul() !== 1) parts.splice(1, 0, [vipMul() > 1 ? '贵宾 +15%' : '贵宾 -20%', vipMul() > 1 ? '#ffd75e' : '#ff9a8a']);
+  const parts = [[wxOf().name, '#bfe0ff'], ['客 ' + D.served, '#fff4dc'], [money$(D.revenue), C.gold], ['★' + (st ? st.toFixed(1) : '-'), '#ffd75e'], ['清洁 ' + Math.round(100 - dirtOf()) + '%', dirtOf() > 50 ? '#ff9a8a' : '#c8f0d8'], ['名气 ' + W.rep.toFixed(1), '#f6c0a0']]; if (vipMul() !== 1) parts.splice(1, 0, [vipMul() > 1 ? '贵宾 +15%' : '贵宾 -20%', vipMul() > 1 ? '#ffd75e' : '#ff9a8a']);
   c.font = fp(FS); const wOf = L_ => L_.reduce((a, [t]) => a + c.measureText(t).width, 0); while (parts.length > 4 && wOf(parts) + 4 * (parts.length - 1) > 282) parts.pop();   // it must stay left of the 研发 button: tighten the gaps, then drop the last items
   const gap = Math.min(10, (282 - wOf(parts)) / (parts.length - 1)); let x = 6; for (const [t, col] of parts) { T(c, t, R(x), 36, col, 'left', null); x += c.measureText(t).width + gap; }
 }
@@ -199,7 +201,7 @@ function drawEpisodeBar(c) {   // 小剧场 invitation at the top: 看 to watch 
   btn(c, 200, y + 4, 44, 20, '看', () => { SFX.tap(); playEpisode(B.ep); }, 'gold'); btn(c, 248, y + 4, 34, 20, '×', () => { EP_BANNER = null; SFX.tap(); }, 'cream');
 }
 function drawDeskButton(c) {
-  if (!W || PHASE === 'title') return;
+  if (!W || PHASE === 'title' || DIALOG) return;   // hidden under a scene (the 跳过 button sits there)
   const on = canResearch(), n = on ? researchable().length : 0, x = 296, y = 40, t = gtime;
   px(c, x - 1, y - 1, 60, 26, on && n && Math.sin(t * 3) > -.3 ? C.gold : OUT); px(c, x, y, 58, 24, on ? '#ffe08a' : '#8a8078'); px(c, x, y + 21, 58, 3, on ? '#e0b84a' : '#6e665e');
   c.drawImage(ICON.desk, 0, 0, ICON.desk.width, ICON.desk.height, x + 3, y + 3, 18, 14); if (!on) { c.save(); c.globalAlpha = .55; px(c, x + 3, y + 3, 18, 14, '#8a8078'); c.restore(); }

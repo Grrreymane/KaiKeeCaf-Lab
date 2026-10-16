@@ -277,6 +277,8 @@ function render(c) {
   BTNS.length = 0;
   c.save(); c.translate(-camX, 0); drawWorld(c); if (PHASE !== 'title') drawOutdoor(c); c.restore();
   { const wx = wxNow(); if (wx.rain) { c.save(); c.globalAlpha = [0, .025, .05, .09][wx.rain]; c.fillStyle = '#3a4a64'; c.fillRect(0, 0, 720, 1280); c.restore(); } else if (wx.snow) { c.save(); c.globalAlpha = .07; c.fillStyle = '#dce8ff'; c.fillRect(0, 0, 720, 1280); c.restore(); } }
+  { const dusk = isOpenPhase() ? Math.max(0, Math.min(1, (clockOpen - (OPEN_LEN - 36)) / 56)) : PHASE === 'ledger' ? 1 : 0;   // from five o'clock the light goes evening: dimmer, warmer
+    if (dusk > 0) { c.save(); c.globalAlpha = .2 * dusk; c.fillStyle = '#2a1840'; c.fillRect(0, 0, 720, 1280); c.globalCompositeOperation = 'lighter'; c.globalAlpha = .07 * dusk; c.fillStyle = '#ffb050'; c.fillRect(0, 0, 720, 1280); c.restore(); } }
   c.save(); c.scale(K, K); c.imageSmoothingEnabled = false;
   if (PHASE !== 'title') { c.save(); c.translate(-camX / K, 0); drawWorldText(c); c.restore(); }
   drawHUD(c);

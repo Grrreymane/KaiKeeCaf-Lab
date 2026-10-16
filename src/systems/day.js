@@ -54,6 +54,7 @@ function startDay() {
   for (const p of PIDS) if (PRODUCTS[p].day === W.day && W.day > 1 && !W.known[p]) notice((PRODUCTS[p].where === 'table' ? '坤伯想试做' : '水吧想试做') + PRODUCTS[p].name + ' → 研发');
   { const L_ = SEASON_WX[seasonIdx(W.day)]; W.today.wx = W.day === 1 ? 'sun' : pick(L_);   // today's weather and the opening forecast
     W.today.fc = forecast(); notice('今日' + wxOf().name + ' · 约 ' + W.today.fc.n + ' 位客 · 好卖' + PRODUCTS[W.today.fc.top[0]].name); }
+  newGroupOrder();
   morningStory();
   newGuests();   // kinds of customer coming for the first time: a short scene for one of them (guests.js)
   morningSpecials();   // staff 特技: plan, research, restock, shelves
@@ -72,7 +73,7 @@ function syncStaff() {   // after hiring / changing posts: waiter + takeaway win
 }
 const PREP_LEN = 90; let prepT = 0;   // the morning: 07:00 -> 09:00 in 90 s of shop time (panels pause it); at 9 the shop opens by itself
 function stepPrep(dt) { if (MODE !== 'play' || STORY_Q.length || (W.tut !== undefined && W.tut < 4) || tourOn()) return; prepT += dt; if (prepT >= PREP_LEN) { notice('九点了，自动开门营业'); openShop(); } }
-function openShop() { if (PHASE !== 'prep') return; PHASE = 'open'; clockOpen = 0; spawnT = 1.5; takeT = 5; SFX.open(); if (W.tut === 3) W.tut = 4; }
+function openShop() { if (PHASE !== 'prep') return; PHASE = 'open'; { const G_ = W.today.group; if (G_ && G_.state === 'new') { G_.state = 'open'; for (let i = 0; i < G_.n; i++) ORDERS.push({ d: null, p: G_.p, grp: true }); } } clockOpen = 0; spawnT = 1.5; takeT = 5; SFX.open(); if (W.tut === 3) W.tut = 4; }   // a group order goes to the kitchen at opening
 function stepDay(dt) {
   if (PHASE === 'open') {
     clockOpen += dt;
@@ -83,6 +84,7 @@ function stepDay(dt) {
       const want = PIDS.filter(unlocked).slice(0, 3);
       spawnCustomer({ ci: 6, wants: want, vip: true }); spawnCustomer({ ci: 7, wants: want.slice().reverse(), vip: false });
     }
+    stepGroupOrder();
     if (clockOpen >= OPEN_LEN) { PHASE = 'closing'; SFX.close(); }
   } else if (PHASE === 'closing') {
     clockOpen += dt;
@@ -128,13 +130,29 @@ function endDay() {
 function adviceFor(k) {
   if (!k) return '今天顺顺利利，继续保持！';
   if (k === 'long' || k === 'slow') return W.up.till ? '排队还是长：多摆货，客人拿完就走' : '收银排长队：账本里换新收银机';
-  if (k === 'serve') return '卡座等太久：招待忙不过来，少点种类或加快出餐';
+  if (k === 'serve') return postsOf('serve').length < 2 ? '卡座等太久：员工里多派一个人做「招待」' : '卡座等太久：招待忙不过来，少点种类或加快出餐';
   if (k === 'pricey') return '有客人嫌贵买唔起：摆多啲平价货（蛋挞、鸡蛋仔），或者用「亲民」价钱';
   if (k === 'dirty') return '客人嫌店污糟：员工里派人「打扫」，或者买垃圾桶、地毯';
   const [kind, p] = k.split(':'), n = PRODUCTS[p] ? PRODUCTS[p].name : '';
   if (kind === 'none') return '有客人想要' + n + '：摆上货架就有人买';
   if (kind === 'out') return n + '常卖完：早点进货，或者设成主打';
   return '';
+}
+// 团体订单 (from day 6, some mornings): an office / school / club wants a pile of one item by 4 pm — the kitchen makes them
+// alongside everything else; picked up as soon as they're all ready. A good earner later on, and a reason to stock up.
+const GROUP_WHO = ['街口写字楼', '对面幼稚园', '街坊会', '银行分行', '诊所姑娘们', '地盘师傅'], GROUP_BY = 126;   // 126 s after opening = 16:00
+function newGroupOrder() {
+  if (W.day < 6 || rng() > .45) return;
+  const L_ = PIDS.filter(p => unlocked(p) && W.plan[p] !== 'off' && !PRODUCTS[p].lab && (batchesOf(p) > 0 || W.stock[p] > 0)); if (!L_.length) return;
+  const p = pick(L_), n = Math.min(18, BATCH + 2 * Math.floor(W.day / 6)); W.today.group = { p, n, who: pick(GROUP_WHO), state: 'new' };
+  notice('团体订单：' + W.today.group.who + '要 ' + n + ' 个' + PRODUCTS[p].name + '，四点前');
+}
+function stepGroupOrder() {
+  const G_ = W.today.group; if (!G_ || G_.state !== 'open') return;
+  const drop = () => { for (let i = ORDERS.length - 1; i >= 0; i--) if (ORDERS[i].grp) ORDERS.splice(i, 1); };
+  if (W.stock[G_.p] >= G_.n) { W.stock[G_.p] -= G_.n; drop(); const amt = Math.round(G_.n * priceOf(G_.p) * 1.3); G_.state = 'done';
+    const [x, y] = P1(259, 330, 40); earn(amt, x, y, '团体订单 +$' + amt); W.rep = Math.min(5, W.rep + .05); SFX.ding(); notice(G_.who + '收货：+$' + amt + '，名气 +0.05'); return; }
+  if (clockOpen > GROUP_BY) { drop(); G_.state = 'fail'; W.rep = Math.max(1, W.rep - .05); notice(G_.who + '等不及，订单取消（名气 -0.05）'); }
 }
 function nextDay() { startDay(); saveGame(); }
 const isOpenPhase = () => PHASE === 'open' || PHASE === 'closing';

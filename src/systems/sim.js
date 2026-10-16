@@ -206,7 +206,7 @@ function spawnCustomer(force) {
   CUST.push(c); SFX.bell(); return c;
 }
 function spawnDiner(st) {
-  const ci = freshLook(), p = seatPos(st), avail = PIDS.filter(q => unlocked(q) && W.plan[q] !== 'off');
+  const ci = freshLook(), p = seatPos(st), avail = PIDS.filter(q => unlocked(q) && W.plan[q] !== 'off' && (W.stock[q] - ordered(q) > 0 || batchesOf(q) > 0));   // only what the kitchen has or can still make
   const drinks = avail.filter(q => PRODUCTS[q].where === 'fridge'), food = avail.filter(q => PRODUCTS[q].where === 'table');
   const [im, bud] = wealthOf(ci), ok = q => priceOf(q) <= im, dr = drinks.filter(ok), fd = food.filter(ok), wants = []; let spend = SEAT_FEE;   // a sit-down meal within their budget (the seat fee counts)
   for (const L of [dr, fd, rng() < .4 ? fd : []]) if (L.length) { const q = weighted(L); if (spend + priceOf(q) <= bud) { wants.push(q); spend += priceOf(q); } }
@@ -348,7 +348,7 @@ function stepDiners(dt) {
       if (d.t > 6 && !d.asked) { d.asked = true; say(d, '唔该，落单！', true); }
       if (d.t > 26 * patience() * (d.tag === 'hurry' ? .6 : 1)) leaveDiner(d, d.tag === 'hurry' ? '赶时间，唔等喇' : '等好耐都冇人招呼', 1);
     } else if (d.state === 'order') {
-      if (d.t > 40 * patience() * (d.tag === 'hurry' ? .6 : 1)) { for (const p of d.wants) { const i = ORDERS.findIndex(o => o.d === d && o.p === p); if (i >= 0) ORDERS.splice(i, 1); } leaveDiner(d, '等唔到嘢食…', 1); }
+      if (d.t > 40 * patience() * (d.tag === 'hurry' ? .6 : 1)) { for (const p of d.wants) { const i = ORDERS.findIndex(o => o.d === d && o.p === p); if (i >= 0) ORDERS.splice(i, 1); } const miss = d.wants.find(p => W.stock[p] < d.wants.filter(q => q === p).length && !batchesOf(p)); leaveDiner(d, '等唔到嘢食…', 1, miss ? 'out:' + miss : 'serve'); }
     } else if (d.state === 'eat') {
       if (d.t > d.eatT) {
         let amt = 0; for (const p of d.wants) { amt += priceOf(p); W.today.sold[p]++; }
@@ -366,8 +366,8 @@ function stepDiners(dt) {
   }
   DINERS = DINERS.filter(d => !d.gone);
 }
-function leaveDiner(d, line, stars) {
-  if (line) { say(d, line, true); gripe('serve'); W.today.stars.push(stars); if (d.vip) vipDone(d, false); }
+function leaveDiner(d, line, stars, why = 'serve') {
+  if (line) { say(d, line, true); gripe(why); W.today.stars.push(stars); if (d.vip) vipDone(d, false); }
   if (d.st.who === d) d.st.who = null;
   const p = seatPos(d.st), nav = navRoute([p.X - 7, p.y], [700, 338]); d.state = 'out'; d.route = nav ? [[p.x, p.y]].concat(nav) : p.X > 318 ? [[p.x, p.y], [p.X - 7, p.y], [p.X - 7, AISLE_Y], [259, AISLE_Y], [259, 338], [700, 338]] : [[p.x, p.y], [259, p.y], [259, 338], [700, 338]]; d.d = 0; d.L = polyLen(d.route);
 }
