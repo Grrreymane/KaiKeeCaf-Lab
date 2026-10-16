@@ -4639,7 +4639,7 @@ const RONG_TALK = [
 function rongVisit() {   // once a morning at most; walks through the talks in order so they don't repeat
   WALKERS.push({ ch: STAFF_HD.rong, y: 338, dir: -1, v: 20, x: 720, dist: 0, temp: true });   // pushing his cart past the door
   W.rongN = W.rongN || 0; let talk = RONG_TALK[W.rongN % RONG_TALK.length]; W.rongN++;
-  if (!(W.eps || {}).why3 && talk.some(([, t]) => t.includes('外公'))) { talk = RONG_TALK[W.rongN % RONG_TALK.length]; W.rongN++; }   // grandpa stays a secret until the owner tells 莲姨 (为什么开冰室 3) W.today.rongSale = true;
+  if (!(W.eps || {}).why3 && talk.some(([, t]) => t.includes('外公'))) { talk = RONG_TALK[W.rongN % RONG_TALK.length]; W.rongN++; } W.today.rongSale = true;   // grandpa stays a secret until the owner tells 莲姨 (为什么开冰室 3)
   STORY_Q.push({ key: 'rong', lines: [[null, '荣叔推着货车经过门口。']].concat(talk).concat([[null, '今天荣叔材料店进货八折']]) });
 }
 
