@@ -112,30 +112,30 @@ function drawLabPanel(c, P_) {
   const r = P_.r; let y = sheet(c, '港式 Lab · 年轻人至爱', '每日试做一款', 104) - 2;
   const row = (label, set, key) => {   // each line of choices is stretched to the full width (no ragged gaps), a thin rule between groups
     const ks = Object.keys(set), lines = Math.ceil(ks.length / 4), per = Math.ceil(ks.length / lines);
-    T(c, label, 14, y + 6, SUB, 'left', null);
+    T(c, label, 14, y + 8, SUB, 'left', null);
     for (let L = 0; L < lines; L++) { const part = ks.slice(L * per, L * per + per), w = (292 - 3 * (part.length - 1)) / part.length;
       part.forEach((k, i) => { const x = R(54 + i * (w + 3)), on = r[key] === k, bad = key === 'fill' && set[k].bad && set[k].bad.includes(r.base), has = labHas(key, k);
-        btn(c, x, y, R(54 + (i + 1) * (w + 3) - 3) - x, 24, set[k].name, () => { if (!has) { SFX.deny(); NOTICE = { text: '先研发「' + PRODUCTS[LAB_NEED[key][k]].name + '」才能用' + set[k].name, t: 0 }; return; } r[key] = k; P_.sure = false; if (key === 'base' || key === 'flavor') P_.name = null; SFX.tap(); }, on ? 'gold' : bad || !has ? 'off' : 'cream'); });
-      y += 27; }
+        btn(c, x, y, R(54 + (i + 1) * (w + 3) - 3) - x, 30, set[k].name, () => { if (!has) { SFX.deny(); NOTICE = { text: '先研发「' + PRODUCTS[LAB_NEED[key][k]].name + '」才能用' + set[k].name, t: 0 }; return; } r[key] = k; P_.sure = false; if (key === 'base' || key === 'flavor') P_.name = null; SFX.tap(); }, on ? 'gold' : bad || !has ? 'off' : 'cream'); });
+      y += 34; }
     y += 3; px(c, 14, y - 3, 332, 1, '#e3d6bc');
   };
   row('基底', LAB_BASES, 'base'); row('风味', LAB_FLAVORS, 'flavor'); row('配料', LAB_FILLS, 'fill'); row('装饰', LAB_DECOR, 'decor'); y += 4;
   const rate = labRate(r); P_.name = P_.name || labName(r, false); r.name = P_.name;
-  card(c, 14, y, 332, 112, '#fffaf0');
+  card(c, 14, y, 332, 116, '#fffaf0');
   { const im = FOOD_L.labImg(r.base, LAB_FLAVORS[r.flavor].col, LAB_FILLS[r.fill].col || null, r.decor); c.drawImage(im, 18, y + 18, im.width * 2, im.height * 2); }
   TS(c, r.name, 92, y + 6, FS_H, INK); T(c, '★'.repeat(rate.stars) + '☆'.repeat(5 - rate.stars), 338, y + 8, '#c99428', 'right', null);
   T(c, '$' + rate.price + ' · ' + (rate.bake <= 10 ? '快' : rate.bake <= 14 ? '中' : '慢') + ' · ' + (LAB_BASES[r.base].where === 'table' ? '坤伯烤' : '水吧做'), 92, y + 28, '#2f6e56', 'left', null);
-  rate.why.slice(0, 4).forEach((w, i) => T(c, '· ' + w, 92, y + 46 + i * 15, /不|普普通通|慢/.test(w) ? '#b8342c' : SUB, 'left', null));
-  y += 120;
-  btn(c, 14, y, 96, 24, '传统名', () => { P_.name = labName(r, false); SFX.tap(); }, 'cream');
-  btn(c, 114, y, 96, 24, '创意名', () => { P_.name = labName(r, true); SFX.tap(); }, 'cream');
-  btn(c, 214, y, 132, 24, '自己改名', () => { let n = null; try { n = window.prompt('改个名字（最多 8 个字）', P_.name); } catch (e) {} if (n && n.trim()) P_.name = n.trim().slice(0, 8); }, 'cream');
-  y += 30;
-  T(c, '保存到', 14, y + 6, SUB, 'left', null);
+  rate.why.slice(0, 4).forEach((w, i) => T(c, '· ' + w, 92, y + 46 + i * 16, /不|普普通通|慢/.test(w) ? '#b8342c' : SUB, 'left', null));
+  y += 124;
+  btn(c, 14, y, 96, BTN_H, '传统名', () => { P_.name = labName(r, false); SFX.tap(); }, 'cream');
+  btn(c, 114, y, 96, BTN_H, '创意名', () => { P_.name = labName(r, true); SFX.tap(); }, 'cream');
+  btn(c, 214, y, 132, BTN_H, '自己改名', () => { let n = null; try { n = window.prompt('改个名字（最多 8 个字）', P_.name); } catch (e) {} if (n && n.trim()) P_.name = n.trim().slice(0, 8); }, 'cream');
+  y += 40;
+  T(c, '保存到', 14, y + 12, SUB, 'left', null);
   LAB_SLOTS.forEach((id, i) => { const x = 58 + i * 58, has = (W.lab || {})[id], on = (P_.slot || LAB_SLOTS.find(q => !(W.lab || {})[q]) || LAB_SLOTS[0]) === id;
-    card(c, x, y, 54, 40, on ? '#ffe9b0' : '#fffaf0'); if (has) { half(c, PRODUCTS[id].img, x + 27, y + 12); T(c, PRODUCTS[id].name.slice(0, 4), x + 27, y + 23, INK, 'center', null); } else T(c, '空位', x + 27, y + 13, '#b0a08c', 'center', null);
-    button(x, y, 54, 40, () => { P_.slot = id; SFX.tap(); }); });
-  y += 50;
+    card(c, x, y, 54, 44, on ? '#ffe9b0' : '#fffaf0'); if (has) { half(c, PRODUCTS[id].img, x + 27, y + 12); T(c, PRODUCTS[id].name.slice(0, 4), x + 27, y + 23, INK, 'center', null); } else T(c, '空位', x + 27, y + 13, '#b0a08c', 'center', null);
+    button(x, y, 54, 44, () => { P_.slot = id; SFX.tap(); }); });
+  y += 54;
   const done = W.labDay === W.day;
   btn(c, 70, y, 220, 36, done ? '今天试做过了' : '试做 →', () => labTry(P_), done ? 'off' : 'gold');
   if (W.labGuide && !done) { const ay = y + 18, tx = 64 - R(Math.abs(Math.sin(rtime * 4)) * 5); px(c, tx - 24, ay - 4, 14, 8, OUT); px(c, tx - 23, ay - 3, 13, 6, C.gold); for (let k = 0; k < 8; k++) { px(c, tx - 10 + k, ay - 8 + k, 1, 16 - 2 * k, C.gold); px(c, tx - 10 + k, ay - 9 + k, 1, 1, OUT); px(c, tx - 10 + k, ay + 8 - k, 1, 1, OUT); }   // an arrow from the left, pointing at 试做

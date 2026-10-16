@@ -1,6 +1,8 @@
 // ==== hud: top sign board (money, alarm clock, tear-off calendar, pause / sound), receipt hint, bottom bar
-const BAR_Y = 588, BTNS = [];
-function button(x, y, w, h, fn, id) { BTNS.push({ x, y, w, h, fn, id }); }
+const BAR_Y = 578, BTNS = [];   // the bottom menu is 62 tall
+function button(x, y, w, h, fn, id) {   // inside a scrolling sheet: shift by the scroll and keep only the visible part
+  if (typeof SCR !== 'undefined' && SCR) { const y1 = y - SCR.dy, a = Math.max(y1, SCR.top), b = Math.min(y1 + h, SCR.bot); if (b <= a) return; BTNS.push({ x, y: a, w, h: b - a, fn, id }); return; }
+  BTNS.push({ x, y, w, h, fn, id }); }
 const ICON = {
   decor: paint(26, 20, G => { G.rect(4, 2, 16, 7, '#e9806a'); G.rect(4, 2, 16, 2, '#f6a890'); G.rect(20, 4, 2, 3, '#8a8f93'); G.rect(21, 6, 2, 6, '#8a8f93'); G.rect(12, 11, 11, 2, '#8a8f93'); G.rect(11, 11, 3, 8, '#7a4a2e'); G.rect(5, 9, 3, 3, '#e9806a'); }),   // paint roller
   desk: paint(26, 20, G => { G.rect(3, 4, 16, 14, '#fff4dc'); G.rect(3, 4, 16, 3, '#b8483c'); for (let y = 9; y < 16; y += 3) G.rect(5, y, 11, 1, '#c9b9a0'); G.ell(19, 13, 5, 4, '#ffd21f'); G.ell(19, 12, 3.4, 2.2, '#fff6b8'); G.rect(21, 2, 2, 10, '#8a512a'); G.rect(21, 2, 2, 2, '#e5412f'); }),
@@ -122,10 +124,10 @@ function drawHUD(c) {
   px(c, 0, BAR_Y, 360, 640 - BAR_Y, '#2f4a3e'); px(c, 0, BAR_Y, 360, 2, '#4f7a64'); px(c, 0, BAR_Y + 2, 360, 1, '#1e3028');
   [0, 1, 3, 6, 4, 5].forEach((i, j) => {   // 研发 (2) is not on the bar (its own button, top right); 6 = 装修 shop
     const x = 5 + j * 59, on = (i === 5 && MODE === 'edit') || (PANEL && PANEL.bar === i), glow = H && H.btn === i && MODE === 'play';
-    px(c, x - 1, BAR_Y + 6, 57, 44, glow && Math.sin(t * 3) > -.2 ? C.gold : OUT); px(c, x, BAR_Y + 7, 55, 42, on ? '#ffe08a' : '#f3e2bf'); px(c, x, BAR_Y + 7, 55, 1, '#fff6dc'); px(c, x, BAR_Y + 46, 55, 3, on ? '#e0b84a' : '#d9c49a');
-    c.drawImage(ICON[BTN_ICONS[i]], x + 15, BAR_Y + 9);
-    TC(c, i === 5 && MODE === 'edit' ? '完成' : BTN_NAMES[i], x + 27.5, BAR_Y + 38, '#5a3f2e');
-    button(x, BAR_Y + 6, 55, 44, () => clickBar(i));
+    px(c, x - 1, BAR_Y + 6, 57, 52, glow && Math.sin(t * 3) > -.2 ? C.gold : OUT); px(c, x, BAR_Y + 7, 55, 50, on ? '#ffe08a' : '#f3e2bf'); px(c, x, BAR_Y + 7, 55, 1, '#fff6dc'); px(c, x, BAR_Y + 54, 55, 3, on ? '#e0b84a' : '#d9c49a');
+    { const im = ICON[BTN_ICONS[i]]; c.drawImage(im, R(x + 27.5 - im.width * .65), BAR_Y + 9, R(im.width * 1.3), R(im.height * 1.3)); }   // icons a size up
+    TC(c, i === 5 && MODE === 'edit' ? '完成' : BTN_NAMES[i], x + 27.5, BAR_Y + 46, '#5a3f2e');
+    button(x, BAR_Y + 6, 55, 52, () => clickBar(i));
   });
   // something to the right: the bake room (drag over)
   if (camX > 20 && MODE === 'play' && !PANEL) { const a = .6 + .4 * Math.sin(t * 4); c.save(); c.globalAlpha = a; px(c, 4, 300, 20, 40, '#3a2418'); c.restore(); T(c, '<', 14, 312, C.gold, 'center'); }
@@ -143,7 +145,7 @@ function drawHUD(c) {
 // TOUR_DAYS[day] = steps; 'dirt' runs once the first morning the shop is noticeably dirty. Tap to go on, 跳过 ends that day's set.
 const wrect = o => o ? [(o.sx - camX) / K + 4, o.sy / K + 4, o.cv.width / K - 8, o.cv.height / K - 10] : null;
 const wbox = (x0, y0, x1, y1, z) => { const pts = [[x0, y0, 0], [x1, y0, 0], [x1, y1, 0], [x0, y1, 0], [x0, y0, z], [x1, y0, z], [x1, y1, z], [x0, y1, z]].map(q => P(...q)), xs = pts.map(q => q[0]), ys = pts.map(q => q[1]); const a = (Math.min(...xs) - camX) / K, b = Math.min(...ys) / K; return [a - 2, b - 2, (Math.max(...xs) - Math.min(...xs)) / K + 4, (Math.max(...ys) - Math.min(...ys)) / K + 4]; };   // a box in the shop -> screen rect
-const barRect = j => [5 + j * 59, BAR_Y + 6, 55, 44];   // bottom bar: 0 摆货 1 进货 2 员工 3 装修 4 账本 5 摆放
+const barRect = j => [5 + j * 59, BAR_Y + 6, 55, 52];   // bottom bar: 0 摆货 1 进货 2 员工 3 装修 4 账本 5 摆放
 const TOUR_DAYS = {   // one feature at a time, a line each, spread over the first two weeks (plus a few that wait for their moment)
   1: [{ text: '欢迎来到街记冰室！' },
       { text: '点亮着的货架，摆上点心', cam: [211, 160], rect: () => wrect(SHELF.T4 && SHELF.T4.obj) },
@@ -185,7 +187,7 @@ function drawTour(c) {
   if (r) { const [x, y, w, h] = r; c.fillRect(0, 0, 360, y); c.fillRect(0, y + h, 360, 640 - y - h); c.fillRect(0, y, x, h); c.fillRect(x + w, y, 360 - x - w, h); } else c.fillRect(0, 0, 360, 640);
   c.restore();
   const txt = L(st.text), cut = txt.length > 22 ? Math.max(txt.lastIndexOf('：', 22), txt.lastIndexOf('，', 22)) + 1 || 22 : 0, lines = cut ? [txt.slice(0, cut), txt.slice(cut)] : [txt];   // up to two lines
-  const act = st.go && r && (!st.must || st.must()), cardH = 44 + lines.length * 16 + (act ? 0 : 30);   // the skip buttons sit inside the card
+  const act = st.go && r && (!st.must || st.must()), cardH = 44 + lines.length * 16 + (act ? 0 : 34);   // the skip buttons sit inside the card
   button(0, 0, 360, 640, act ? () => SFX.deny() : next); if (act) button(r[0] - 2, r[1] - 2, r[2] + 4, r[3] + 4, () => { if (i + 1 >= steps.length) done(); else W.tourStep = i + 1; st.go(); });
   let cy = 280;
   if (r) {
@@ -199,16 +201,16 @@ function drawTour(c) {
   card(c, 20, cy, 320, cardH, PAPER); lines.forEach((l, k) => T(c, l, 180, cy + 10 + k * 16, INK, 'center', null));
   T(c, (isNaN(key) ? '提示' : '第 ' + key + ' 天') + ' · ' + (i + 1) + '/' + steps.length + (act ? ' · 点亮着的按钮' : ' · 点任意地方继续'), 180, cy + 18 + lines.length * 16, SUB, 'center', null, FS_S);
   if (act) return;   // must-do: no skipping
-  const by = cy + cardH - 30;
-  btn(c, 192, by, 64, 24, '跳过', () => { SFX.tap(); done(); }, 'cream');
-  btn(c, 262, by, 72, 24, '不再提示', () => { SFX.tap(); W.tourOff = true; saveGame(); }, 'cream');
+  const by = cy + cardH - 34;
+  btn(c, 192, by, 64, 28, '跳过', () => { SFX.tap(); done(); }, 'cream');
+  btn(c, 262, by, 72, 28, '不再提示', () => { SFX.tap(); W.tourOff = true; saveGame(); }, 'cream');
 }
 function drawEpisodeBar(c) {   // 小剧场 invitation at the top: 看 to watch (the shop pauses while reading), or let it pass
   const B = EP_BANNER; if (!B || PANEL || DIALOG || DESK) return;
   const y = 54, pulse = Math.sin(rtime * 4) > -.2;
   px(c, 8, y - 1, 280, 30, pulse ? C.gold : OUT); px(c, 9, y, 278, 28, '#fff3d6');
   T(c, B.ep.arc ? '小剧场 · ' + B.ep.arc : '小剧场 · 店里好像有事发生', 18, y + 8, '#b8483c', 'left', null);
-  btn(c, 200, y + 4, 44, 20, '看', () => { SFX.tap(); playEpisode(B.ep); }, 'gold'); btn(c, 248, y + 4, 34, 20, '×', () => { EP_BANNER = null; SFX.tap(); }, 'cream');
+  btn(c, 196, y + 2, 48, 26, '看', () => { SFX.tap(); playEpisode(B.ep); }, 'gold'); btn(c, 248, y + 2, 36, 26, '×', () => { EP_BANNER = null; SFX.tap(); }, 'cream');
 }
 function drawDeskButton(c) {
   if (!W || PHASE === 'title' || DIALOG) return;   // hidden under a scene (the 跳过 button sits there)

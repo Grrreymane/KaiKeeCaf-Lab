@@ -15,7 +15,7 @@ render(CTX); { const t = BTNS.filter(b => b.w === 104 && b.h === 76)[1]; tap(t.x
 tap(337, 249); ok(!PANEL, 'close tab closes the sheet');
 frame(30 * 12); ok(W.shelves.T4.layers[0].n > 0 || W.stock.tart > 0 || JOB.kun, 'Kun baked / is baking');
 tap(10 + 76, 588 + 20); ok(PANEL && PANEL.kind === 'shop', 'bottom bar: 进货 opens the shop');
-const m0 = W.money, f0 = W.ing.flour; render(CTX); const b1 = BTNS.filter(b => b.w === 52 && b.y > 100)[0]; tap(b1.x + 5, b1.y + 5); ok(W.money === m0 - bagCost('flour') && W.ing.flour === f0 + BAG_N.flour, 'buy a bag of flour');
+const m0 = W.money, f0 = W.ing.flour; render(CTX); const b1 = BTNS.filter(b => b.w === 54 && b.y > 100)[0]; tap(b1.x + 5, b1.y + 5); ok(W.money === m0 - bagCost('flour') && W.ing.flour === f0 + BAG_N.flour, 'buy a bag of flour');
 render(CTX); const rs = BTNS.find(b => b.w === 196); const m1 = W.money; tap(rs.x + 5, rs.y + 5); ok(W.money < m1 && batchesOf('tart') >= 3, 'restock button tops up for the plan');
 PANEL = null;
 tap(300, 560); ok(PHASE === 'open', 'receipt button opens the shop');

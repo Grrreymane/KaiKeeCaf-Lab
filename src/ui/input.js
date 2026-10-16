@@ -59,7 +59,7 @@ function setupInput(cv) {
   cv.addEventListener('contextmenu', e => e.preventDefault());
   cv.addEventListener('pointerdown', e => {
     const [sx, sy] = pos(e); try { cv.setPointerCapture(e.pointerId); } catch (er) {}
-    down = { x: sx, y: sy, cam: camX, moved: false };
+    down = { x: sx, y: sy, cam: camX, moved: false, sy0: PANEL ? PANEL.sy || 0 : 0, scroll: !!(PANEL && PANEL.smax > 0 && sy / K > (PANEL.stop || 0) && sy / K < BAR_Y) };   // a drag inside a long sheet scrolls it
     if (DESK) deskDown(sx / K, sy / K);
     if (MODE === 'edit' && !PANEL && sy < BAR_Y * K && sy > 34 * K) {
       const ci = wallCellAt(sx + camX, sy), wid = ci >= 0 && WALL_IDS.find(k => wallSlotOf(k) === ci && wallOwned(k));
@@ -77,6 +77,7 @@ function setupInput(cv) {
       if (dx !== pk.dx || dy !== pk.dy) { moveGroup(pk.g, dx - pk.dx, dy - pk.dy); pk.dx = dx; pk.dy = dy; const why = canPlace(pk.g); EDIT.bad = !!why; EDIT.msg = why || '可以放这里'; }
       return;
     }
+    if (down.moved && down.scroll && PANEL) { PANEL.sy = clamp(down.sy0 - (sy - down.y) / K, 0, PANEL.smax || 0); return; }
     if (down.moved && !PANEL && !DESK && !DIALOG && PHASE !== 'title' && PHASE !== 'ledger') camX = clamp(down.cam - (sx - down.x), 0, CAM_MAX);
   });
   const up = e => {
@@ -93,7 +94,7 @@ function setupInput(cv) {
     tapAt(sx / K, sy / K, sx + camX, sy);
   };
   cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', () => { down = null; });
-  cv.addEventListener('wheel', e => { if (!PANEL) camX = clamp(camX + (e.deltaX || e.deltaY), 0, CAM_MAX); e.preventDefault(); }, { passive: false });
+  cv.addEventListener('wheel', e => { if (!PANEL) camX = clamp(camX + (e.deltaX || e.deltaY), 0, CAM_MAX); else if (PANEL.smax) PANEL.sy = clamp((PANEL.sy || 0) + e.deltaY * .5, 0, PANEL.smax); e.preventDefault(); }, { passive: false });
 }
 // a tap at UI point (ux, uy) / world-canvas point (wx, wy)
 function tapAt(ux, uy, wx, wy) {
