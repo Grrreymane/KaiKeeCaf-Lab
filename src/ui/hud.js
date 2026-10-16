@@ -94,7 +94,7 @@ function drawHUD(c) {
   px(c, 306, 12, 3, 10, '#5a3a28'); px(c, 311, 12, 3, 10, '#5a3a28');
   c.fillStyle = '#5a3a28'; c.fillRect(331, 14, 3, 6); c.beginPath(); c.moveTo(334, 14); c.lineTo(339, 10); c.lineTo(339, 24); c.lineTo(334, 20); c.fill();
   if (MUTED) { px(c, 341, 12, 1, 10, '#b8342c'); for (let k = 0; k < 8; k++) px(c, 330 + k, 11 + k, 1, 1, '#b8342c'); }
-  { const sp = W ? W.speed || 1 : 1; px(c, 265, 7, 30, 20, OUT); px(c, 266, 8, 28, 18, sp > 1 ? '#ffd75e' : '#f3e2bf'); px(c, 266, 24, 28, 2, sp > 1 ? '#e0a83a' : '#d9c49a'); T(c, '×' + sp, 280, 11, '#5a3a28', 'center', null);
+  { const sp = W ? W.speed || 1 : 1; px(c, 265, 7, 30, 20, OUT); px(c, 266, 8, 28, 18, sp > 1 ? '#ffd75e' : '#f3e2bf'); px(c, 266, 24, 28, 2, sp > 1 ? '#e0a83a' : '#d9c49a'); TC(c, '×' + sp, 280, 16, '#5a3a28');
     button(262, 4, 34, 28, () => { if (!W) return; W.speed = (W.speed || 1) % 3 + 1; SFX.tap(); }); }
   button(296, 4, 28, 28, () => openPanel({ kind: 'pause' })); button(324, 4, 28, 28, () => { setMuted(!MUTED); SFX.tap(); });
   if (PHASE === 'title' || !W) return;
@@ -144,28 +144,36 @@ function drawHUD(c) {
 const wrect = o => o ? [(o.sx - camX) / K + 4, o.sy / K + 4, o.cv.width / K - 8, o.cv.height / K - 10] : null;
 const wbox = (x0, y0, x1, y1, z) => { const pts = [[x0, y0, 0], [x1, y0, 0], [x1, y1, 0], [x0, y1, 0], [x0, y0, z], [x1, y0, z], [x1, y1, z], [x0, y1, z]].map(q => P(...q)), xs = pts.map(q => q[0]), ys = pts.map(q => q[1]); const a = (Math.min(...xs) - camX) / K, b = Math.min(...ys) / K; return [a - 2, b - 2, (Math.max(...xs) - Math.min(...xs)) / K + 4, (Math.max(...ys) - Math.min(...ys)) / K + 4]; };   // a box in the shop -> screen rect
 const barRect = j => [5 + j * 59, BAR_Y + 6, 55, 44];   // bottom bar: 0 摆货 1 进货 2 员工 3 装修 4 账本 5 摆放
-const TOUR_DAYS = {
-  1: [{ text: '欢迎来到街记冰室！跟着箭头，看看怎么开始。' },
-      { text: '① 点亮着的货架，摆上点心', cam: [211, 160], rect: () => wrect(SHELF.T4 && SHELF.T4.obj) },
-      { text: '② 摆好了，就按「开门营业」', rect: () => [250, 544, 100, 32] }],
-  2: [{ text: '原料不够做了，就来「进货」', rect: () => barRect(1) },
-      { text: '有人来应征：「员工」里请人、派岗位', rect: () => barRect(2) }],
-  3: [{ text: '来研发一款新品！点亮着的「研发」（每天一款，收工后或开门前）', rect: () => [296, 40, 58, 24], must: () => canResearch() && researchable().length > 0, go: () => clickBar(2) },
-      { text: '「账本」：看收支，买升级（收银机、烤炉…）', rect: () => barRect(4) },
-      { text: '客人旁的小牌：红闹钟＝赶时间，先招呼；咖啡杯＝悠闲，坐得久' }],
-  4: [{ text: '「员工」→ 今日安排：主打、价钱、备货、促销', rect: () => barRect(2) },
-      { text: '卡座：派人做「招待」，客人坐下吃，有茶位和小费', cam: [290, 180], rect: () => { const B = BOOTHS[0], g = B.table.grp; return wbox(B.X + g.dx, B.y0 + g.dy, B.X + g.dx + 46, B.y0 + g.dy + 40, 30); } }],
-  5: [{ text: '「装修」：摆设、墙纸、卡座，舒适和美观越高客人越多', rect: () => barRect(3) },
-      { text: '「摆放」：拖动家具，换个位置或转 90°', rect: () => barRect(5) }],
-  6: [{ text: '外卖窗：派人站窗口，街上的路人也会买', cam: [192, 307], rect: () => wbox(162, 300, 222, 314, 46) }],
-  8: [{ text: '前台玻璃柜是招牌柜：员工 → 今日安排 → 换招牌', cam: [148, 38], rect: () => wbox(96, 30, 200, 46, 50) }],
-  10: [{ text: '有钱了可以扩建：装修 → 扩建，打通隔壁', rect: () => barRect(3) }],
-  13: [{ text: '天气和季节会改变客人想买的东西，看这一栏', rect: () => [0, 35, 290, 15] },
-       { text: '暑假有学生来打工，可以一次签 6 天', rect: () => barRect(2) }],
-  lab: [{ text: '扩建后开了「港式 Lab」：点它，配搭一款年轻人爱的创意新品', rect: () => [296, 68, 58, 18], must: () => labOpen() && W.labDay !== W.day, go: () => { PANEL = { kind: 'lab', bar: 2 }; W.labGuide = true; SFX.tap(); } }],
-  dirt: [{ text: '店里脏了客人会变少：员工里派人「打扫」，或买垃圾桶', rect: () => [0, 35, 290, 15] }],
+const TOUR_DAYS = {   // one feature at a time, a line each, spread over the first two weeks (plus a few that wait for their moment)
+  1: [{ text: '欢迎来到街记冰室！' },
+      { text: '点亮着的货架，摆上点心', cam: [211, 160], rect: () => wrect(SHELF.T4 && SHELF.T4.obj) },
+      { text: '摆好就「开门营业」', rect: () => [250, 544, 100, 32] }],
+  2: [{ text: '原料不够：「进货」', rect: () => barRect(1) },
+      { text: '请人、派岗位：「员工」', rect: () => barRect(2) }],
+  3: [{ text: '每天可研发一款新品', rect: () => [296, 40, 58, 24], must: () => canResearch() && researchable().length > 0, go: () => clickBar(2) },
+      { text: '收支和升级：「账本」', rect: () => barRect(4) }],
+  4: [{ text: '主打、价钱、促销：员工 → 今日安排', rect: () => barRect(2) },
+      { text: '派人「招待」，卡座有茶位和小费', cam: [290, 180], rect: () => { const B = BOOTHS[0], g = B.table.grp; return wbox(B.X + g.dx, B.y0 + g.dy, B.X + g.dx + 46, B.y0 + g.dy + 40, 30); } }],
+  5: [{ text: '店越靓客越多：「装修」', rect: () => barRect(3) },
+      { text: '拖动家具：「摆放」', rect: () => barRect(5) }],
+  6: [{ text: '派人站外卖窗，路人也会买', cam: [192, 307], rect: () => wbox(162, 300, 222, 314, 46) },
+      { text: '嫌慢？点这里 ×2 ×3', rect: () => [264, 6, 32, 22] }],
+  7: [{ text: '账本底下有目标，做完有奖', rect: () => barRect(4) }],
+  8: [{ text: '招牌柜：员工 → 今日安排 → 换招牌', cam: [148, 38], rect: () => wbox(96, 30, 200, 46, 50) }],
+  9: [{ text: '积分可以给员工升级，升级有故事', rect: () => barRect(2) }],
+  10: [{ text: '钱够了：装修 → 扩建，打通隔壁', rect: () => barRect(3) }],
+  11: [{ text: '装修 → 整套：一键换搭配，美观加成', rect: () => barRect(3) }],
+  12: [{ text: '店铺升级后，进货里找供应商更平', rect: () => barRect(1) }],
+  13: [{ text: '天气和季节会改变客人想买的', rect: () => [0, 35, 290, 15] }],
+  14: [{ text: '熟客好感满了会送礼、讲故事：账本 → 客人', rect: () => barRect(4) }],
+  16: [{ text: '员工 Lv4 后，用积分解锁特技', rect: () => barRect(2) }],
+  lab: [{ text: '扩建后开了「港式 Lab」：做一款创意新品', rect: () => [296, 68, 58, 18], must: () => labOpen() && W.labDay !== W.day, go: () => { PANEL = { kind: 'lab', bar: 2 }; W.labGuide = true; SFX.tap(); } }],
+  dirt: [{ text: '店脏了客人会少：派人「打扫」', rect: () => [0, 35, 290, 15] }],
+  group: [{ text: '团体订单：四点前做齐，多赚三成', rect: () => [8, 544, 240, 32] }],
+  student: [{ text: '暑假有学生来打工，可签 6 天', rect: () => barRect(2) }],
 };
-const tourKey = () => { if (!W) return null; W.toured = W.toured || {}; if (TOUR_DAYS[W.day] && !W.toured[W.day]) return W.day; if (!W.toured.lab && labUnlocked()) return 'lab'; if (!W.toured.dirt && dirtOf() > 25) return 'dirt'; return null; };
+const tourKey = () => { if (!W) return null; W.toured = W.toured || {}; if (TOUR_DAYS[W.day] && !W.toured[W.day]) return W.day; if (!W.toured.lab && labUnlocked()) return 'lab'; if (!W.toured.dirt && dirtOf() > 25) return 'dirt';
+  if (!W.toured.group && W.today.group && W.today.group.state === 'new') return 'group'; if (!W.toured.student && HIRE.temp && HIRE.temp.student) return 'student'; return null; };   // the last few wait for their moment
 const tourOn = () => W && !W.tourOff && PHASE === 'prep' && MODE === 'play' && !DIALOG && !STORY_Q.length && !PANEL && !DESK && tourKey() !== null;
 function drawTour(c) {
   const key = tourKey(), steps = TOUR_DAYS[key], i = Math.min(W.tourStep || 0, steps.length - 1), st = steps[i], t = rtime;
@@ -175,23 +183,24 @@ function drawTour(c) {
   c.save(); c.globalAlpha = .55; c.fillStyle = '#1c141c';
   if (r) { const [x, y, w, h] = r; c.fillRect(0, 0, 360, y); c.fillRect(0, y + h, 360, 640 - y - h); c.fillRect(0, y, x, h); c.fillRect(x + w, y, 360 - x - w, h); } else c.fillRect(0, 0, 360, 640);
   c.restore();
-  const act = st.go && r && (!st.must || st.must());   // a must-do step: only the lit button works, and doing it moves the tour on
+  const txt = L(st.text), cut = txt.length > 22 ? Math.max(txt.lastIndexOf('：', 22), txt.lastIndexOf('，', 22)) + 1 || 22 : 0, lines = cut ? [txt.slice(0, cut), txt.slice(cut)] : [txt];   // up to two lines
+  const act = st.go && r && (!st.must || st.must()), cardH = 44 + lines.length * 16 + (act ? 0 : 30);   // the skip buttons sit inside the card
   button(0, 0, 360, 640, act ? () => SFX.deny() : next); if (act) button(r[0] - 2, r[1] - 2, r[2] + 4, r[3] + 4, () => { if (i + 1 >= steps.length) done(); else W.tourStep = i + 1; st.go(); });
   let cy = 280;
   if (r) {
     const [x, y, w, h] = r, glow = Math.sin(t * 4) > -.3 ? C.gold : '#fff4dc';
     px(c, x - 2, y - 2, w + 4, 2, glow); px(c, x - 2, y + h, w + 4, 2, glow); px(c, x - 2, y, 2, h, glow); px(c, x + w, y, 2, h, glow);
     const ax = R(x + w / 2), down = y > 320, bounce = R(Math.abs(Math.sin(t * 4)) * 6);   // the arrow: above the target pointing down, or below pointing up
-    if (down) { const ty = y - 8 - bounce; px(c, ax - 4, ty - 26, 8, 16, OUT); px(c, ax - 3, ty - 25, 6, 15, C.gold); for (let k = 0; k < 9; k++) { px(c, ax - 9 + k, ty - 11 + k, 18 - 2 * k, 1, k ? C.gold : OUT); px(c, ax - 10 + k, ty - 11 + k, 1, 1, OUT); px(c, ax + 9 - k, ty - 11 + k, 1, 1, OUT); } cy = ty - 80; }
+    if (down) { const ty = y - 8 - bounce; px(c, ax - 4, ty - 26, 8, 16, OUT); px(c, ax - 3, ty - 25, 6, 15, C.gold); for (let k = 0; k < 9; k++) { px(c, ax - 9 + k, ty - 11 + k, 18 - 2 * k, 1, k ? C.gold : OUT); px(c, ax - 10 + k, ty - 11 + k, 1, 1, OUT); px(c, ax + 9 - k, ty - 11 + k, 1, 1, OUT); } cy = ty - 30 - cardH; }
     else { const ty = y + h + 8 + bounce; for (let k = 0; k < 9; k++) { px(c, ax - k, ty + k, 2 * k, 1, C.gold); px(c, ax - k - 1, ty + k, 1, 1, OUT); px(c, ax + k, ty + k, 1, 1, OUT); } px(c, ax - 4, ty + 9, 8, 16, OUT); px(c, ax - 3, ty + 9, 6, 15, C.gold); cy = ty + 34; }
   }
-  cy = clamp(cy, 70, 470);
-  const txt = L(st.text), cut = txt.length > 22 ? Math.max(txt.lastIndexOf('：', 22), txt.lastIndexOf('，', 22)) + 1 || 22 : 0, lines = cut ? [txt.slice(0, cut), txt.slice(cut)] : [txt];   // up to two lines
-  card(c, 20, cy, 320, 44 + lines.length * 16, PAPER); lines.forEach((l, k) => T(c, l, 180, cy + 10 + k * 16, INK, 'center', null));
-  T(c, (isNaN(key) ? '提示' : '第 ' + key + ' 天') + ' · ' + (i + 1) + '/' + steps.length + (act ? ' · 点亮着的按钮' : ' · 点任意地方继续'), 180, cy + 18 + lines.length * 16, SUB, 'center', null); cy += lines.length * 16 - 16;
+  cy = clamp(cy, 40, 538 - cardH);   // never over the hint bar or the menu
+  card(c, 20, cy, 320, cardH, PAPER); lines.forEach((l, k) => T(c, l, 180, cy + 10 + k * 16, INK, 'center', null));
+  T(c, (isNaN(key) ? '提示' : '第 ' + key + ' 天') + ' · ' + (i + 1) + '/' + steps.length + (act ? ' · 点亮着的按钮' : ' · 点任意地方继续'), 180, cy + 18 + lines.length * 16, SUB, 'center', null, FS_S);
   if (act) return;   // must-do: no skipping
-  btn(c, 200, cy + 64, 60, 22, '跳过', () => { SFX.tap(); done(); }, 'cream');
-  btn(c, 266, cy + 64, 74, 22, '不再提示', () => { SFX.tap(); W.tourOff = true; saveGame(); }, 'cream');
+  const by = cy + cardH - 30;
+  btn(c, 192, by, 64, 24, '跳过', () => { SFX.tap(); done(); }, 'cream');
+  btn(c, 262, by, 72, 24, '不再提示', () => { SFX.tap(); W.tourOff = true; saveGame(); }, 'cream');
 }
 function drawEpisodeBar(c) {   // 小剧场 invitation at the top: 看 to watch (the shop pauses while reading), or let it pass
   const B = EP_BANNER; if (!B || PANEL || DIALOG || DESK) return;
