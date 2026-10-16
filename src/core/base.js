@@ -44,10 +44,13 @@ function spr(rs, pal) { const G = new Grid(rs[0].length + 2, rs.length + 2); rs.
 function flipC(c) { const o = mk(c.width, c.height), x = o.getContext('2d'); x.translate(c.width, 0); x.scale(-1, 1); x.drawImage(c, 0, 0); return o; }
 const px = (c, x, y, w, h, col) => { c.fillStyle = col; c.fillRect(x, y, w, h); };
 const putB = (c, img, p, dy = 0) => c.drawImage(img, R(p[0] - img.width / 2), R(p[1] - img.height + 1 + dy));
-function TC(d, s, cx, cy, col, size = FS, serif = false) {   // text centred on (cx, cy) by its real glyph box — font metrics differ between phones, so no fixed offsets
+// type scale: FS_T titles (sheets, pop-ups) · FS_H headings (cards, sections) · FS body · FS_S small notes; the story box uses its own 18
+const FS_T = 18, FS_H = 15, FS_S = 12;
+function TC(d, s, cx, cy, col, size = FS, serif = false, align = 'center') {   // text centred vertically on cy (and on cx, or starting / ending there) by its real glyph box — font metrics differ between phones, so no fixed offsets
   d.font = serif ? sr(size) : fp(size); d.textAlign = 'left'; d.textBaseline = 'alphabetic'; const m = d.measureText(s);
-  const L = m.actualBoundingBoxLeft || 0, Rt = m.actualBoundingBoxRight || m.width, A = m.actualBoundingBoxAscent || size * .8, D = m.actualBoundingBoxDescent || 0;
-  d.fillStyle = col; d.fillText(s, Math.round(cx - (Rt - L) / 2 + L), Math.round(cy + (A - D) / 2));
+  const L = m.actualBoundingBoxLeft || 0, Rt = m.actualBoundingBoxRight || m.width, A = m.actualBoundingBoxAscent || size * .8, D = m.actualBoundingBoxDescent || 0, w = Rt + L;
+  const x = align === 'left' ? cx + L : align === 'right' ? cx - Rt : cx - (Rt - L) / 2 + L;
+  d.fillStyle = col; d.fillText(s, Math.round(x), Math.round(cy + (A - D) / 2));
 }
 function T(d, s, x, y, col = '#fff4dc', align = 'left', stroke = '#2a1e22', size = FS) {   // size: 12 for the odd small label
   d.font = fp(size); d.textAlign = align; d.textBaseline = 'top';

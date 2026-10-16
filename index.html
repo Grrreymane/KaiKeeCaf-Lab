@@ -75,10 +75,13 @@ function spr(rs, pal) { const G = new Grid(rs[0].length + 2, rs.length + 2); rs.
 function flipC(c) { const o = mk(c.width, c.height), x = o.getContext('2d'); x.translate(c.width, 0); x.scale(-1, 1); x.drawImage(c, 0, 0); return o; }
 const px = (c, x, y, w, h, col) => { c.fillStyle = col; c.fillRect(x, y, w, h); };
 const putB = (c, img, p, dy = 0) => c.drawImage(img, R(p[0] - img.width / 2), R(p[1] - img.height + 1 + dy));
-function TC(d, s, cx, cy, col, size = FS, serif = false) {   // text centred on (cx, cy) by its real glyph box — font metrics differ between phones, so no fixed offsets
+// type scale: FS_T titles (sheets, pop-ups) · FS_H headings (cards, sections) · FS body · FS_S small notes; the story box uses its own 18
+const FS_T = 18, FS_H = 15, FS_S = 12;
+function TC(d, s, cx, cy, col, size = FS, serif = false, align = 'center') {   // text centred vertically on cy (and on cx, or starting / ending there) by its real glyph box — font metrics differ between phones, so no fixed offsets
   d.font = serif ? sr(size) : fp(size); d.textAlign = 'left'; d.textBaseline = 'alphabetic'; const m = d.measureText(s);
-  const L = m.actualBoundingBoxLeft || 0, Rt = m.actualBoundingBoxRight || m.width, A = m.actualBoundingBoxAscent || size * .8, D = m.actualBoundingBoxDescent || 0;
-  d.fillStyle = col; d.fillText(s, Math.round(cx - (Rt - L) / 2 + L), Math.round(cy + (A - D) / 2));
+  const L = m.actualBoundingBoxLeft || 0, Rt = m.actualBoundingBoxRight || m.width, A = m.actualBoundingBoxAscent || size * .8, D = m.actualBoundingBoxDescent || 0, w = Rt + L;
+  const x = align === 'left' ? cx + L : align === 'right' ? cx - Rt : cx - (Rt - L) / 2 + L;
+  d.fillStyle = col; d.fillText(s, Math.round(x), Math.round(cy + (A - D) / 2));
 }
 function T(d, s, x, y, col = '#fff4dc', align = 'left', stroke = '#2a1e22', size = FS) {   // size: 12 for the odd small label
   d.font = fp(size); d.textAlign = align; d.textBaseline = 'top';
@@ -5452,9 +5455,9 @@ function sheet(c, title, right, y0 = 292) {   // bottom sheet with a wood header
   button(0, 34, 360, y0 - 34, () => { PANEL = null; });   // tapping the dimmed shop closes the sheet
   px(c, 4, y0 - 1, 352, BAR_Y - y0 + 1, OUT); px(c, 5, y0, 350, BAR_Y - y0 - 1, PAPER);
   px(c, 5, y0, 350, 26, '#5a3a28'); px(c, 5, y0 + 26, 350, 2, '#3a2418');
-  TS(c, title, 15, y0 + 4, 16, '#fbe9c0');
-  if (right) T(c, right, 314, y0 + 7, '#fbe9c0', 'right', null);
-  px(c, 324, y0 + 3, 26, 20, '#7a5238'); T(c, '×', 337, y0 + 6, '#fbe9c0', 'center', null); button(318, y0, 36, 26, () => { PANEL = null; SFX.tap(); });
+  TC(c, title, 15, y0 + 13, '#fbe9c0', FS_T, true, 'left');
+  if (right) TC(c, right, 314, y0 + 13, '#fbe9c0', FS, false, 'right');
+  px(c, 324, y0 + 3, 26, 20, '#7a5238'); TC(c, '×', 337, y0 + 13, '#fbe9c0'); button(318, y0, 36, 26, () => { PANEL = null; SFX.tap(); });
   return y0 + 34;
 }
 const half = (c, img, x, y) => c.drawImage(img, R(x - img.width / 4), R(y - img.height / 2), img.width / 2, img.height / 2);   // a 2x sprite at native pixels in the 1x UI
@@ -5662,7 +5665,7 @@ function drawDecorPanel(c, P_) {   // 装修: better shelves, wallpaper, booth s
   }
   if (tab === 'expand') {   // 扩建: open up next door, then more booths there
     const n = expandLv();
-    TS(c, '隔壁堂食区', 22, y, 16, INK); T(c, '卡座 ' + BOOTHS.length + ' 组 · 座位 ' + SEATS.length + ' 个', 336, y + 2, '#2f6e56', 'right', null);
+    TS(c, '隔壁堂食区', 22, y, FS_H, INK); T(c, '卡座 ' + BOOTHS.length + ' 组 · 座位 ' + SEATS.length + ' 个', 336, y + 2, '#2f6e56', 'right', null);
     EXPAND.forEach((E, i) => {
       const yy = y + 26 + i * 44, done = i < n, next = i === n, early = E.day && W.day < E.day;
       card(c, 14, yy, 332, 40, done ? '#e6f2ea' : next ? '#fff3d6' : '#ece2cf');
@@ -5737,9 +5740,12 @@ function drawPlanPanel(c) {
     T(c, '招牌柜', 16, y + 5, SUB, 'left', null); if (sp) { half(c, PRODUCTS[sp].img, 70, y + 11); T(c, PRODUCTS[sp].name + ' · 多四成人买', 84, y + 5, '#b8483c', 'left', null); }
     btn(c, 270, y, 76, 22, '换招牌', () => { PANEL = { kind: 'showcase', back: PANEL, bar: 3 }; SFX.tap(); }, 'cream'); y += 28; }
   { const q = PROMOS.find(q => q.id === W.today.promo) || PROMOS[0], tip = q.cost ? q.name + '：' + q.desc + ' · ' + money$(q.cost) : '主打的先做、多做；不做的就不做。'; T(c, tip, 16, y, q.cost ? '#b8483c' : SUB, 'left', null); } y += 16;
-  const list = PIDS.filter(unlocked), h = Math.min(44, Math.floor((BAR_Y - 8 - y) / list.length));
+  const all = PIDS.filter(unlocked), h = 31, per = Math.max(1, Math.floor((BAR_Y - 6 - y) / h)), pages = Math.ceil(all.length / per);   // fixed rows; pages once the menu is long
+  const pg = Math.min(pages - 1, PANEL.page || 0), many = pages > 1, per2 = many ? Math.max(1, Math.floor((BAR_Y - 40 - y) / h)) : per, pages2 = Math.ceil(all.length / per2), pg2 = Math.min(pages2 - 1, pg), list = all.slice(pg2 * per2, pg2 * per2 + per2);
+  if (many) { const yb = BAR_Y - 32; T(c, (pg2 + 1) + ' / ' + pages2, 180, yb + 6, SUB, 'center', null);
+    btn(c, 40, yb, 80, 26, '上一页', () => { PANEL.page = Math.max(0, pg2 - 1); SFX.tap(); }, pg2 ? 'cream' : 'off'); btn(c, 240, yb, 80, 26, '下一页', () => { PANEL.page = Math.min(pages2 - 1, pg2 + 1); SFX.tap(); }, pg2 < pages2 - 1 ? 'cream' : 'off'); }
   list.forEach((p, i) => {
-    const yy = y + i * h, rh = h - 5;
+    const yy = y + i * h, rh = h - 4;
     card(c, 14, yy, 332, rh, '#fffaf0'); half(c, PRODUCTS[p].img, 30, yy + rh / 2);
     { const ty = yy + rh / 2 - 7, last = W.history.length ? (W.history[W.history.length - 1].sold || {})[p] || 0 : 0;   // name, price, sold today (yesterday), on hand, speed
       { const nm = PRODUCTS[p].name; T(c, nm.length > 4 ? nm.slice(0, 3) + '…' : nm, 46, ty, INK, 'left', null, nm.length > 3 ? 12 : FS); } T(c, '$' + priceOf(p), 100, ty, '#2f6e56', 'left', null, 12);
@@ -5796,7 +5802,7 @@ function drawMenuPanel(c) {   // the shop's full menu: what is on sale (with pri
   let y = sheet(c, '餐单 ' + PIDS.filter(p => !PRODUCTS[p].lab && unlocked(p)).length + '/' + PIDS.filter(p => !PRODUCTS[p].lab).length, bookBack(70) || '', 70) - 2;
   const grp = [['饮品', p => PRODUCTS[p].where === 'fridge' && !PRODUCTS[p].cake && !PRODUCTS[p].lab && !['pudding', 'mango', 'dpn'].includes(p)], ['饼食', p => !PRODUCTS[p].cake && !PRODUCTS[p].lab && (PRODUCTS[p].where === 'table' || ['pudding', 'mango', 'dpn'].includes(p))], ['蛋糕', p => PRODUCTS[p].cake], ['港式 Lab', p => PRODUCTS[p].lab && unlocked(p)]];
   for (const [title, f] of grp) { const L_ = PIDS.filter(p => f(p) && !(PRODUCTS[p].lab && !unlocked(p)) && (PRODUCTS[p].lab || PRODUCTS[p].day < 999)); if (!L_.length) continue;
-    TS(c, title, 15, y, 13, '#b8483c'); px(c, 14, y + 18, 332, 1, '#e3d6bc'); y += 22;
+    TS(c, title, 15, y, FS_H, '#b8483c'); px(c, 14, y + 18, 332, 1, '#e3d6bc'); y += 22;
     L_.forEach((p, i) => { const x = 14 + (i % 3) * 112, yy = y + Math.floor(i / 3) * 42, on = unlocked(p); card(c, x, yy, 108, 38, on ? '#fffaf0' : '#ece2cf');
       const nm = PRODUCTS[p].name, short = nm.length > 4 ? nm.slice(0, 4) : nm;   // one line: picture, name, price — locked ones just greyed
       if (on) { half(c, PRODUCTS[p].img, x + 15, yy + 19); T(c, short, x + 30, yy + 11, INK, 'left', null, nm.length > 3 ? 12 : FS); T(c, '$' + priceOf(p), x + 104, yy + 12, '#2f6e56', 'right', null, 12); }
@@ -5831,7 +5837,7 @@ function drawPlaceAsk(c, P_) {   // just bought a floor piece: place it now, or 
 function drawSupPanel(c) {   // shop level + suppliers you can sign with
   let y = sheet(c, '供应商', money$(W.money), 200);
   const lv = shopLv(), nx = SHOP_LV[lv], served = (W.total && W.total.served) || 0;
-  card(c, 14, y, 332, 52, '#fff3d6'); TS(c, '店铺 Lv' + lv, 22, y + 6, 16, '#b8483c'); T(c, '原料平 ' + (lv - 1) * 2 + '%', 336, y + 8, '#2f6e56', 'right', null);
+  card(c, 14, y, 332, 52, '#fff3d6'); TS(c, '店铺 Lv' + lv, 22, y + 6, FS_H, '#b8483c'); T(c, '原料平 ' + (lv - 1) * 2 + '%', 336, y + 8, '#2f6e56', 'right', null);
   T(c, nx !== undefined ? '累计招呼 ' + served + '/' + nx + ' 位客人升下一级' : '已经满级', 22, y + 30, SUB, 'left', null);
   y += 62;
   card(c, 14, y, 332, 52, '#fffaf0'); TS(c, '荣叔', 22, y + 6, 15, INK); T(c, '样样都有，照价', 22, y + 28, SUB, 'left', null); T(c, '一直合作', 336, y + 18, '#2f6e56', 'right', null);
@@ -5923,7 +5929,7 @@ function drawBookPanel(c) {   // the books: today's numbers in a two-column tabl
 }
 function drawPause(c) {
   c.save(); c.globalAlpha = .55; px(c, 0, 0, 360, 640, '#1c141c'); c.restore(); button(0, 0, 360, 640, () => {});
-  card(c, 70, 200, 220, 250, PAPER); TS(c, '暂停', 180, 214, 20, INK, 'center');
+  card(c, 70, 200, 220, 250, PAPER); TS(c, '暂停', 180, 214, FS_T, INK, 'center');
   btn(c, 100, 400, 160, 34, LANG === 'yue' ? '語言：粵語（繁）' : '语言：普通话', () => setLang(LANG === 'yue' ? 'cmn' : 'yue'), 'cream');
   btn(c, 100, 254, 160, 34, '继续', () => { PANEL = null; });
   btn(c, 100, 298, 78, 34, MUTED ? '声音：关' : '声音：开', () => setMuted(!MUTED), 'cream'); btn(c, 182, 298, 78, 34, MUSIC_OFF ? '音乐：关' : '音乐：开', () => setMusic(MUSIC_OFF), 'cream');
@@ -5952,7 +5958,7 @@ function drawLedger(c) {   // end of the day: money in two columns (with ▲▼ 
   card(c, 32, y, 296, 42, '#fffaf0'); T(c, '明天：', 40, y + 5, '#b8483c', 'left', null); T(c, L.tip, 40, y + 23, INK, 'left', null); y += 50;
   T(c, (L.upCost ? '买升级 -' + money$(L.upCost) + ' · ' : '') + (L.pts ? '积分 +' + L.pts + ' · ' : '') + '现金 ' + money$(W.money), 180, y, W.money >= 0 ? INK : '#b8342c', 'center', null); y += 22;
   if (L.month) { card(c, 32, y, 296, 44, '#fff3d6'); TS(c, L.month.m + '月盘点', 40, y + 4, 15, '#b8483c'); T(c, '收入 ' + money$(L.month.revenue) + ' · 净赚 ' + money$(L.month.profit) + ' · 客 ' + L.month.served, 40, y + 25, INK, 'left', null); y += 50; }
-  if (end) { TS(c, end + '过完啦，辛苦！', 180, y, 16, '#b8483c', 'center'); y += 22; T(c, '开张以来共收 ' + money$(W.total.revenue) + ' · 招呼 ' + W.total.served + ' 位', 180, y, INK, 'center', null); y += 20; btn(c, 80, y + 2, 200, 34, '继续经营', () => nextDay()); }
+  if (end) { TS(c, end + '过完啦，辛苦！', 180, y, FS_H, '#b8483c', 'center'); y += 22; T(c, '开张以来共收 ' + money$(W.total.revenue) + ' · 招呼 ' + W.total.served + ' 位', 180, y, INK, 'center', null); y += 20; btn(c, 80, y + 2, 200, 34, '继续经营', () => nextDay()); }
   else btn(c, 80, y + 4, 200, 34, '明天继续', () => nextDay());
 }
 let TITLE_NEW = false;
@@ -6753,7 +6759,7 @@ function drawDesk(c) {
   const D = DESK;
   px(c, 0, 0, 360, 640, '#2f2430'); button(0, 0, 360, 640, () => {});
   px(c, 0, 40, 360, 2, '#1c141c');
-  TS(c, '设计台', 12, 10, 16, '#fbe9c0');
+  TS(c, '设计台', 12, 10, FS_T, '#fbe9c0');
   px(c, 300, 8, 52, 24, OUT); px(c, 301, 9, 50, 22, '#4a3a48'); T(c, '离开', 326, 14, '#fbe9c0', 'center', null); button(296, 4, 60, 32, () => { if (DESK && DESK.lab) labCancel(); DESK = null; SFX.tap(); });
   if (D.mode === 'pick') {
     px(c, 0, 42, 360, 598, '#e9e3d3');
@@ -6949,7 +6955,7 @@ function drawLabPanel(c, P_) {
   const rate = labRate(r); P_.name = P_.name || labName(r, false); r.name = P_.name;
   card(c, 14, y, 332, 112, '#fffaf0');
   { const im = FOOD_L.labImg(r.base, LAB_FLAVORS[r.flavor].col, LAB_FILLS[r.fill].col || null, r.decor); c.drawImage(im, 18, y + 18, im.width * 2, im.height * 2); }
-  TS(c, r.name, 92, y + 6, 16, INK); T(c, '★'.repeat(rate.stars) + '☆'.repeat(5 - rate.stars), 338, y + 8, '#c99428', 'right', null);
+  TS(c, r.name, 92, y + 6, FS_H, INK); T(c, '★'.repeat(rate.stars) + '☆'.repeat(5 - rate.stars), 338, y + 8, '#c99428', 'right', null);
   T(c, '$' + rate.price + ' · ' + (rate.bake <= 10 ? '快' : rate.bake <= 14 ? '中' : '慢') + ' · ' + (LAB_BASES[r.base].where === 'table' ? '坤伯烤' : '水吧做'), 92, y + 28, '#2f6e56', 'left', null);
   rate.why.slice(0, 4).forEach((w, i) => T(c, '· ' + w, 92, y + 46 + i * 15, /不|普普通通|慢/.test(w) ? '#b8342c' : SUB, 'left', null));
   y += 120;

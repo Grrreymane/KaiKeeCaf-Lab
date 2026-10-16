@@ -753,7 +753,7 @@ function drawDesk(c) {
   const D = DESK;
   px(c, 0, 0, 360, 640, '#2f2430'); button(0, 0, 360, 640, () => {});
   px(c, 0, 40, 360, 2, '#1c141c');
-  TS(c, '设计台', 12, 10, 16, '#fbe9c0');
+  TS(c, '设计台', 12, 10, FS_T, '#fbe9c0');
   px(c, 300, 8, 52, 24, OUT); px(c, 301, 9, 50, 22, '#4a3a48'); T(c, '离开', 326, 14, '#fbe9c0', 'center', null); button(296, 4, 60, 32, () => { if (DESK && DESK.lab) labCancel(); DESK = null; SFX.tap(); });
   if (D.mode === 'pick') {
     px(c, 0, 42, 360, 598, '#e9e3d3');

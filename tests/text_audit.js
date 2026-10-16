@@ -3,15 +3,16 @@
 (() => {
   const bad = [], seen = new Set(), P = CanvasRenderingContext2D.prototype, f0 = P.fillText;
   let where = '', cards = [], boxes = [];
-  P.fillText = function (s, x, y, ...r) {
-    const w = this.measureText(s).width, a = this.textAlign, l = a === 'center' ? x - w / 2 : a === 'right' || a === 'end' ? x - w : x;
+  P.fillText = function (s, x, y0, ...r) {
+    const mm = this.measureText(s), y = this.textBaseline === 'alphabetic' ? y0 - (mm.actualBoundingBoxAscent || 0) : y0;   // centred text (TC) is drawn from its baseline: use its top
+    const w = mm.width, a = this.textAlign, l = a === 'center' ? x - w / 2 : a === 'right' || a === 'end' ? x - w : x;
     if (this.canvas === CV && (l < 2 || l + w > 358) && String(s).trim()) { const k = where + '|' + s; if (!seen.has(k)) { seen.add(k); bad.push([where, 'screen', String(s), Math.round(l), Math.round(l + w)]); } }
     if (this.canvas === CV && String(s).trim() && this.fillStyle !== '#2a1e22' && !boxes.some(q => q[4] === s && Math.abs(q[0] - l) < 2 && Math.abs(q[1] - y) < 2)) { const fs = +((this.font.match(/(\d+)px/) || [])[1] || 12);
       for (const q of boxes) if (q[4] !== s && l < q[2] - 1 && l + w > q[0] + 1 && y < q[3] - 2 && y + fs > q[1] + 2) { const k = where + '|o|' + s + '|' + q[4]; if (!seen.has(k)) { seen.add(k); bad.push([where, 'overlap', String(s), q[4]]); } }
       boxes.push([l, y, l + w, y + fs, s]); }
     if (this.canvas === CV && String(s).trim()) { const inC = cards.filter(q => l >= q[0] - 1 && l < q[0] + q[2] && y >= q[1] - 2 && y < q[1] + q[3]).sort((a, b) => a[2] * a[3] - b[2] * b[3])[0];
       if (inC && l + w > inC[0] + inC[2] + 1) { const k = where + '|c|' + s; if (!seen.has(k)) { seen.add(k); bad.push([where, 'card', String(s), Math.round(l + w), inC[0] + inC[2]]); } } }
-    return f0.call(this, s, x, y, ...r);
+    return f0.call(this, s, x, y0, ...r);
   };
   const card0 = card; card = function (c, x, y, w, h, ...r) { cards.push([x, y, w, h]); if (w >= 250 && h >= 100) boxes = []; return card0(c, x, y, w, h, ...r); };   // a big card covers what was drawn before it
   const sheet0 = sheet; sheet = function (...a) { boxes = []; return sheet0(...a); };

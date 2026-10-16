@@ -123,7 +123,7 @@ function drawLabPanel(c, P_) {
   const rate = labRate(r); P_.name = P_.name || labName(r, false); r.name = P_.name;
   card(c, 14, y, 332, 112, '#fffaf0');
   { const im = FOOD_L.labImg(r.base, LAB_FLAVORS[r.flavor].col, LAB_FILLS[r.fill].col || null, r.decor); c.drawImage(im, 18, y + 18, im.width * 2, im.height * 2); }
-  TS(c, r.name, 92, y + 6, 16, INK); T(c, '★'.repeat(rate.stars) + '☆'.repeat(5 - rate.stars), 338, y + 8, '#c99428', 'right', null);
+  TS(c, r.name, 92, y + 6, FS_H, INK); T(c, '★'.repeat(rate.stars) + '☆'.repeat(5 - rate.stars), 338, y + 8, '#c99428', 'right', null);
   T(c, '$' + rate.price + ' · ' + (rate.bake <= 10 ? '快' : rate.bake <= 14 ? '中' : '慢') + ' · ' + (LAB_BASES[r.base].where === 'table' ? '坤伯烤' : '水吧做'), 92, y + 28, '#2f6e56', 'left', null);
   rate.why.slice(0, 4).forEach((w, i) => T(c, '· ' + w, 92, y + 46 + i * 15, /不|普普通通|慢/.test(w) ? '#b8342c' : SUB, 'left', null));
   y += 120;
