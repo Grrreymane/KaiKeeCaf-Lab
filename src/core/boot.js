@@ -13,6 +13,7 @@ function buildWorld() {
 }
 const SPEED_X = () => DIALOG || DESK ? 1 : (W && isOpenPhase() || (W && PHASE === 'prep')) ? (W.speed || 1) : 1;
 let achT = 1;
+const STORY_KEYS = ['ep', 'loyal', 'giftshelf'], wantMusic = () => DIALOG && (STORY_KEYS.includes(DIALOG.key) || String(DIALOG.key).startsWith('aff_') || DIALOG.bg) ? 'story' : 'shop';   // 小剧场 and heart-to-hearts get the slow version
 function step(dt) {
   gtime += dt;
   stepStory(); stepDesk(dt); stepCars(dt);
@@ -31,6 +32,6 @@ FONTS_READY.then(() => {
   render(CTX);   // first frame now (headless screenshots may never get a rAF)
   /*TEST_HOOK*/
   let last = performance.now();
-  const loop = now => { const dt = clamp((now - last) / 1000, 0, .05); last = now; rtime += dt; for (let k = 0; k < SPEED_X(); k++) step(dt); render(CTX); requestAnimationFrame(loop); };   // fast-forward = several sim steps per frame
+  const loop = now => { const dt = clamp((now - last) / 1000, 0, .05); last = now; rtime += dt; for (let k = 0; k < SPEED_X(); k++) step(dt); render(CTX); musicTick(wantMusic()); requestAnimationFrame(loop); };   // fast-forward = several sim steps per frame
   requestAnimationFrame(loop);
 });

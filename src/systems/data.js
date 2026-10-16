@@ -191,7 +191,7 @@ const WEALTH = { '小男孩': [10, 20], '小女孩': [10, 20], '女学生': [16,
 const wealthOf = ci => WEALTH[GUEST_DEF[ci] && GUEST_DEF[ci].name] || [24, 60];
 const wealthStars = ci => { const m = wealthOf(ci)[1]; return m < 25 ? 1 : m < 45 ? 2 : m < 70 ? 3 : m < 100 ? 4 : 5; };
 // gifts: when one kind of customer has been happy here often enough, one of them brings the owner something for the shop
-const GIFT_AT = 8;
+const GIFT_AT = 14;   // gifts only from regulars at the top level (= LOYAL_STORY)
 // signature showcase (the glass case on the front counter): one item a day, shown from kitchen stock
 const showcaseOk = p => unlocked(p) && (PRODUCTS[p].where === 'table' || PRODUCTS[p].cake || PRODUCTS[p].lab);
 const TAGS = { hurry: { name: '赶时间' }, chill: { name: '坐耐' } };

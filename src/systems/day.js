@@ -35,14 +35,14 @@ const GOALS = [
 const goalNow = () => GOALS[W.goal || 0];
 function checkGoals() {
   let G_; while ((G_ = goalNow()) && (() => { const [a, b] = G_[2](); return a >= b; })()) {
-    W.goal = (W.goal || 0) + 1; W.money += G_[3]; W.pts = (W.pts || 0) + G_[4]; SFX.ding(); notice('目标达成「' + G_[0] + '」：+' + money$(G_[3]) + ' +' + G_[4] + '分');
+    W.goal = (W.goal || 0) + 1; W.money += G_[3]; W.pts = (W.pts || 0) + G_[4]; SFX.cheer(); notice('目标达成「' + G_[0] + '」：+' + money$(G_[3]) + ' +' + G_[4] + '分');
   }
 }
 function checkAch() {   // award any achievement that has just come true (once each)
   if (!W || !W.ach) return; checkGoals();
   for (const a of ACH) if (!W.ach[a.id] && a.test()) {
     W.ach[a.id] = W.day; W.pts = (W.pts || 0) + a.pts; if (a.money) W.money += a.money;
-    NOTICES.unshift('成就「' + a.name + '」 +' + a.pts + '分' + (a.money ? ' +$' + a.money : '')); if (!NOTICE || PHASE !== 'open') NOTICE = { text: NOTICES.shift(), t: 0 }; SFX.ding();
+    NOTICES.unshift('成就「' + a.name + '」 +' + a.pts + '分' + (a.money ? ' +$' + a.money : '')); if (!NOTICE || PHASE !== 'open') NOTICE = { text: NOTICES.shift(), t: 0 }; SFX.cheer();
   }
 }
 function startDay() {

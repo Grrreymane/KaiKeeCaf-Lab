@@ -110,7 +110,7 @@ ok(HIRE.temp.name && STAFF_HD.temp, "today's part-timer: " + HIRE.temp.name); { 
 { W.dirt = 0; const s0 = spawnRate(); dirtAdd(80); ok(W.dirt >= 79 && spawnRate() < s0, 'a dirty shop draws fewer customers');
   W.staff.temp.hired = true; W.staff.temp.post = 'clean'; const d0 = W.dirt; for (let i = 0; i < 600; i++) stepCleaners(.05); ok(W.dirt < d0, 'cleaner brings the dirt down (' + R(d0) + ' -> ' + R(W.dirt) + ')'); W.staff.temp.post = 'take'; W.dirt = 0;
   const kid = GUEST_DEF.findIndex(g => g.name === '小男孩'); ok(wealthOf(kid)[0] <= 10 && wealthOf(GUEST_DEF.findIndex(g => g.name === '西装金融男'))[1] > 100, 'kids have small budgets, finance men big ones');
-  const fk = GUEST_DEF[0].name; W.fans = {}; W.gifted = {}; for (let i = 0; i < GIFT_AT; i++) fanOf(0, 5); ok(W.gifted[fk], 'a happy regular kind brings a gift'); STORY_Q.length = 0; DIALOG = null;
+  const fk = GUEST_DEF[0].name; W.fans = {}; W.gifted = {}; W.keepsakes = {}; for (let i = 0; i < 8; i++) fanOf(0, 5); ok(!W.gifted[fk], 'no gift half-way'); for (let i = 0; i < LOYAL_STORY; i++) fanOf(0, 5); W.today.spEve = false; specialSlot(true); ok(W.gifted[fk], 'a regular at the top level brings a gift (with their scene)'); STORY_Q.length = 0; DIALOG = null;
   ok(POST_MAX.bake === 2, 'two people can work the bake post');
   ok(TEMP_TALK['米米'] && TEMP_TALK['退休浩叔'], 'every part-timer has their own joining scene'); }
 // signature showcase + Hong Kong cakes

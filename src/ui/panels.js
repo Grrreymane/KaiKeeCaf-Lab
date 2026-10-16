@@ -1,6 +1,6 @@
 // ==== panels: bottom sheets (shelf, stock overview, ingredient shop, staff, books), pause, end-of-day books, title
 let PANEL = null, CONFIRM = 0;
-function openPanel(p) { PANEL = p; SFX.tap(); if (p.kind === 'shelf' && W.tut === 0 && p.id === 'T4') W.tut = 1; }
+function openPanel(p) { PANEL = p; SFX.page(); if (p.kind === 'shelf' && W.tut === 0 && p.id === 'T4') W.tut = 1; }
 const INK = '#3a2a2e', SUB = '#5f4a3c', PAPER = '#f6e8c8', GOLDB = '#ffd75e';
 function card(c, x, y, w, h, fill = PAPER) { px(c, x - 1, y - 1, w + 2, h + 2, OUT); px(c, x, y, w, h, fill); px(c, x, y + h - 2, w, 2, shade(fill, -22)); }
 function btn(c, x, y, w, h, label, fn, kind = 'gold') {
@@ -340,7 +340,7 @@ function drawGuestPanel(c, P_) {   // one kind of customer: portrait, who they a
   T(c, '财富 ' + '$'.repeat(wealthStars(ci)), 136, y + 2, '#2f6e56', 'left', null);
   T(c, '好感 ' + f + ' / ' + LOYAL_STORY, 136, y + 20, INK, 'left', null);
   px(c, 136, y + 38, 206, 8, '#e3d6bc'); px(c, 136, y + 38, R(206 * Math.min(1, f / LOYAL_STORY)), 8, f >= LOYAL_STORY ? '#c99428' : f >= GIFT_AT ? '#3fbf7a' : '#e88aa0'); px(c, 136 + R(206 * GIFT_AT / LOYAL_STORY), y + 35, 1, 14, '#8a6a4a');
-  T(c, (W.gifted || {})[kind] ? '已送过摆设' : '好感 ' + GIFT_AT + '：送摆设', 136, y + 52, SUB, 'left', null);
+  T(c, (W.gifted || {})[kind] ? '已送过摆设' : '好感满 ' + LOYAL_STORY + '：送摆设', 136, y + 52, SUB, 'left', null);
   T(c, (W.keepsakes || {})[kind] ? '纪念品：' + KEEPSAKE[kind] : '好感 ' + LOYAL_STORY + '：专属故事 + 纪念品', 136, y + 68, (W.keepsakes || {})[kind] ? '#b8483c' : SUB, 'left', null);
   T(c, '爱吃', 136, y + 92, SUB, 'left', null);
   Object.entries(per.likes || {}).sort((a, b) => b[1] - a[1]).map(q => q[0]).filter(p => PRODUCTS[p]).slice(0, 4).forEach((p, i) => { card(c, 168 + i * 44, y + 86, 40, 40, '#fffaf0'); half(c, PRODUCTS[p].img, 188 + i * 44, y + 104); if (!unlocked(p)) T(c, '?', 204 + i * 44, y + 112, '#b0a08c', 'right', null); });
@@ -369,7 +369,7 @@ function drawMenuPanel(c) {   // the shop's full menu: what is on sale (with pri
     y += Math.ceil(L_.length / 3) * 42 + 6; }
 }
 function drawGuestsPanel(c) {   // every kind of customer: who comes, how loyal they are (gift at 8, their story + keepsake at 14), wealth, favourite
-  let y = sheet(c, '客人', bookBack(70) || '好感 8 送礼 · 14 故事', 70) - 4;
+  let y = sheet(c, '客人', bookBack(70) || '好感满 14：故事 + 送礼', 70) - 4;
   const dayOf = ci => (GUEST_UNLOCK.find(q => q[0] === ci) || [0, 99])[1], list = CUST_POOL.filter(guestOpen).concat(CUST_POOL.filter(ci => !guestOpen(ci)).sort((a, b) => dayOf(a) - dayOf(b)));   // regulars first, then who comes next
   list.forEach((ci, i) => {
     const x = 14 + (i % 3) * 112, yy = y + Math.floor(i / 3) * 59, kind = guestKind(ci), open = guestOpen(ci), f = (W.fans || {})[kind] || 0;
@@ -491,7 +491,7 @@ function drawPause(c) {
   card(c, 70, 200, 220, 250, PAPER); TS(c, '暂停', 180, 214, 20, INK, 'center');
   btn(c, 100, 400, 160, 34, LANG === 'yue' ? '語言：粵語（繁）' : '语言：普通话', () => setLang(LANG === 'yue' ? 'cmn' : 'yue'), 'cream');
   btn(c, 100, 254, 160, 34, '继续', () => { PANEL = null; });
-  btn(c, 100, 298, 160, 34, MUTED ? '声音：关' : '声音：开', () => setMuted(!MUTED), 'cream');
+  btn(c, 100, 298, 78, 34, MUTED ? '声音：关' : '声音：开', () => setMuted(!MUTED), 'cream'); btn(c, 182, 298, 78, 34, MUSIC_OFF ? '音乐：关' : '音乐：开', () => setMusic(MUSIC_OFF), 'cream');
   btn(c, 100, 352, 160, 34, CONFIRM ? '真的从头开始？' : '从头开始', () => { if (CONFIRM) { CONFIRM = 0; PANEL = null; startGame(true); } else CONFIRM = 1; }, CONFIRM ? 'red' : 'cream');
 }
 function drawLedger(c) {   // end of the day: money in two columns (with ▲▼ against yesterday), people, what sold, tomorrow's tip

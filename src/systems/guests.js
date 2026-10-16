@@ -8,7 +8,7 @@ const GUEST_UNLOCK = [   // [index into GUEST_DEF, day it starts coming, shop le
 const guestOpen = ci => { const u = GUEST_UNLOCK.find(q => q[0] === ci); return !!u && W && (W.day >= u[1] || (u[2] && shopLv() >= u[2])); };
 const guestPool = () => { const L = CUST_POOL.filter(guestOpen); return L.length ? L : [0, 2, 3, 8, 9]; };
 const guestKind = ci => GUEST_DEF[ci] && GUEST_DEF[ci].name;
-const LOYAL_STORY = 14;   // loyalty for the special scene + keepsake (the decoration gift comes at GIFT_AT = 8)
+const LOYAL_STORY = 14;   // top loyalty: their own scene, a keepsake and their gift piece (all at once, once)
 // keepsakes: what each kind brings at loyalty 14 — kept in the customer list, +1 comfort each
 const KEEPSAKE = {
   '上班族': '公司送的保温杯', '白领姐姐': '手写下午茶推荐卡', '女学生': '亲手画的贴纸', '中学男生': '篮球比赛门票', '小男孩': '一颗玻璃弹珠', '小女孩': '蜡笔画的店铺',
@@ -44,7 +44,8 @@ function loyalStory(kind, ci, now) {   // the scene + keepsake, once per kind (e
   W.keepsakes = W.keepsakes || {}; if (W.keepsakes[kind]) return;
   if (!now) { W.loyalQ = W.loyalQ || []; if (!W.loyalQ.some(q => q[0] === kind)) W.loyalQ.push([kind, ci]); return; }
   W.keepsakes[kind] = W.day; const talk = (LOYAL_TALK[kind] || [['cust', '谢谢你们一直以来的照顾。']]).filter(([w]) => !HIRE[w] || W.staff[w].hired);
-  STORY_Q.push({ key: 'loyal', ci, lines: [[null, '老熟客·' + kind]].concat(talk).concat([[null, '收到「' + (KEEPSAKE[kind] || '一份心意') + '」，摆在店里了（舒适 +1）']]) });
+  const gift = giveGift(kind), thanks = gift ? (GIFT_THANKS[kind] || []).filter(([w]) => !HIRE[w] || W.staff[w].hired) : [];   // the gift comes with the top-level scene, not before
+  STORY_Q.push({ key: 'loyal', ci, lines: [[null, '老熟客·' + kind]].concat(talk).concat([[null, '收到「' + (KEEPSAKE[kind] || '一份心意') + '」，摆在店里了（舒适 +1）']], thanks, gift ? [[null, gift]] : []) });
   setTimeout(() => applyDecor(), 0);   // it goes on the wall board or the glass case
   NOTICES.push('老熟客' + kind + '送了「' + (KEEPSAKE[kind] || '一份心意') + '」'); SFX.ding();
 }

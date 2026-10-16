@@ -449,7 +449,7 @@ function stepDesk(dt) {
   if (S.tapT > 0) S.tapT -= dt;
   if (S.doneT > 0 && (S.doneT -= dt) <= 0) { finishStep(D); return; }
   if (D.anim) { D.anim.t += dt; if (D.anim.t >= D.anim.T) { D.blobs.push(blobFor(D.anim.k, D.anim.spot)); D.anim = null; if (s.type === 'add' && s.ks.every(k => (S.got || []).includes(k))) finishStep(D); } }
-  S.holdT = D.hold ? (S.holdT || 0) + dt : 0; const fast = 1 + Math.min(2, S.holdT * 1.4);   // hold longer → pour faster
+  S.holdT = D.hold ? (S.holdT || 0) + dt : 0; if (D.hold && (s.type === 'weigh' || s.type === 'mix' || s.type === 'pour' || s.type === 'fill')) SFX.pour(); const fast = 1 + Math.min(2, S.holdT * 1.4);   // hold longer → pour faster
   if (s.type === 'weigh' && D.hold) { S.poured = true; S.grams = (S.grams || 0) + dt * s.g * .42 * fast; if (S.grams > s.g * 1.3) { D.blobs.push(blobFor(s.k)); D.got.push(s.k); finishStep(D, false); D.msg = '倒多咗！'; } }
   if (s.type === 'mix' && D.hold) { D.mix = Math.min(1, D.mix + dt * .45 * fast); if (D.mix >= 1) { D.mixedN = D.blobs.length; nextStep(D); } }
   if (['sift', 'roll', 'stove'].includes(s.type) && D.hold) { S.v = Math.min(1, (S.v || 0) + dt * .45); if (S.v >= 1) nextStep(D); }

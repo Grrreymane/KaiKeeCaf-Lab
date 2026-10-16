@@ -186,6 +186,7 @@ function spawnRate() {
 }
 function freshLook() { const pool = guestPool(), used = new Set([...CUST, ...DINERS].map(c => c.ci)), free = pool.filter(i => !used.has(i)); return pick(free.length ? free : pool); }   // only the kinds of customer that have started coming
 function spawnCustomer(force) {
+  SFX.door();   // the bell over the door (rate-limited)
   // sit-down guests need a waiter and a clean free seat
   const seats = SEATS.filter(s => !s.who && !s.dirty);
   const cap = Math.max(6, Math.min(SEATS.length * .6, 6 * WAITERS.length)), near = seats.filter(s => seatPos(s).X < 318);   // as many diners as the waiters can look after; the booths near the door fill first
@@ -273,20 +274,20 @@ function leaveShop(c) {
   else if (c.wait > 9 && r < .3) say(c, pick(['等得有啲耐…', '收银快啲就好喇']), true);
   else if (gotAll && r < .35) say(c, rng() < .6 ? sayP(personaOf(c.ci).happy) : pick([PRODUCTS[pick(got)].name + '好味！', '下次再来！', COMBOS.some(k => c.got[k.a] && c.got[k.b]) ? '套餐抵食！' : '街坊价，抵！']), false);
 }
-function fanOf(ci, st) {   // happy visits by this kind of customer add up; at GIFT_AT one of them brings a present (once per kind)
+function fanOf(ci, st) {   // happy visits by this kind of customer add up; at the top (LOYAL_STORY) their own scene, a keepsake and their gift piece
   const kind = GUEST_DEF[ci] && GUEST_DEF[ci].name; if (!kind || !W) return; W.fans = W.fans || {}; W.gifted = W.gifted || {};
-  W.fans[kind] = Math.max(0, (W.fans[kind] || 0) + (st >= 5 ? 1 : st <= 2 ? -1 : 0));
-  if (W.fans[kind] >= LOYAL_STORY) loyalStory(kind, ci, false);   // a true regular: their own scene + a keepsake (guests.js)
-  if (W.fans[kind] < GIFT_AT || W.gifted[kind]) return;
-  W.gifted[kind] = true;
-  const id = GIFT_ITEM[kind], it = id && !hasItem(id) && DECOR_ITEMS[id]; if (!it) return;   // their own piece, once
+  W.fans[kind] = Math.max(0, Math.min(LOYAL_STORY, (W.fans[kind] || 0) + (st >= 5 ? 1 : st <= 2 ? -1 : 0)));
+  if (W.fans[kind] >= LOYAL_STORY) loyalStory(kind, ci, false);   // queued for the next story slot (guests.js)
+}
+function giveGift(kind) {   // their own decor piece, once: onto 坤伯's shelf / the counter / the floor; returns the line that says where it went
+  W.gifted = W.gifted || {}; if (W.gifted[kind]) return null; W.gifted[kind] = true;
+  const id = GIFT_ITEM[kind], it = id && !hasItem(id) && DECOR_ITEMS[id]; if (!it) return null;
   W.giftN = (W.giftN || 0) + 1; if (W.giftN >= 3 && !W.giftShelf) W.giftShelfDue = true;   // the third present: 坤伯 puts a shelf up on the wall (next morning)
-  if (W.giftShelf && isSmallGift(id) && shelfFree().length) { (W.items = W.items || {})[id] = true; (W.counter = W.counter || {})[shelfFree()[0]] = id; applyDecor(); }   // after 坤伯's shelf: small ones only go up there
-  else if (COUNTER_OK.includes(id) && counterFree().length) { (W.items = W.items || {})[id] = true; (W.counter = W.counter || {})[counterFree()[0]] = id; applyDecor(); }   // small gifts go straight onto the front counter
-  else if (it) { let pos = null; if (it.cat !== 'wall') pos = findItemSpot(); if (it.cat === 'wall' || pos) { (W.items = W.items || {})[id] = true; if (pos) { (W.itemPos = W.itemPos || {})[id] = pos; GIFT_PLACE = id; } applyDecor(); } }
-  else { (W.items = W.items || {})[id] = true; }   // no room on the floor right now: it waits for 摆放
-  STORY_Q.push({ key: 'gift', ci, lines: [[null, '一位' + kind + '熟客走到收银台。'], ...(GIFT_THANKS[kind] || [['cust', '常来光顾，你们招呼得很好。这个送给你！']]).filter(([w]) => !HIRE[w] || W.staff[w].hired), [null, '收到「' + it.name + '」' + (it.cat === 'wall' ? '，已经挂好了。' : onGiftShelf(id) ? '，摆在墙上的木架了。' : onCounter(id) ? '，摆在前台了。' : '。')]] });
-  NOTICES.push('熟客送礼：' + it.name); SFX.ding();
+  if (W.giftShelf && isSmallGift(id) && shelfFree().length) { (W.items = W.items || {})[id] = true; (W.counter = W.counter || {})[shelfFree()[0]] = id; }   // after 坤伯's shelf: small ones only go up there
+  else if (COUNTER_OK.includes(id) && counterFree().length) { (W.items = W.items || {})[id] = true; (W.counter = W.counter || {})[counterFree()[0]] = id; }
+  else { let pos = null; if (it.cat !== 'wall') pos = findItemSpot(); (W.items = W.items || {})[id] = true; if (pos) { (W.itemPos = W.itemPos || {})[id] = pos; GIFT_PLACE = id; } }
+  applyDecor(); NOTICES.push('熟客送礼：' + it.name);
+  return '还送了「' + it.name + '」' + (it.cat === 'wall' ? '，已经挂好了。' : onGiftShelf(id) ? '，摆在墙上的木架了。' : onCounter(id) ? '，摆在前台了。' : '。');
 }
 function gripe(k) { W.today.gripes[k] = (W.today.gripes[k] || 0) + 1; LAST_GRIPE = { k, t: 0 }; }
 function stepCustomers(dt) {
@@ -477,12 +478,12 @@ function chooseBatch(list) {   // biggest shortfall first, the day's "主打" it
 function popAt(x, y, z, p, text) { const [a, b] = P1(x, y, z); POPS.push({ x: a, y: b, t: 0, img: PRODUCTS[p].img, text }); }
 function stepStaff(dt) {
   if (!JOB.kun) { const p = chooseBatch(TABLE_ALL); if (p) { if (!(hasPerk('kun_thrift') && rng() < .2)) useIngr(p); JOB.kun = { p, t: 0, T: bakeTime(p) * lvSpeed('kun') }; } }
-  else if ((JOB.kun.t += dt) >= JOB.kun.T) { W.stock[JOB.kun.p] += BATCH + (hasPerk('kun_batch') ? 2 : 0); popAt(250, 36, 70, JOB.kun.p, '出炉'); workDone('kun'); JOB.kun = null; SFX.ding(); }
+  else if ((JOB.kun.t += dt) >= JOB.kun.T) { W.stock[JOB.kun.p] += BATCH + (hasPerk('kun_batch') ? 2 : 0); popAt(250, 36, 70, JOB.kun.p, '出炉'); workDone('kun'); JOB.kun = null; SFX.oven(); }
   ['kun2', 'kun3'].forEach((key, i) => {   // up to two helpers on 烘焙 (耀仔 or whoever is posted there), each running another oven batch
     const bk = postsOf('bake')[i];
     if (!bk) JOB[key] = null;
     else if (!JOB[key]) { const p = chooseBatch(TABLE_ALL); if (p) { if (!(hasPerk('yao_save') && bk === 'yao' && rng() < .15)) useIngr(p); JOB[key] = { p, t: 0, T: bakeTime(p) * lvSpeed(bk) }; } }
-    else if ((JOB[key].t += dt) >= JOB[key].T) { W.stock[JOB[key].p] += BATCH; popAt(i ? 206 : 226, 36, 70, JOB[key].p, '出炉'); workDone(bk); JOB[key] = null; SFX.ding(); }
+    else if ((JOB[key].t += dt) >= JOB[key].T) { W.stock[JOB[key].p] += BATCH; popAt(i ? 206 : 226, 36, 70, JOB[key].p, '出炉'); workDone(bk); JOB[key] = null; SFX.oven(); }
   });
   // water bar: Wen (or whoever is posted there) — otherwise Lin, between customers
   const bars = postsOf('bar'), barK = bars[0];
