@@ -461,7 +461,7 @@ function stepDesk(dt) {
     if (D.cur >= 6 && !D.foldAnim) nextStep(D);
   }
   if (D.foldAnim) { D.foldAnim.t += dt; if (D.foldAnim.t > .6) { D.stage[D.foldAnim.i] = 2; D.fills[D.foldAnim.i] = 1; D.foldAnim = null; D.cur++; if (D.cur >= 6) nextStep(D); } }
-  if (D.oven) { const O = D.oven; O.t += dt; if (O.ph === 'load' && O.t > 1.2) { O.ph = 'cook'; O.t = 0; } if (O.ph === 'cook') O.k = (Math.sin(O.t * 2.6 - Math.PI / 2) + 1) / 2; if (O.ph === 'out' && O.t > 1.8) finishRecipe(O.q); }
+  if (D.oven) { const O = D.oven; O.t += dt; if (O.ph === 'load' && O.t > 1.2) { O.ph = 'cook'; O.t = 0; } if (O.ph === 'cook') { O.k = Math.min(.5, O.t / 3); if (O.t > 1.5) { O.ph = 'out'; O.t = 0; O.q = 3; SFX.oven(); } } if (O.ph === 'out' && O.t > 1.8) finishRecipe(O.q); }   // no timing game: it bakes to just right and comes out by itself
 }
 const HOLD_STEPS = ['weigh', 'mix', 'sift', 'roll', 'stove', 'brew', 'fill'];
 function deskDown(ux, uy) { const D = DESK; if (D && D.mode === 'make' && HOLD_STEPS.includes(D.step) && uy > 40 && uy < 556) D.hold = true; }   // hold anywhere on the bench (the lit ingredient too)
@@ -775,7 +775,7 @@ function drawDesk(c) {
   const S = D.s, TN = TAP_N[D.step], line = D.step === 'weigh' ? '按住倒' + ING[st.k][0] + '，到 ' + st.g + 'g 就松手' : D.step === 'add' ? '点亮着的材料放入盆 ' + (S.got || []).length + '/' + st.ks.length
     : D.step === 'sift' ? '按住摇筛 ' + R((S.v || 0) * 100) + '%' : D.step === 'roll' ? '按住碾皮 ' + R((S.v || 0) * 100) + '%' : D.step === 'stove' ? '按住搅 ' + R((S.v || 0) * 100) + '%'
     : D.step === 'brew' ? '按住焗茶，茶色到绿格就松手' : D.step === 'rest' ? (S.covered ? stepName(st, R0) + '中…' : '点一下盖保鲜纸') : TN ? ({ knead: '连点搓面团', cut: '连点压出挞皮', pull: '连点来回撞茶', dice: '连点切粒', press: '连点压柠檬' })[D.step] + ' ' + (S.n || 0) + '/' + TN
-    : D.step === 'mix' ? '按住 用打蛋器拌匀 ' + R(D.mix * 100) + '%' : D.step === 'fill' ? (R0.vessel === 'disc' ? '点一下 ' : '按住 ') + R0.verb + ' ' + Math.min(6, D.cur) + '/6' : !D.oven ? '点' + (R0.heat === 'oven' ? '烤箱入炉' : R0.heat === 'steam' ? '蒸柜入蒸' : '雪柜冷藏') : D.oven.ph === 'cook' ? '睇住颜色，到绿色就拎出嚟' : D.oven.ph === 'load' ? (R0.heat === 'fridge' ? '放入雪柜…' : R0.heat === 'steam' ? '入蒸柜…' : '入炉…') : R0.heat === 'oven' ? '好香！' : R0.heat === 'steam' ? '热辣辣！' : '冻冰冰！';
+    : D.step === 'mix' ? '按住 用打蛋器拌匀 ' + R(D.mix * 100) + '%' : D.step === 'fill' ? (R0.vessel === 'disc' ? '点一下 ' : '按住 ') + R0.verb + ' ' + Math.min(6, D.cur) + '/6' : !D.oven ? '点' + (R0.heat === 'oven' ? '烤箱入炉' : R0.heat === 'steam' ? '蒸柜入蒸' : '雪柜冷藏') : D.oven.ph === 'cook' ? (R0.heat === 'fridge' ? '等佢凝固…' : R0.heat === 'steam' ? '蒸紧…' : '焗紧…') : D.oven.ph === 'load' ? (R0.heat === 'fridge' ? '放入雪柜…' : R0.heat === 'steam' ? '入蒸柜…' : '入炉…') : R0.heat === 'oven' ? '好香！' : R0.heat === 'steam' ? '热辣辣！' : '冻冰冰！';
   px(c, 86, 250, 188, 20, 'rgba(255,250,240,.92)'); T(c, line, 180, 253, '#b8342c', 'center', null);
   if (D.msg) T(c, D.msg, 180, 274, '#7a6250', 'center', null);
   if (D.mode === 'make') { const L_ = litIngs(D); if (L_.length) { const i = ING_ORDER.indexOf(L_[0]), [x, y] = ingCell(i), ax = x / 2 + 30, tip = y / 2 - 1 - R(Math.abs(Math.sin(rtime * 5)) * 4);   // a bouncing arrow pointing down at the bin to tap
@@ -786,11 +786,8 @@ function drawDesk(c) {
   if (D.step === 'fill' && R0.vessel === 'disc' && D.cur < 6 && !D.foldAnim) { const [mx, my] = moldXY(D.cur); button(mx / 2 - 30, my / 2 - 30, 60, 60, () => { D.foldAnim = { i: D.cur, t: 0 }; SFX.tap(); }); c.drawImage(HAND, mx / 2 + 10, my / 2 + R(Math.abs(Math.sin(gtime * 4)) * -4)); }
   if (((HOLD_STEPS.includes(D.step) && D.step !== 'fill') || (D.step === 'fill' && R0.vessel !== 'disc')) && !D.hold) c.drawImage(HAND, 250, 380 + R(Math.abs(Math.sin(gtime * 4)) * -4));
   if (D.step === 'oven' && !D.oven) { button(OV.x / 2, OV.y / 2, OV.w / 2, OV.h / 2, () => { D.oven = { ph: 'load', t: 0, k: 0 }; SFX.tap(); }); c.drawImage(HAND, 260, 500 + R(Math.abs(Math.sin(gtime * 4)) * -4)); }
-  if (D.oven && D.oven.ph === 'cook') {   // timing bar: the needle sweeps, the food in the window colours with it; stop it in the green
-    const k = D.oven.k, bx = 30, bw = 300, by = 412;
-    px(c, bx - 2, by - 2, bw + 4, 22, OUT); px(c, bx, by, bw, 18, '#e9806a'); px(c, bx + bw * .3, by, bw * .4, 18, '#f2c14e'); px(c, bx + bw * .42, by, bw * .16, 18, '#6cb86c');
-    px(c, R(bx + bw * k) - 2, by - 6, 4, 30, '#2f2430');
-    btn(c, 120, 368, 120, 34, R0.heat === 'fridge' ? '拎出嚟！' : '出炉！', () => { const d = Math.abs(k - .5); D.oven = { ph: 'out', t: 0, q: d < .08 ? 3 : d < .2 ? 2 : 1, k }; SFX.tap(); });
+  if (D.oven && D.oven.ph === 'cook') {   // a little progress bar while it bakes (no button: it comes out by itself)
+    const bx = 80, bw = 200, by = 412; px(c, bx - 2, by - 2, bw + 4, 14, OUT); px(c, bx, by, bw, 10, '#e8dcc6'); px(c, bx, by, R(bw * Math.min(1, D.oven.t / 1.5)), 10, '#f2c14e');
   }
   px(c, 0, 560, 360, 80, '#2f2430'); px(c, 0, 560, 360, 2, '#1c141c');
   px(c, 10, 576, 20, 20, C.gold); T(c, '?', 20, 579, '#2f2430', 'center', null); T(c, '小贴士：' + (st.tip || R0.tip), 38, 579, '#fbe9c0', 'left', null);   // this step's tip

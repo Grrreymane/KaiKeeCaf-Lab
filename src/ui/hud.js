@@ -158,10 +158,10 @@ const TOUR_DAYS = {   // one feature at a time, a line each, spread over the fir
       { text: '拖动家具：「摆放」', rect: () => barRect(5) }],
   6: [{ text: '派人站外卖窗，路人也会买', cam: [192, 307], rect: () => wbox(162, 300, 222, 314, 46) },
       { text: '嫌慢？点这里 ×2 ×3', rect: () => [264, 6, 32, 22] }],
-  7: [{ text: '账本底下有目标，做完有奖', rect: () => barRect(4) }],
+
   8: [{ text: '招牌柜：员工 → 今日安排 → 换招牌', cam: [148, 38], rect: () => wbox(96, 30, 200, 46, 50) }],
   9: [{ text: '积分可以给员工升级，升级有故事', rect: () => barRect(2) }],
-  10: [{ text: '钱够了：装修 → 扩建，打通隔壁', rect: () => barRect(3) }],
+  7: [{ text: '账本底下有目标，做完有奖', rect: () => barRect(4) }, { text: '钱够了：装修 → 扩建，打通隔壁', rect: () => barRect(3) }],
   11: [{ text: '装修 → 整套：一键换搭配，美观加成', rect: () => barRect(3) }],
   12: [{ text: '店铺升级后，进货里找供应商更平', rect: () => barRect(1) }],
   13: [{ text: '天气和季节会改变客人想买的', rect: () => [0, 35, 290, 15] }],

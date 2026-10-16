@@ -160,7 +160,7 @@ const promoWant = p => { let m = promoOn('pri') && W.plan[p] === 'pri' ? 1.5 : p
   if (m > 1 && hasPerk('qing_promo')) m = 1 + (m - 1) * 1.5; return m * (hasPerk('qing_ice') && PRODUCTS[p].where === 'fridge' ? 1.2 : 1); };
 // ---- v1.22 expansion: the empty shop next door becomes a dining room; each level adds two booths there
 const EXPAND = [
-  { name: '打通隔壁', cost: 2500, day: 10, desc: '隔壁变堂食区，多两组卡座' },
+  { name: '打通隔壁', cost: 2500, day: 5, desc: '隔壁变堂食区，多两组卡座' },
   { name: '加卡座', cost: 1200, desc: '隔壁再多两组卡座' },
   { name: '再加卡座', cost: 1600, desc: '再多两组卡座' },
   { name: '坐满隔壁', cost: 2200, desc: '隔壁坐满八组卡座' },
