@@ -1,6 +1,6 @@
 // ==== art: shop (isometric 2:1, world canvas x2; from 草图/店铺等距.html)
 const ROOM = 320, DADO = 96, WALL_H = 200, OX = 180, OY = 140, PLAT = 14;   // PLAT：柜台后面平台的高度
-const K = 2, FOOT2 = FOOT * 2, LM = 240, WW = 1120 + LM, CAM_MAX = WW - 720;   // LM: world margin on the left so the view can pan left too   // world canvas is 2x; WW wider than the screen so the player can pan right (bake room, next door)
+const K = 2, FOOT2 = FOOT * 2, LM = 240, WW = 1700 + LM; let CAM_MAX = 640;   // the view pans to 640 (the shop); once next door is open, out to its far corner (applyExpand)   // LM: world margin on the left so the view can pan left too   // world canvas is 2x; WW wider than the screen so the player can pan right (bake room, next door)
 // mint palette, whites pushed warm, floor warm terracotta (settled 2026-10-14)
 Object.assign(C, { marble: '#efe2c8', marbleS: '#d5c09c', marbleD: '#b9a17c', vein: '#e3d0ae', tile: '#eadcc0', tileL: '#d2c09e', floorA: '#e7bd96', floorB: '#dcac86', dot: '#4f9a7c',
   steel: '#d3d8d6', steelS: '#b4bbba', steelD: '#959d9e', cream: '#f6e8c8' });
@@ -723,7 +723,7 @@ function applyRooms() {   // the bigger kitchen (oven + prep table) and the long
   for (const f of ['xk', 'xf']) { const o = ROOM_OBJ[f], on = !!(W && W[f] && expandLv()), i = STATICS.indexOf(o); if (on && i < 0) STATICS.push(o); else if (!on && i >= 0) STATICS.splice(i, 1); }
 }
 function applyExpand() {   // match the room to W.expand: partition + shutter out, windows in, booths next door
-  const lv = expandLv();
+  const lv = expandLv(); CAM_MAX = lv ? WW - 760 : 640; camX = Math.min(camX, CAM_MAX);   // room to pan over next door
   if (!NEXT_HIDE.length) NEXT_HIDE.push(...STATICS.filter(o => (o.x0 === 316 && o.x1 === 320 && o.y1 <= 316) || (o.x0 === 314 && o.x1 === 321) || (o.x0 === 324 && o.x1 === 640)));
   for (const o of NEXT_HIDE) { const i = STATICS.indexOf(o); if (lv && i >= 0) STATICS.splice(i, 1); else if (!lv && i < 0) STATICS.push(o); }
   for (const o of NEXT_FRONT) { const i = STATICS.indexOf(o); if (lv && i < 0) STATICS.push(o); else if (!lv && i >= 0) STATICS.splice(i, 1); }
