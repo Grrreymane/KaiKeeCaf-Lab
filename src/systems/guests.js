@@ -65,7 +65,7 @@ const EPISODES = [
   { id: 'umbrella', ok: () => !!wxOf().rain, lines: [['cust', '伞放哪里？'], ['lin', '门口那个桶！别滴到地上呀！'], [null, '（下雨天地上容易脏，记得派人打扫）']] },
   { id: 'regular', ok: () => Object.values(W.fans || {}).some(v => v >= 5), lines: [['cust', '老样子！'], ['hero', '马上来~'], ['lin', '老板现在连客人的「老样子」都记得了，厉害哦。']] },
   { id: 'cousin', ok: () => W.day >= 4, ci: 18, cname: '表姐', lines: [['cust', '（推门）哇，真的开起来了！我还以为你说着玩的。'], ['hero', '表姐！你怎么来了？'], ['cust', '你妈说你最近瘦了，叫我来看看。'],
-    ['cust', '（吃了一口蛋挞）……嗯，比外公做的还差一点点。'], ['hero', '（委屈）就一点点？'], ['cust', '（拍拍你的肩）一点点，已经很厉害啦。加油！']] },
+    ['cust', '（吃了一口蛋挞）……嗯，跟小时候吃的比，还差一点点。'], ['hero', '（委屈）就一点点？'], ['cust', '（拍拍你的肩）一点点，已经很厉害啦。加油！']] },
   { id: 'unimate', ok: () => W.day >= 8, ci: 0, cname: '大学同学阿文', lines: [['cust', '老同学！我在网上看到你的店了！'], ['hero', '阿文！你不是在投行上班吗？'], ['cust', '是啊，天天加班到半夜……（看着店里）你这里，真好。'],
     ['cust', '以前上课你就一直说想开冰室，没想到你真的做到了。'], ['hero', '……还在努力啦。'], ['cust', '给我来十个菠萝包，我拿回公司，跟大家说这是我朋友开的！']] },
   { id: 'emma', ok: () => W.day >= 11, ci: 13, cname: 'Emma', lines: [['cust', 'Surprise! 我来香港出差，第一站就是你的店！'], ['hero', '（惊）Emma！你怎么找到的？'], ['cust', '你天天在网上发蛋挞照片呀~'],
@@ -324,7 +324,8 @@ const RONG_TALK = [
 ];
 function rongVisit() {   // once a morning at most; walks through the talks in order so they don't repeat
   WALKERS.push({ ch: STAFF_HD.rong, y: 338, dir: -1, v: 20, x: 720, dist: 0, temp: true });   // pushing his cart past the door
-  W.rongN = W.rongN || 0; const talk = RONG_TALK[W.rongN % RONG_TALK.length]; W.rongN++; W.today.rongSale = true;
+  W.rongN = W.rongN || 0; let talk = RONG_TALK[W.rongN % RONG_TALK.length]; W.rongN++;
+  if (!(W.eps || {}).why3 && talk.some(([, t]) => t.includes('外公'))) { talk = RONG_TALK[W.rongN % RONG_TALK.length]; W.rongN++; }   // grandpa stays a secret until the owner tells 莲姨 (为什么开冰室 3) W.today.rongSale = true;
   STORY_Q.push({ key: 'rong', lines: [[null, '荣叔推着货车经过门口。']].concat(talk).concat([[null, '今天荣叔材料店进货八折']]) });
 }
 
