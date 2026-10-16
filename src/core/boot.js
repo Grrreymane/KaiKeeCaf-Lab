@@ -4,6 +4,8 @@ function fit() {   // keep 9:16, as big as the *visible* area allows (phone tool
   const V = window.visualViewport, vw = V ? V.width : window.innerWidth, vh = V ? V.height : window.innerHeight, ox = V ? V.offsetLeft : 0, oy = V ? V.offsetTop : 0;
   const pad = window.matchMedia && matchMedia('(pointer: coarse)').matches ? 14 : 0;   // phones: a little room under the menu bar (home bar / browser toolbar)
   const s = Math.min(vw / 720, (vh - pad) / 1280), w = Math.floor(720 * s), h = Math.floor(1280 * s);
+  const bw = Math.min(1600, Math.max(720, Math.round(w * (window.devicePixelRatio || 1))));   // draw at the screen's own resolution: text stays crisp instead of a 720px picture stretched unevenly
+  if (CV.width !== bw) { CV.width = bw; CV.height = Math.round(bw * 16 / 9); if (W) render(CTX); }
   Object.assign(CV.style, { width: w + 'px', height: h + 'px', left: Math.round(ox + (vw - w) / 2) + 'px', top: Math.round(oy + Math.min((vh - h) / 2, vh - h - pad)) + 'px' });
 }
 function buildWorld() {

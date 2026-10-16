@@ -5197,7 +5197,7 @@ function drawOutdoor(c) {   // umbrellas over everyone outside, then the weather
   drawWeather(c);
 }
 function render(c) {
-  BTNS.length = 0;
+  BTNS.length = 0; { const f = c.canvas.width / 720; c.setTransform(f, 0, 0, f, 0, 0); c.imageSmoothingEnabled = false; }   // the game is laid out on 720 x 1280; sharp screens get more real pixels (see fit)
   c.save(); c.translate(-camX, 0); drawWorld(c); if (PHASE !== 'title') drawOutdoor(c); c.restore();
   { const wx = wxNow(); if (wx.rain) { c.save(); c.globalAlpha = [0, .025, .05, .09][wx.rain]; c.fillStyle = '#3a4a64'; c.fillRect(0, 0, 720, 1280); c.restore(); } else if (wx.snow) { c.save(); c.globalAlpha = .07; c.fillStyle = '#dce8ff'; c.fillRect(0, 0, 720, 1280); c.restore(); } }
   { const dusk = isOpenPhase() ? Math.max(0, Math.min(1, (clockOpen - (OPEN_LEN - 36)) / 56)) : PHASE === 'ledger' ? 1 : 0;   // from five o'clock the light goes evening: dimmer, warmer
@@ -7093,6 +7093,8 @@ function fit() {   // keep 9:16, as big as the *visible* area allows (phone tool
   const V = window.visualViewport, vw = V ? V.width : window.innerWidth, vh = V ? V.height : window.innerHeight, ox = V ? V.offsetLeft : 0, oy = V ? V.offsetTop : 0;
   const pad = window.matchMedia && matchMedia('(pointer: coarse)').matches ? 14 : 0;   // phones: a little room under the menu bar (home bar / browser toolbar)
   const s = Math.min(vw / 720, (vh - pad) / 1280), w = Math.floor(720 * s), h = Math.floor(1280 * s);
+  const bw = Math.min(1600, Math.max(720, Math.round(w * (window.devicePixelRatio || 1))));   // draw at the screen's own resolution: text stays crisp instead of a 720px picture stretched unevenly
+  if (CV.width !== bw) { CV.width = bw; CV.height = Math.round(bw * 16 / 9); if (W) render(CTX); }
   Object.assign(CV.style, { width: w + 'px', height: h + 'px', left: Math.round(ox + (vw - w) / 2) + 'px', top: Math.round(oy + Math.min((vh - h) / 2, vh - h - pad)) + 'px' });
 }
 function buildWorld() {

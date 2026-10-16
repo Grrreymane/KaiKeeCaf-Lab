@@ -274,7 +274,7 @@ function drawOutdoor(c) {   // umbrellas over everyone outside, then the weather
   drawWeather(c);
 }
 function render(c) {
-  BTNS.length = 0;
+  BTNS.length = 0; { const f = c.canvas.width / 720; c.setTransform(f, 0, 0, f, 0, 0); c.imageSmoothingEnabled = false; }   // the game is laid out on 720 x 1280; sharp screens get more real pixels (see fit)
   c.save(); c.translate(-camX, 0); drawWorld(c); if (PHASE !== 'title') drawOutdoor(c); c.restore();
   { const wx = wxNow(); if (wx.rain) { c.save(); c.globalAlpha = [0, .025, .05, .09][wx.rain]; c.fillStyle = '#3a4a64'; c.fillRect(0, 0, 720, 1280); c.restore(); } else if (wx.snow) { c.save(); c.globalAlpha = .07; c.fillStyle = '#dce8ff'; c.fillRect(0, 0, 720, 1280); c.restore(); } }
   { const dusk = isOpenPhase() ? Math.max(0, Math.min(1, (clockOpen - (OPEN_LEN - 36)) / 56)) : PHASE === 'ledger' ? 1 : 0;   // from five o'clock the light goes evening: dimmer, warmer
