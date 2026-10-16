@@ -18,8 +18,8 @@ const ALARM = paint(19, 20, G => {   // red twin-bell alarm clock
 }, false);
 const BTN_NAMES = ['摆货', '进货', '研发', '员工', '账本', '摆放', '装修'], BTN_ICONS = ['shelf', 'basket', 'desk', 'staff', 'book', 'move', 'decor'];
 const money$ = n => (n < 0 ? '-$' : '$') + Math.abs(Math.round(n)).toLocaleString('en-US');
-function T2(c, s, x, y, size, col = '#3a2a2e', align = 'left') { c.font = fp(size); c.textAlign = align; c.textBaseline = 'top'; c.fillStyle = col; c.fillText(s, x, y); }
-function TS(c, s, x, y, size, col = '#3a2a2e', align = 'left') { c.font = sr(size); c.textAlign = align; c.textBaseline = 'top'; c.fillStyle = col; c.fillText(s, x, y); }
+function T2(c, s, x, y, size, col = '#3a2a2e', align = 'left') { c.font = fp(size); c.textAlign = align; c.textBaseline = 'alphabetic'; c.fillStyle = col; c.fillText(s, x, y + glyphTop(c)); }
+function TS(c, s, x, y, size, col = '#3a2a2e', align = 'left') { c.font = sr(size); c.textAlign = align; c.textBaseline = 'alphabetic'; c.fillStyle = col; c.fillText(s, x, y + glyphTop(c)); }   // same glyph-top rule as T
 
 // ---------------------------------------------------------------- hint: one thing at a time, says "what + where"
 let HINT = null;
@@ -172,14 +172,15 @@ const TOUR_DAYS = {   // one feature at a time, a line each, spread over the fir
   group: [{ text: '团体订单：四点前做齐，多赚三成', rect: () => [8, 544, 240, 32] }],
   student: [{ text: '暑假有学生来打工，可签 6 天', rect: () => barRect(2) }],
 };
-const tourKey = () => { if (!W) return null; W.toured = W.toured || {}; if (TOUR_DAYS[W.day] && !W.toured[W.day]) return W.day; if (!W.toured.lab && labUnlocked()) return 'lab'; if (!W.toured.dirt && dirtOf() > 25) return 'dirt';
+const tourKey = () => { if (!W) return null; W.toured = W.toured || {}; if ((W.today.tours || 0) >= 2) return null;   // two sets a morning at most
+  { const d = Object.keys(TOUR_DAYS).map(Number).filter(n => n && n <= W.day && !W.toured[n]).sort((a, b) => a - b)[0]; if (d) return d; }   // today's tips, or ones from days already past (a save from before they existed) if (!W.toured.lab && labUnlocked()) return 'lab'; if (!W.toured.dirt && dirtOf() > 25) return 'dirt';
   if (!W.toured.group && W.today.group && W.today.group.state === 'new') return 'group'; if (!W.toured.student && HIRE.temp && HIRE.temp.student) return 'student'; return null; };   // the last few wait for their moment
 const tourOn = () => W && !W.tourOff && PHASE === 'prep' && MODE === 'play' && !DIALOG && !STORY_Q.length && !PANEL && !DESK && tourKey() !== null;
 function drawTour(c) {
   const key = tourKey(), steps = TOUR_DAYS[key], i = Math.min(W.tourStep || 0, steps.length - 1), st = steps[i], t = rtime;
   if (st.cam) { const want = clamp(R(P(st.cam[0], st.cam[1])[0]) - 360, 0, CAM_MAX); camX += (want - camX) * .2; }   // bring a target in the shop into view
   const r = st.rect ? st.rect() : null;
-  const done = () => { W.toured[key] = true; W.tourStep = 0; saveGame(); }, next = () => { SFX.tap(); if (i + 1 >= steps.length) done(); else W.tourStep = i + 1; };
+  const done = () => { W.toured[key] = true; W.tourStep = 0; W.today.tours = (W.today.tours || 0) + 1; saveGame(); }, next = () => { SFX.tap(); if (i + 1 >= steps.length) done(); else W.tourStep = i + 1; };
   c.save(); c.globalAlpha = .55; c.fillStyle = '#1c141c';
   if (r) { const [x, y, w, h] = r; c.fillRect(0, 0, 360, y); c.fillRect(0, y + h, 360, 640 - y - h); c.fillRect(0, y, x, h); c.fillRect(x + w, y, 360 - x - w, h); } else c.fillRect(0, 0, 360, 640);
   c.restore();

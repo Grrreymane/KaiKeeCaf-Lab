@@ -491,11 +491,12 @@ function drawBookPanel(c) {   // the books: today's numbers in a two-column tabl
 }
 function drawPause(c) {
   c.save(); c.globalAlpha = .55; px(c, 0, 0, 360, 640, '#1c141c'); c.restore(); button(0, 0, 360, 640, () => {});
-  card(c, 70, 200, 220, 250, PAPER); TS(c, '暂停', 180, 214, FS_T, INK, 'center');
-  btn(c, 100, 400, 160, 34, LANG === 'yue' ? '語言：粵語（繁）' : '语言：普通话', () => setLang(LANG === 'yue' ? 'cmn' : 'yue'), 'cream');
+  card(c, 70, 186, 220, 296, PAPER); TS(c, '暂停', 180, 200, FS_T, INK, 'center');
+  btn(c, 100, 386, 160, 34, LANG === 'yue' ? '語言：粵語（繁）' : '语言：普通话', () => setLang(LANG === 'yue' ? 'cmn' : 'yue'), 'cream');
+  btn(c, 100, 342, 160, 34, W && W.tourOff ? '提示：关' : '提示：开', () => { if (W) { W.tourOff = !W.tourOff; saveGame(); } }, 'cream');   // the tips can be switched back on
   btn(c, 100, 254, 160, 34, '继续', () => { PANEL = null; });
   btn(c, 100, 298, 78, 34, MUTED ? '声音：关' : '声音：开', () => setMuted(!MUTED), 'cream'); btn(c, 182, 298, 78, 34, MUSIC_OFF ? '音乐：关' : '音乐：开', () => setMusic(MUSIC_OFF), 'cream');
-  btn(c, 100, 352, 160, 34, CONFIRM ? '真的从头开始？' : '从头开始', () => { if (CONFIRM) { CONFIRM = 0; PANEL = null; startGame(true); } else CONFIRM = 1; }, CONFIRM ? 'red' : 'cream');
+  btn(c, 100, 436, 160, 34, CONFIRM ? '真的从头开始？' : '从头开始', () => { if (CONFIRM) { CONFIRM = 0; PANEL = null; startGame(true); } else CONFIRM = 1; }, CONFIRM ? 'red' : 'cream');
 }
 function drawLedger(c) {   // end of the day: money in two columns (with ▲▼ against yesterday), people, what sold, tomorrow's tip
   const L = LEDGER; if (!L) return;

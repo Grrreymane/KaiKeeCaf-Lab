@@ -202,12 +202,12 @@ function drawWorldText(c) {
 function drawBubbles(c) {
   c.font = fp(FS);
   for (const b of BUBBLES) {
-    const [a, y0] = whereIs(b.who), w = R(c.measureText(b.text).width) + 12, h = 18, x = clamp(R(a - w / 2), 2 + camX / K, 358 + camX / K - w), y = R(y0 - FOOT - h - 6);
+    const [a, y0] = whereIs(b.who), w = R(c.measureText(b.text).width) + (b.hint ? 15 : 12), h = 20, x = clamp(R(a - w / 2), 2 + camX / K, 358 + camX / K - w), y = R(y0 - FOOT - h - 6);
     c.save(); c.globalAlpha = Math.min(1, b.t * 5, (2.8 - b.t) * 3);
     px(c, x - 1, y - 1, w + 2, h + 2, b.hint ? '#c99428' : OUT); px(c, x, y, w, h, '#fffaf0');
     c.fillStyle = '#fffaf0'; c.beginPath(); c.moveTo(R(a) - 3, y + h); c.lineTo(R(a) + 3, y + h); c.lineTo(R(a), y + h + 5); c.fill();
     if (b.hint) px(c, x, y, 3, h, C.gold);
-    T(c, b.text, x + (b.hint ? 8 : 6), y + 3, '#3a2a2e', 'left', null);
+    TC(c, b.text, x + (b.hint ? 3 : 0) + (w - (b.hint ? 3 : 0)) / 2, y + h / 2, '#3a2a2e');   // centred in the bubble (the hint stripe takes the left 3px)
     c.restore();
   }
 }

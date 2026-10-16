@@ -52,8 +52,13 @@ function TC(d, s, cx, cy, col, size = FS, serif = false, align = 'center') {   /
   const x = align === 'left' ? cx + L : align === 'right' ? cx - Rt : cx - (Rt - L) / 2 + L;
   d.fillStyle = col; d.fillText(s, Math.round(x), Math.round(cy + (A - D) / 2));
 }
-function T(d, s, x, y, col = '#fff4dc', align = 'left', stroke = '#2a1e22', size = FS) {   // size: 12 for the odd small label
-  d.font = fp(size); d.textAlign = align; d.textBaseline = 'top';
-  if (stroke) { d.fillStyle = stroke; for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [1, 1], [-1, 1], [1, -1]]) d.fillText(s, x + dx, y + dy); }
-  d.fillStyle = col; d.fillText(s, x, y);
+// Text is placed by the top of its glyphs: canvas 'top' baseline means different things in desktop Chrome and phone
+// browsers (Safari puts it lower), so we draw from the alphabetic baseline, one glyph-height below y (measured per font).
+const GLYPH_ASC = {};
+function glyphTop(d) { const f = d.font; if (GLYPH_ASC[f] !== undefined) return GLYPH_ASC[f]; const b = d.textBaseline; d.textBaseline = 'alphabetic'; const a = d.measureText('国').actualBoundingBoxAscent; d.textBaseline = b;
+  const v = a > 0 ? a : parseFloat(f.match(/(\d+)px/)[1]) * .82; if (!document.fonts || document.fonts.check(f)) GLYPH_ASC[f] = v; return v; }
+function T(d, s, x, y, col = '#fff4dc', align = 'left', stroke = '#2a1e22', size = FS) {   // size: FS_S for the odd small label
+  d.font = fp(size); d.textAlign = align; d.textBaseline = 'alphabetic'; const yy = y + glyphTop(d);
+  if (stroke) { d.fillStyle = stroke; for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [1, 1], [-1, 1], [1, -1]]) d.fillText(s, x + dx, yy + dy); }
+  d.fillStyle = col; d.fillText(s, x, yy);
 }
