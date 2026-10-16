@@ -75,6 +75,11 @@ function spr(rs, pal) { const G = new Grid(rs[0].length + 2, rs.length + 2); rs.
 function flipC(c) { const o = mk(c.width, c.height), x = o.getContext('2d'); x.translate(c.width, 0); x.scale(-1, 1); x.drawImage(c, 0, 0); return o; }
 const px = (c, x, y, w, h, col) => { c.fillStyle = col; c.fillRect(x, y, w, h); };
 const putB = (c, img, p, dy = 0) => c.drawImage(img, R(p[0] - img.width / 2), R(p[1] - img.height + 1 + dy));
+function TC(d, s, cx, cy, col, size = FS, serif = false) {   // text centred on (cx, cy) by its real glyph box — font metrics differ between phones, so no fixed offsets
+  d.font = serif ? sr(size) : fp(size); d.textAlign = 'left'; d.textBaseline = 'alphabetic'; const m = d.measureText(s);
+  const L = m.actualBoundingBoxLeft || 0, Rt = m.actualBoundingBoxRight || m.width, A = m.actualBoundingBoxAscent || size * .8, D = m.actualBoundingBoxDescent || 0;
+  d.fillStyle = col; d.fillText(s, Math.round(cx - (Rt - L) / 2 + L), Math.round(cy + (A - D) / 2));
+}
 function T(d, s, x, y, col = '#fff4dc', align = 'left', stroke = '#2a1e22', size = FS) {   // size: 12 for the odd small label
   d.font = fp(size); d.textAlign = align; d.textBaseline = 'top';
   if (stroke) { d.fillStyle = stroke; for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [1, 1], [-1, 1], [1, -1]]) d.fillText(s, x + dx, y + dy); }
@@ -4377,7 +4382,7 @@ function drawDialog(c) {
   const shown = L(text).slice(0, Math.floor(D.t * 40) + 1);   // typewriter: the whole line in the chosen language first, then typed out
   wrapText(c, shown, 318, DLG_FS).slice(0, 4).forEach((l, i) => T(c, l, 21, 478 + i * 26, who ? '#3a2a2e' : '#7a6250', 'left', null, DLG_FS));   // story text a size bigger than the UI: it's what people actually read
   if (Math.sin(gtime * 6) > 0) T(c, '▼', 342, 566, '#b8342c', 'center', null);
-  if (D.key !== 'ep') { px(c, 296, 42, 56, 24, OUT); px(c, 297, 43, 54, 22, '#4a3a48'); T(c, '跳过', 324, 48, '#fbe9c0', 'center', null);
+  if (D.key !== 'ep') { px(c, 296, 42, 56, 24, OUT); px(c, 297, 43, 54, 22, '#4a3a48'); TC(c, '跳过', 324, 54, '#fbe9c0');
   button(292, 38, 64, 32, () => { DIALOG = null; STORY_Q.length = 0; SFX.tap(); }); }   // 小剧场 cannot be skipped
 }
 // while the shop is open, someone not busy now and then says one of their lines (a bubble over their head)
@@ -5316,7 +5321,7 @@ function drawHUD(c) {
     if (H.open) {   // big gold "open" button on the receipt
       const pulse = Math.sin(t * 4) > 0 ? 1 : 0;
       px(c, 255, 549 - pulse, 90, 24, OUT); px(c, 256, 550 - pulse, 88, 22, '#ffd75e'); px(c, 256, 568 - pulse, 88, 4, '#e0a83a');
-      TS(c, '开门营业', 300, 552 - pulse, 15, '#5a2a1a', 'center'); button(250, 544, 100, 32, () => { openShop(); });
+      TC(c, '开门营业', 300, 559 - pulse, '#5a2a1a', 15, true); button(250, 544, 100, 32, () => { openShop(); });
       if (W.tut === 3) c.drawImage(HAND, 318, 566 + R(Math.abs(Math.sin(t * 4)) * -3));
     } else if (H.act) T(c, H.act, 340, 554, H.warn ? '#b8342c' : '#2f6e56', 'right', null);
     if (H.btn != null) button(10, 548, H.open ? 236 : 338, 26, () => clickBar(H.btn));
@@ -5329,7 +5334,7 @@ function drawHUD(c) {
     const x = 5 + j * 59, on = (i === 5 && MODE === 'edit') || (PANEL && PANEL.bar === i), glow = H && H.btn === i && MODE === 'play';
     px(c, x - 1, BAR_Y + 6, 57, 44, glow && Math.sin(t * 3) > -.2 ? C.gold : OUT); px(c, x, BAR_Y + 7, 55, 42, on ? '#ffe08a' : '#f3e2bf'); px(c, x, BAR_Y + 7, 55, 1, '#fff6dc'); px(c, x, BAR_Y + 46, 55, 3, on ? '#e0b84a' : '#d9c49a');
     c.drawImage(ICON[BTN_ICONS[i]], x + 15, BAR_Y + 9);
-    T(c, i === 5 && MODE === 'edit' ? '完成' : BTN_NAMES[i], x + 27, BAR_Y + 31, '#5a3f2e', 'center', null);
+    TC(c, i === 5 && MODE === 'edit' ? '完成' : BTN_NAMES[i], x + 27.5, BAR_Y + 38, '#5a3f2e');
     button(x, BAR_Y + 6, 55, 44, () => clickBar(i));
   });
   // something to the right: the bake room (drag over)
@@ -5410,11 +5415,11 @@ function drawDeskButton(c) {
   const on = canResearch(), n = on ? researchable().length : 0, x = 296, y = 40, t = gtime;
   px(c, x - 1, y - 1, 60, 26, on && n && Math.sin(t * 3) > -.3 ? C.gold : OUT); px(c, x, y, 58, 24, on ? '#ffe08a' : '#8a8078'); px(c, x, y + 21, 58, 3, on ? '#e0b84a' : '#6e665e');
   c.drawImage(ICON.desk, 0, 0, ICON.desk.width, ICON.desk.height, x + 3, y + 3, 18, 14); if (!on) { c.save(); c.globalAlpha = .55; px(c, x + 3, y + 3, 18, 14, '#8a8078'); c.restore(); }
-  T(c, '研发', x + 39, y + 5, on ? '#5a3f2e' : '#d8d0c4', 'center', null);
+  TC(c, '研发', x + 39, y + 10.5, on ? '#5a3f2e' : '#d8d0c4');
   if (on && n) { px(c, x + 51, y - 3, 8, 8, '#e5412f'); px(c, x + 52, y - 2, 2, 2, '#ff9a8a'); }
   button(x - 2, y - 2, 62, 28, () => clickBar(2));
   if (labUnlocked()) { const ly = y + 28, on2 = labOpen(), fresh = on2 && W.labDay !== W.day;   // 港式 Lab, under 研发
-    px(c, x - 1, ly - 1, 60, 20, fresh && Math.sin(t * 3) > -.3 ? C.gold : OUT); px(c, x, ly, 58, 18, on2 ? '#d8f0e0' : '#8a8078'); T(c, '港式 Lab', x + 29, ly + 3, on2 ? '#2f6e56' : '#d8d0c4', 'center', null);
+    px(c, x - 1, ly - 1, 60, 20, fresh && Math.sin(t * 3) > -.3 ? C.gold : OUT); px(c, x, ly, 58, 18, on2 ? '#d8f0e0' : '#8a8078'); TC(c, '港式 Lab', x + 29, ly + 9, on2 ? '#2f6e56' : '#d8d0c4');
     button(x - 2, ly - 2, 62, 22, () => { if (labOpen()) { PANEL = { kind: 'lab', bar: 2 }; SFX.tap(); } else { SFX.deny(); NOTICE = { text: '收工后或开门前才能进 Lab', t: 0 }; } }); }
 }
 function clickBar(i) {
@@ -5436,7 +5441,7 @@ function card(c, x, y, w, h, fill = PAPER) { px(c, x - 1, y - 1, w + 2, h + 2, O
 function btn(c, x, y, w, h, label, fn, kind = 'gold') {
   const off = kind === 'off', fill = off ? '#d9cfbd' : kind === 'gold' ? GOLDB : kind === 'red' ? '#e9806a' : '#fffaf0';
   px(c, x - 1, y - 1, w + 2, h + 2, OUT); px(c, x, y, w, h, fill); px(c, x, y + h - 3, w, 3, shade(fill, -30));
-  T(c, label, x + w / 2, y + (h - 14) / 2, off ? '#9a8a78' : INK, 'center', null);
+  TC(c, label, x + w / 2, y + (h - 3) / 2, off ? '#9a8a78' : INK);   // the bottom 3px is the button's shadow
   button(x, y, w, h, off ? () => SFX.deny() : fn);
 }
 // a list opened from 账本 gets a way back to it (in the header, where the info line would be)
@@ -7080,8 +7085,9 @@ function tapAt(ux, uy, wx, wy) {
 const CV = document.getElementById('c'), CTX = CV.getContext('2d');
 function fit() {   // keep 9:16, as big as the *visible* area allows (phone toolbars / keyboards shrink it), centred in it
   const V = window.visualViewport, vw = V ? V.width : window.innerWidth, vh = V ? V.height : window.innerHeight, ox = V ? V.offsetLeft : 0, oy = V ? V.offsetTop : 0;
-  const s = Math.min(vw / 720, vh / 1280), w = Math.floor(720 * s), h = Math.floor(1280 * s);
-  Object.assign(CV.style, { width: w + 'px', height: h + 'px', left: Math.round(ox + (vw - w) / 2) + 'px', top: Math.round(oy + (vh - h) / 2) + 'px' });
+  const pad = window.matchMedia && matchMedia('(pointer: coarse)').matches ? 14 : 0;   // phones: a little room under the menu bar (home bar / browser toolbar)
+  const s = Math.min(vw / 720, (vh - pad) / 1280), w = Math.floor(720 * s), h = Math.floor(1280 * s);
+  Object.assign(CV.style, { width: w + 'px', height: h + 'px', left: Math.round(ox + (vw - w) / 2) + 'px', top: Math.round(oy + Math.min((vh - h) / 2, vh - h - pad)) + 'px' });
 }
 function buildWorld() {
   BG = mk(WW, 1280); drawBackground(BG.getContext('2d'));

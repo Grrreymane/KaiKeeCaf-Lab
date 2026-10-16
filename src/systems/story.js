@@ -208,7 +208,7 @@ function drawDialog(c) {
   const shown = L(text).slice(0, Math.floor(D.t * 40) + 1);   // typewriter: the whole line in the chosen language first, then typed out
   wrapText(c, shown, 318, DLG_FS).slice(0, 4).forEach((l, i) => T(c, l, 21, 478 + i * 26, who ? '#3a2a2e' : '#7a6250', 'left', null, DLG_FS));   // story text a size bigger than the UI: it's what people actually read
   if (Math.sin(gtime * 6) > 0) T(c, '▼', 342, 566, '#b8342c', 'center', null);
-  if (D.key !== 'ep') { px(c, 296, 42, 56, 24, OUT); px(c, 297, 43, 54, 22, '#4a3a48'); T(c, '跳过', 324, 48, '#fbe9c0', 'center', null);
+  if (D.key !== 'ep') { px(c, 296, 42, 56, 24, OUT); px(c, 297, 43, 54, 22, '#4a3a48'); TC(c, '跳过', 324, 54, '#fbe9c0');
   button(292, 38, 64, 32, () => { DIALOG = null; STORY_Q.length = 0; SFX.tap(); }); }   // 小剧场 cannot be skipped
 }
 // while the shop is open, someone not busy now and then says one of their lines (a bubble over their head)

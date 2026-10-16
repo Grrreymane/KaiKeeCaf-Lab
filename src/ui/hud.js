@@ -111,7 +111,7 @@ function drawHUD(c) {
     if (H.open) {   // big gold "open" button on the receipt
       const pulse = Math.sin(t * 4) > 0 ? 1 : 0;
       px(c, 255, 549 - pulse, 90, 24, OUT); px(c, 256, 550 - pulse, 88, 22, '#ffd75e'); px(c, 256, 568 - pulse, 88, 4, '#e0a83a');
-      TS(c, '开门营业', 300, 552 - pulse, 15, '#5a2a1a', 'center'); button(250, 544, 100, 32, () => { openShop(); });
+      TC(c, '开门营业', 300, 559 - pulse, '#5a2a1a', 15, true); button(250, 544, 100, 32, () => { openShop(); });
       if (W.tut === 3) c.drawImage(HAND, 318, 566 + R(Math.abs(Math.sin(t * 4)) * -3));
     } else if (H.act) T(c, H.act, 340, 554, H.warn ? '#b8342c' : '#2f6e56', 'right', null);
     if (H.btn != null) button(10, 548, H.open ? 236 : 338, 26, () => clickBar(H.btn));
@@ -124,7 +124,7 @@ function drawHUD(c) {
     const x = 5 + j * 59, on = (i === 5 && MODE === 'edit') || (PANEL && PANEL.bar === i), glow = H && H.btn === i && MODE === 'play';
     px(c, x - 1, BAR_Y + 6, 57, 44, glow && Math.sin(t * 3) > -.2 ? C.gold : OUT); px(c, x, BAR_Y + 7, 55, 42, on ? '#ffe08a' : '#f3e2bf'); px(c, x, BAR_Y + 7, 55, 1, '#fff6dc'); px(c, x, BAR_Y + 46, 55, 3, on ? '#e0b84a' : '#d9c49a');
     c.drawImage(ICON[BTN_ICONS[i]], x + 15, BAR_Y + 9);
-    T(c, i === 5 && MODE === 'edit' ? '完成' : BTN_NAMES[i], x + 27, BAR_Y + 31, '#5a3f2e', 'center', null);
+    TC(c, i === 5 && MODE === 'edit' ? '完成' : BTN_NAMES[i], x + 27.5, BAR_Y + 38, '#5a3f2e');
     button(x, BAR_Y + 6, 55, 44, () => clickBar(i));
   });
   // something to the right: the bake room (drag over)
@@ -205,11 +205,11 @@ function drawDeskButton(c) {
   const on = canResearch(), n = on ? researchable().length : 0, x = 296, y = 40, t = gtime;
   px(c, x - 1, y - 1, 60, 26, on && n && Math.sin(t * 3) > -.3 ? C.gold : OUT); px(c, x, y, 58, 24, on ? '#ffe08a' : '#8a8078'); px(c, x, y + 21, 58, 3, on ? '#e0b84a' : '#6e665e');
   c.drawImage(ICON.desk, 0, 0, ICON.desk.width, ICON.desk.height, x + 3, y + 3, 18, 14); if (!on) { c.save(); c.globalAlpha = .55; px(c, x + 3, y + 3, 18, 14, '#8a8078'); c.restore(); }
-  T(c, '研发', x + 39, y + 5, on ? '#5a3f2e' : '#d8d0c4', 'center', null);
+  TC(c, '研发', x + 39, y + 10.5, on ? '#5a3f2e' : '#d8d0c4');
   if (on && n) { px(c, x + 51, y - 3, 8, 8, '#e5412f'); px(c, x + 52, y - 2, 2, 2, '#ff9a8a'); }
   button(x - 2, y - 2, 62, 28, () => clickBar(2));
   if (labUnlocked()) { const ly = y + 28, on2 = labOpen(), fresh = on2 && W.labDay !== W.day;   // 港式 Lab, under 研发
-    px(c, x - 1, ly - 1, 60, 20, fresh && Math.sin(t * 3) > -.3 ? C.gold : OUT); px(c, x, ly, 58, 18, on2 ? '#d8f0e0' : '#8a8078'); T(c, '港式 Lab', x + 29, ly + 3, on2 ? '#2f6e56' : '#d8d0c4', 'center', null);
+    px(c, x - 1, ly - 1, 60, 20, fresh && Math.sin(t * 3) > -.3 ? C.gold : OUT); px(c, x, ly, 58, 18, on2 ? '#d8f0e0' : '#8a8078'); TC(c, '港式 Lab', x + 29, ly + 9, on2 ? '#2f6e56' : '#d8d0c4');
     button(x - 2, ly - 2, 62, 22, () => { if (labOpen()) { PANEL = { kind: 'lab', bar: 2 }; SFX.tap(); } else { SFX.deny(); NOTICE = { text: '收工后或开门前才能进 Lab', t: 0 }; } }); }
 }
 function clickBar(i) {

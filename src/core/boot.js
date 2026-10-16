@@ -2,8 +2,9 @@
 const CV = document.getElementById('c'), CTX = CV.getContext('2d');
 function fit() {   // keep 9:16, as big as the *visible* area allows (phone toolbars / keyboards shrink it), centred in it
   const V = window.visualViewport, vw = V ? V.width : window.innerWidth, vh = V ? V.height : window.innerHeight, ox = V ? V.offsetLeft : 0, oy = V ? V.offsetTop : 0;
-  const s = Math.min(vw / 720, vh / 1280), w = Math.floor(720 * s), h = Math.floor(1280 * s);
-  Object.assign(CV.style, { width: w + 'px', height: h + 'px', left: Math.round(ox + (vw - w) / 2) + 'px', top: Math.round(oy + (vh - h) / 2) + 'px' });
+  const pad = window.matchMedia && matchMedia('(pointer: coarse)').matches ? 14 : 0;   // phones: a little room under the menu bar (home bar / browser toolbar)
+  const s = Math.min(vw / 720, (vh - pad) / 1280), w = Math.floor(720 * s), h = Math.floor(1280 * s);
+  Object.assign(CV.style, { width: w + 'px', height: h + 'px', left: Math.round(ox + (vw - w) / 2) + 'px', top: Math.round(oy + Math.min((vh - h) / 2, vh - h - pad)) + 'px' });
 }
 function buildWorld() {
   BG = mk(WW, 1280); drawBackground(BG.getContext('2d'));

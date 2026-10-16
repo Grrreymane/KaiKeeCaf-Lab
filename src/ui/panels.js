@@ -6,7 +6,7 @@ function card(c, x, y, w, h, fill = PAPER) { px(c, x - 1, y - 1, w + 2, h + 2, O
 function btn(c, x, y, w, h, label, fn, kind = 'gold') {
   const off = kind === 'off', fill = off ? '#d9cfbd' : kind === 'gold' ? GOLDB : kind === 'red' ? '#e9806a' : '#fffaf0';
   px(c, x - 1, y - 1, w + 2, h + 2, OUT); px(c, x, y, w, h, fill); px(c, x, y + h - 3, w, 3, shade(fill, -30));
-  T(c, label, x + w / 2, y + (h - 14) / 2, off ? '#9a8a78' : INK, 'center', null);
+  TC(c, label, x + w / 2, y + (h - 3) / 2, off ? '#9a8a78' : INK);   // the bottom 3px is the button's shadow
   button(x, y, w, h, off ? () => SFX.deny() : fn);
 }
 // a list opened from 账本 gets a way back to it (in the header, where the info line would be)
