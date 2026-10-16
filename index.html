@@ -2981,8 +2981,11 @@ function applyKeepsakes() {   // the regulars' small keepsakes stand in a row on
   STATICS.push(KEEP_OBJ);
 }
 // small gifts can stand on the front counter instead of the floor: two spots on the glass case, one on the till counter, one on the extended counter
-const COUNTER_SLOTS = [[164, 38, 50], [186, 38, 50], [91, 40, 34], [372, 40, 34]], COUNTER_OK = ['luckycat', 'aroma', 'plane', 'bunny', 'globe', 'radio', 'vase', 'record', 'fishtank', 'basketball', 'chili', 'bonsai'];
-const counterFree = () => [0, 1, 2].concat(W.xf && expandLv() ? [3] : []).filter(i => !(W.counter || {})[i]);
+const COUNTER_SLOTS = [[164, 38, 50], [186, 38, 50], [91, 40, 34], [372, 40, 34], [158, 34, 60], [172, 34, 60], [186, 34, 60], [20, 40, 34], [32, 40, 34]],   // 4-6: the display step on the glass case (前台 Lv1), 7-8: the counter extended toward the window (Lv2)
+  COUNTER_UP = [['前台展示架', 600, '玻璃柜上加两层木架：多 3 个礼物位'], ['加长前台', 1200, '柜台往窗边接长：再多 2 个位'],], COUNTER_OK = ['luckycat', 'aroma', 'plane', 'bunny', 'globe', 'radio', 'vase', 'record', 'fishtank', 'basketball', 'chili', 'bonsai'];
+const counterSpots = () => [0, 1, 2].concat(W.xf && expandLv() ? [3] : [], (W.counterLv || 0) >= 1 ? [4, 5, 6] : [], (W.counterLv || 0) >= 2 ? [7, 8] : []);
+const counterFree = () => counterSpots().filter(i => !(W.counter || {})[i]);
+function buyCounterUp() { const lv = W.counterLv || 0, U = COUNTER_UP[lv]; if (!U || W.money < U[1]) { SFX.deny(); return false; } W.money -= U[1]; W.today.upCost += U[1]; W.counterLv = lv + 1; COUNTER_KEY = ''; applyDecor(); SFX.ding(); notice(U[0] + '装好了！'); saveGame(); return true; }
 const onCounter = id => Object.values((W && W.counter) || {}).includes(id);
 function toggleCounter(id) {   // onto the counter (first free spot) or back onto the floor
   W.counter = W.counter || {};
@@ -2992,8 +2995,11 @@ function toggleCounter(id) {   // onto the counter (first free spot) or back ont
 }
 let COUNTER_OBJS = [], COUNTER_KEY = '';
 function applyCounterGifts() {
-  const key = JSON.stringify((W && W.counter) || {}) + (W && W.xf ? 'x' : ''); if (key === COUNTER_KEY) return; COUNTER_KEY = key;
+  const key = JSON.stringify((W && W.counter) || {}) + (W && W.xf ? 'x' : '') + (W && W.counterLv || 0); if (key === COUNTER_KEY) return; COUNTER_KEY = key;
   for (const o of COUNTER_OBJS) { const k = STATICS.indexOf(o); if (k >= 0) STATICS.splice(k, 1); } COUNTER_OBJS = [];
+  const lv = (W && W.counterLv) || 0;
+  if (lv >= 1) { const o = makeObj(P, { x0: 150, x1: 198, y0: 30, y1: 37 }, 70, [{ g: (g, Q) => { bx(g, Q, 150, 30, 50, 48, 7, 10, C.woodL, C.wood, C.woodD, 1); bx(g, Q, 150, 30, 60, 48, 4, 2, '#e2ad74', '#c08a54', '#9c6a3c', 0); } }]); STATICS.push(o); COUNTER_OBJS.push(o); }   // the display step on the glass case
+  if (lv >= 2) { const o = makeObj(P, { x0: 14, x1: 38, y0: 30, y1: 46 }, 40, [{ g: (g, Q) => { bx(g, Q, 14, 30, 0, 24, 16, 30, C.cabL, C.cab, C.cabD); bx(g, Q, 13, 29, 30, 26, 18, 4, '#d99a5c', '#b8743c', '#93582c'); } }]); STATICS.push(o); COUNTER_OBJS.push(o); }   // the counter, longer toward the window
   for (const i in (W.counter || {})) { const id = W.counter[i], S = COUNTER_SLOTS[i]; if (!S || !hasItem(id)) continue; const [x, y, z] = S;
     const o = makeObj(P, { x0: x - 6, x1: x + 6, y0: 30, y1: 46.7 }, z + 36, [{ d: (c, Q) => { const im = itemThumb(id), k = Math.min(1, 40 / im.width, 46 / im.height), [a, b] = Q(x, y, z); c.drawImage(im, R(a - im.width * k / 2), R(b - im.height * k + 2), R(im.width * k), R(im.height * k)); } }]);
     STATICS.push(o); COUNTER_OBJS.push(o); }
@@ -3328,9 +3334,10 @@ function fanOf(ci, st) {   // happy visits by this kind of customer add up; at G
   if (W.fans[kind] < GIFT_AT || W.gifted[kind]) return;
   W.gifted[kind] = true;
   const id = GIFT_ITEM[kind], it = id && !hasItem(id) && DECOR_ITEMS[id]; if (!it) return;   // their own piece, once
-  if (it) { let pos = null; if (it.cat !== 'wall') pos = findItemSpot(); if (it.cat === 'wall' || pos) { (W.items = W.items || {})[id] = true; if (pos) { (W.itemPos = W.itemPos || {})[id] = pos; GIFT_PLACE = id; } applyDecor(); } }
+  if (COUNTER_OK.includes(id) && counterFree().length) { (W.items = W.items || {})[id] = true; (W.counter = W.counter || {})[counterFree()[0]] = id; applyDecor(); }   // small gifts go straight onto the front counter
+  else if (it) { let pos = null; if (it.cat !== 'wall') pos = findItemSpot(); if (it.cat === 'wall' || pos) { (W.items = W.items || {})[id] = true; if (pos) { (W.itemPos = W.itemPos || {})[id] = pos; GIFT_PLACE = id; } applyDecor(); } }
   else { (W.items = W.items || {})[id] = true; }   // no room on the floor right now: it waits for 摆放
-  STORY_Q.push({ key: 'gift', ci, lines: [[null, '一位' + kind + '熟客走到收银台。'], ...(GIFT_THANKS[kind] || [['cust', '常来光顾，你们招呼得很好。这个送给你！']]).filter(([w]) => !HIRE[w] || W.staff[w].hired), [null, '收到「' + it.name + '」' + (it.cat === 'wall' ? '，已经挂好了。' : '。')]] });
+  STORY_Q.push({ key: 'gift', ci, lines: [[null, '一位' + kind + '熟客走到收银台。'], ...(GIFT_THANKS[kind] || [['cust', '常来光顾，你们招呼得很好。这个送给你！']]).filter(([w]) => !HIRE[w] || W.staff[w].hired), [null, '收到「' + it.name + '」' + (it.cat === 'wall' ? '，已经挂好了。' : onCounter(id) ? '，摆在前台了。' : '。')]] });
   NOTICES.push('熟客送礼：' + it.name); SFX.ding();
 }
 function gripe(k) { W.today.gripes[k] = (W.today.gripes[k] || 0) + 1; LAST_GRIPE = { k, t: 0 }; }
@@ -5346,9 +5353,11 @@ function drawDecorPanel(c, P_) {   // 装修: better shelves, wallpaper, booth s
       return;
     }
     if (cat === 'gift') {   // one piece from each kind of regular (at loyalty 8): who brings what, which ones have arrived
-      Object.keys(GIFT_ITEM).forEach((kind, i) => { const id = GIFT_ITEM[kind], own = hasItem(id), x = 14 + (i % 3) * 112, yy = y + Math.floor(i / 3) * 38, f = (W.fans || {})[kind] || 0;
-        card(c, x, yy, 108, 35, own ? '#e6f2ea' : '#ece2cf');
-        if (own) { const im = itemThumb(id), k = Math.min(1, 26 / im.width, 28 / im.height); c.drawImage(im, R(x + 15 - im.width * k / 2), R(yy + 32 - im.height * k), R(im.width * k), R(im.height * k)); }
+      { const lv = W.counterLv || 0, U = COUNTER_UP[lv], used = counterSpots().length - counterFree().length;   // the front counter's gift spots, and making room for more
+        T(c, '前台礼物位 ' + used + '/' + counterSpots().length, 14, y + 3, INK, 'left', null); if (U) { T(c, U[2], 120, y + 4, SUB, 'left', null, 12); btn(c, 270, y, 76, 20, money$(U[1]), () => buyCounterUp(), W.money >= U[1] ? 'gold' : 'off'); } else T(c, '前台已经最大', 336, y + 3, '#2f6e56', 'right', null); y += 24; }
+      Object.keys(GIFT_ITEM).forEach((kind, i) => { const id = GIFT_ITEM[kind], own = hasItem(id), x = 14 + (i % 3) * 112, yy = y + Math.floor(i / 3) * 36, f = (W.fans || {})[kind] || 0;
+        card(c, x, yy, 108, 33, own ? '#e6f2ea' : '#ece2cf');
+        if (own) { const im = itemThumb(id), k = Math.min(1, 26 / im.width, 26 / im.height); c.drawImage(im, R(x + 15 - im.width * k / 2), R(yy + 30 - im.height * k), R(im.width * k), R(im.height * k)); }
         else T(c, '？', x + 15, yy + 10, '#b0a08c', 'center', null);
         T(c, own ? DECOR_ITEMS[id].name.slice(0, 5) : kind.slice(0, 5), x + 30, yy + 3, own ? INK : '#8a7a6a', 'left', null, 12);
         if (!own) { px(c, x + 30, yy + 22, 72, 5, '#e3d6bc'); px(c, x + 30, yy + 22, R(72 * Math.min(1, f / GIFT_AT)), 5, '#3fbf7a'); } else if (WALL_IDS.includes(id)) btn(c, x + 64, yy + 17, 40, 16, '换位', () => moveWall(id), 'cream'); else if (COUNTER_OK.includes(id)) btn(c, x + 56, yy + 17, 48, 16, onCounter(id) ? '放地上' : '上前台', () => toggleCounter(id), onCounter(id) ? 'gold' : 'cream'); else T(c, '舒适+' + DECOR_ITEMS[id].comfort, x + 30, yy + 19, '#2f6e56', 'left', null, 12); });

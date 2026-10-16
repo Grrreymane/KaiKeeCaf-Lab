@@ -674,8 +674,11 @@ function applyKeepsakes() {   // the regulars' small keepsakes stand in a row on
   STATICS.push(KEEP_OBJ);
 }
 // small gifts can stand on the front counter instead of the floor: two spots on the glass case, one on the till counter, one on the extended counter
-const COUNTER_SLOTS = [[164, 38, 50], [186, 38, 50], [91, 40, 34], [372, 40, 34]], COUNTER_OK = ['luckycat', 'aroma', 'plane', 'bunny', 'globe', 'radio', 'vase', 'record', 'fishtank', 'basketball', 'chili', 'bonsai'];
-const counterFree = () => [0, 1, 2].concat(W.xf && expandLv() ? [3] : []).filter(i => !(W.counter || {})[i]);
+const COUNTER_SLOTS = [[164, 38, 50], [186, 38, 50], [91, 40, 34], [372, 40, 34], [158, 34, 60], [172, 34, 60], [186, 34, 60], [20, 40, 34], [32, 40, 34]],   // 4-6: the display step on the glass case (前台 Lv1), 7-8: the counter extended toward the window (Lv2)
+  COUNTER_UP = [['前台展示架', 600, '玻璃柜上加两层木架：多 3 个礼物位'], ['加长前台', 1200, '柜台往窗边接长：再多 2 个位'],], COUNTER_OK = ['luckycat', 'aroma', 'plane', 'bunny', 'globe', 'radio', 'vase', 'record', 'fishtank', 'basketball', 'chili', 'bonsai'];
+const counterSpots = () => [0, 1, 2].concat(W.xf && expandLv() ? [3] : [], (W.counterLv || 0) >= 1 ? [4, 5, 6] : [], (W.counterLv || 0) >= 2 ? [7, 8] : []);
+const counterFree = () => counterSpots().filter(i => !(W.counter || {})[i]);
+function buyCounterUp() { const lv = W.counterLv || 0, U = COUNTER_UP[lv]; if (!U || W.money < U[1]) { SFX.deny(); return false; } W.money -= U[1]; W.today.upCost += U[1]; W.counterLv = lv + 1; COUNTER_KEY = ''; applyDecor(); SFX.ding(); notice(U[0] + '装好了！'); saveGame(); return true; }
 const onCounter = id => Object.values((W && W.counter) || {}).includes(id);
 function toggleCounter(id) {   // onto the counter (first free spot) or back onto the floor
   W.counter = W.counter || {};
@@ -685,8 +688,11 @@ function toggleCounter(id) {   // onto the counter (first free spot) or back ont
 }
 let COUNTER_OBJS = [], COUNTER_KEY = '';
 function applyCounterGifts() {
-  const key = JSON.stringify((W && W.counter) || {}) + (W && W.xf ? 'x' : ''); if (key === COUNTER_KEY) return; COUNTER_KEY = key;
+  const key = JSON.stringify((W && W.counter) || {}) + (W && W.xf ? 'x' : '') + (W && W.counterLv || 0); if (key === COUNTER_KEY) return; COUNTER_KEY = key;
   for (const o of COUNTER_OBJS) { const k = STATICS.indexOf(o); if (k >= 0) STATICS.splice(k, 1); } COUNTER_OBJS = [];
+  const lv = (W && W.counterLv) || 0;
+  if (lv >= 1) { const o = makeObj(P, { x0: 150, x1: 198, y0: 30, y1: 37 }, 70, [{ g: (g, Q) => { bx(g, Q, 150, 30, 50, 48, 7, 10, C.woodL, C.wood, C.woodD, 1); bx(g, Q, 150, 30, 60, 48, 4, 2, '#e2ad74', '#c08a54', '#9c6a3c', 0); } }]); STATICS.push(o); COUNTER_OBJS.push(o); }   // the display step on the glass case
+  if (lv >= 2) { const o = makeObj(P, { x0: 14, x1: 38, y0: 30, y1: 46 }, 40, [{ g: (g, Q) => { bx(g, Q, 14, 30, 0, 24, 16, 30, C.cabL, C.cab, C.cabD); bx(g, Q, 13, 29, 30, 26, 18, 4, '#d99a5c', '#b8743c', '#93582c'); } }]); STATICS.push(o); COUNTER_OBJS.push(o); }   // the counter, longer toward the window
   for (const i in (W.counter || {})) { const id = W.counter[i], S = COUNTER_SLOTS[i]; if (!S || !hasItem(id)) continue; const [x, y, z] = S;
     const o = makeObj(P, { x0: x - 6, x1: x + 6, y0: 30, y1: 46.7 }, z + 36, [{ d: (c, Q) => { const im = itemThumb(id), k = Math.min(1, 40 / im.width, 46 / im.height), [a, b] = Q(x, y, z); c.drawImage(im, R(a - im.width * k / 2), R(b - im.height * k + 2), R(im.width * k), R(im.height * k)); } }]);
     STATICS.push(o); COUNTER_OBJS.push(o); }
