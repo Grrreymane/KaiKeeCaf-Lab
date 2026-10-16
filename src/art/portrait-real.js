@@ -103,7 +103,7 @@ const BODY_SPEC = {
   kun: { top: '#c9ad7f', collar: '#dcc49a', apron: '#efe8d8', stain: '#d6c9a8', arms: 'crossed', broad: true },
   lin: { top: '#e47b97', floral: '#ffd3dd', apron: '#3f8f74' },
   wen: { top: '#f2f2ee', collar: '#ffffff', apron: '#3f8f74', roll: true },
-  shao: { top: '#4a4046', inner: '#e9e3d6', zip: '#c9cdd0', jacket: true, broad: true },
+  shao: { top: '#4a4046', inner: '#e9e3d6', zip: '#c9cdd0', jacket: true, broad: true, apron: '#c23a30' },
 };
 const rampOf = col => [shade(col, -38), shade(col, -18), col, shade(col, 18), shade(col, 36)];
 function realBody(c, sp, skin) {   // 400 x 480, same shapes as the owner's body; returns the colours used (palette for pixelising)

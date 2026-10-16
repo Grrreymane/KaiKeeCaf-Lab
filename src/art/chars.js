@@ -300,7 +300,7 @@ const STAFF_DEF = {
   rong: { name: '荣叔', sex: 'm', age: 'old', note: '灰短发 · 深蓝鸭舌帽 · 卡其衬衫 · 绿围裙', skin: 'tan', hair: '#a8a49c', hs: 'crop', hat: '#2f4a6a', hatType: 'flat', top: '#c9b48a', collar: '#e0d0a8', sleeve: 'roll', low: '#4a4a50', apron: '#5a7a5a', body: 'stocky', old: true },   // 材料店老板, 坤伯's old friend (not staff)
   hui: { name: '惠姐', sex: 'f', age: 'adult', note: '烫发 · 红碎花衫 · 爽朗', skin: 'mid', hair: '#3a2a2a', hs: 'perm', top: '#e5604f', floral: '#ffd0c0', sleeve: 'short', low: '#4a3a4a', body: 'adult' },
   cheng: { name: '阿澄', sex: 'm', age: 'adult', note: '整齐短发 · 墨绿衬衫 · 啡色围裙 · 话少', skin: 'light', hair: '#2a2024', hs: 'short', top: '#4a6a5a', collar: '#6a8a7a', sleeve: 'long', low: '#3a3a40', apron: '#8a6a4a', body: 'slim' },
-  shao: { name: '阿少', sex: 'm', age: 'adult', note: '白皮肤 · 侧分棕发 · 黑皮衣', skin: 'pale', hair: '#6b3f26', hs: 'side', top: '#4a4046', leather: true, zip: '#c9cdd0', sleeve: 'long', low: '#3a4a6a', shoe: '#f2f2f2', sole: '#9aa0a8' },
+  shao: { name: '阿少', sex: 'm', age: 'adult', apron: '#c23a30', pocket: '#f2d0c8', note: '白皮肤 · 侧分棕发 · 黑皮衣 · 酒红围裙（全店唯一一条红的）', skin: 'pale', hair: '#6b3f26', hs: 'side', top: '#4a4046', leather: true, zip: '#c9cdd0', sleeve: 'long', low: '#3a4a6a', shoe: '#f2f2f2', sole: '#9aa0a8' },
 };
 const GUEST_DEF = [
   { name: '上班族', sex: 'm', age: 'adult', note: '短发 · 衬衫领带', hair: '#2a2024', hs: 'short', top: '#eef2f8', tie: '#2d6cc4', sleeve: 'long', low: '#3a3f50' },
