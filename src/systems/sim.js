@@ -25,7 +25,8 @@ function rebuildPath() {   // door → every open shelf (nearest next) → the q
   }
   if (!add(navRoute(cur, QUEUE_IN))) pts.push(QUEUE_IN.slice());
   pts.push(TILL_AT.slice()); const pay = pts.length - 1; pts.push(AISLE_END.slice());
-  if (!add(navRoute(AISLE_END, STREET_OUT))) pts.push([292, 286], STREET_OUT.slice()); pts.push([640, 338]);
+  if (doorsOpen() >= 1) { if (!add(navRoute(AISLE_END, [133, 312]))) pts.push([64, 300], [133, 300], [133, 312]); pts.push([133, 338], [-140, 338]); }   // out through the new exit door, along the street
+  else { if (!add(navRoute(AISLE_END, STREET_OUT))) pts.push([292, 286], STREET_OUT.slice()); pts.push([640, 338]); }
   for (let i = pts.length - 2; i > 0; i--) { const a = pts[i - 1], b = pts[i], c = pts[i + 1]; if (i !== pay && i !== pay + 1 && ((a[0] === b[0] && b[0] === c[0]) || (a[1] === b[1] && b[1] === c[1]))) pts.splice(i, 1); }   // drop points in the middle of straight runs
   PAY = pts.findIndex(p => p[0] === TILL_AT[0] && p[1] === TILL_AT[1]); setPath(pts);
 }
@@ -34,7 +35,7 @@ function routesOpen() {
   NAV = null; let ok = true; const from = DOOR;
   for (const id of SHELF_IDS) if (SHELF[id] && !W.shelves[id].locked) { const sp = aisleSpot(id, from); if (!sp || !navRoute(from, sp)) { ok = false; break; } }
   if (ok && !navRoute(from, QUEUE_IN)) ok = false;
-  if (ok && !navRoute(AISLE_END, STREET_OUT)) ok = false;
+  if (ok && !navRoute(AISLE_END, doorsOpen() >= 1 ? [133, 312] : STREET_OUT)) ok = false;
   if (ok) for (const st of SEATS) { const p = seatPos(st); if (!navRoute([-140, 338], [p.X - 7, p.y]) || !navRoute(HOME, [p.X - 7, p.y])) { ok = false; break; } }
   NAV = null; return ok;
 }
@@ -108,9 +109,10 @@ function applyDecor() {   // after loading / buying: wallpaper, booth style, she
   const d = W.decor;
   const bgKey = d.wall + ':' + expandLv() + ':' + upLv('ac') + ':' + Object.keys(DECOR_ITEMS).filter(id => DECOR_ITEMS[id].cat === 'wall' && hasItem(id)).join() + ':' + keepList('w').join() + ':' + JSON.stringify(W.wallSlot || {}) + ':' + PIDS.filter(p => unlocked(p)).map(p => p + priceOf(p)).join();
   if (BG && BG_WALL !== bgKey) { drawBackground(BG.getContext('2d')); BG_WALL = bgKey; }
-  applyExpand(); applyRooms(); applyExtraShelves(); applyItems(); applyCounterGifts(); applyKeepsakes();
+  applyExpand(); applyDoors(); applyRooms(); applyExtraShelves(); applyItems(); applyCounterGifts(); applyKeepsakes();
   W.sets = W.sets || {}; for (const S of DECOR_SETS) if (setDone(S) && !W.sets[S[0]]) { W.sets[S[0]] = W.day; if (PHASE !== 'title') notice('搭配完成「' + S[0] + '」舒适 +' + S[2]); }
   if (BOOTH_DONE !== d.booth) { restyleBooths(); BOOTH_DONE = d.booth; }
+  if (COUNTER_DONE !== (d.counter || 'oak')) { restyleCounter(); COUNTER_DONE = d.counter || 'oak'; applyRooms(); applyCounterGifts(); }
   for (const id of SHELF_IDS) { if (TABLES[id]._key !== ((d.tier[id] || 0) + ':' + (d.rot[id] || 0) + ':' + (isFridge(id) ? 1 : 0))) rebuildShelf(id); shelfCaps(id); }
   for (const id of ['P1', 'P2']) { const g = MOV.find(m => m.id === id), want = !!d.rot[id]; if (g && !!g.objs[0]._flip !== want) { const o = g.objs[0]; o.cv = flipC(o.cv); o._flip = want; o._a = null; } }
   computeStops(); redoShadows(); RINGS.clear();
@@ -180,7 +182,7 @@ const reserve = p => ordered(p) + (W.showcase === p ? 6 : 0) + (takeOpen() && PR
 function spawnRate() {
   const tod = clamp(clockOpen / OPEN_LEN, 0, 1), g = (m, w) => Math.exp(-((tod - m) ** 2) / (2 * w * w));
   const curve = .55 + .9 * g(.12, .06) + 1.0 * g(.45, .07) + .7 * g(.7, .06);   // breakfast, lunch, afternoon tea
-  return .3 * curve * (.6 + W.rep * .12) * (W.day === 1 ? .85 : 1) * [1, 1.2, 1.3, 1.4][upLv('sign')] * (1 + .05 * upLv('ads')) * (hasPerk('shao_lure') ? 1.08 : 1) * (1 + beauty() * .015) * (beautyLv() >= 2 ? 1.05 : 1) * (beautyLv() >= 3 ? 1.1 : 1) * wxOf().rate * priceTier().rate * (hasPerk('qing_student') ? 1.06 : 1) * (1 + comfort() * .01) * (1 + .03 * festive()) * dirtSlow() * vipMul() * (W.today && W.today.crowdUntil > clockOpen ? 1.4 : 1) * (W.rival && W.day <= W.rival.until ? .85 : 1);   // comfort brings people in; festive pieces in season too   // a nicer shop draws more people; weather, prices
+  return .3 * curve * (.6 + W.rep * .12) * (W.day === 1 ? .85 : 1) * [1, 1.2, 1.3, 1.4][upLv('sign')] * (1 + .05 * upLv('ads')) * (hasPerk('shao_lure') ? 1.08 : 1) * (1 + beauty() * .015) * (beautyLv() >= 2 ? 1.05 : 1) * (beautyLv() >= 3 ? 1.1 : 1) * wxOf().rate * priceTier().rate * (hasPerk('qing_student') ? 1.06 : 1) * (1 + comfort() * .01) * (1 + .03 * festive()) * dirtSlow() * vipMul() * (W.today && W.today.crowdUntil > clockOpen ? 1.4 : 1) * (W.rival && W.day <= W.rival.until ? .85 : 1) * (1 + .06 * doorsOpen());   // comfort brings people in; festive pieces in season too   // a nicer shop draws more people; weather, prices
 }
 function freshLook() { const pool = guestPool(), used = new Set([...CUST, ...DINERS].map(c => c.ci)), free = pool.filter(i => !used.has(i)); return pick(free.length ? free : pool); }   // only the kinds of customer that have started coming
 function spawnCustomer(force) {
@@ -274,14 +276,15 @@ function leaveShop(c) {
 function fanOf(ci, st) {   // happy visits by this kind of customer add up; at GIFT_AT one of them brings a present (once per kind)
   const kind = GUEST_DEF[ci] && GUEST_DEF[ci].name; if (!kind || !W) return; W.fans = W.fans || {}; W.gifted = W.gifted || {};
   W.fans[kind] = Math.max(0, (W.fans[kind] || 0) + (st >= 5 ? 1 : st <= 2 ? -1 : 0));
-  if (W.fans[kind] >= LOYAL_STORY) loyalStory(kind, ci);   // a true regular: their own scene + a keepsake (guests.js)
+  if (W.fans[kind] >= LOYAL_STORY) loyalStory(kind, ci, false);   // a true regular: their own scene + a keepsake (guests.js)
   if (W.fans[kind] < GIFT_AT || W.gifted[kind]) return;
   W.gifted[kind] = true;
   const id = GIFT_ITEM[kind], it = id && !hasItem(id) && DECOR_ITEMS[id]; if (!it) return;   // their own piece, once
+  W.giftN = (W.giftN || 0) + 1; if (W.giftN >= 3 && !W.giftShelf) W.giftShelfDue = true;   // the third present: 坤伯 puts a shelf up on the wall (next morning)
   if (COUNTER_OK.includes(id) && counterFree().length) { (W.items = W.items || {})[id] = true; (W.counter = W.counter || {})[counterFree()[0]] = id; applyDecor(); }   // small gifts go straight onto the front counter
   else if (it) { let pos = null; if (it.cat !== 'wall') pos = findItemSpot(); if (it.cat === 'wall' || pos) { (W.items = W.items || {})[id] = true; if (pos) { (W.itemPos = W.itemPos || {})[id] = pos; GIFT_PLACE = id; } applyDecor(); } }
   else { (W.items = W.items || {})[id] = true; }   // no room on the floor right now: it waits for 摆放
-  STORY_Q.push({ key: 'gift', ci, lines: [[null, '一位' + kind + '熟客走到收银台。'], ...(GIFT_THANKS[kind] || [['cust', '常来光顾，你们招呼得很好。这个送给你！']]).filter(([w]) => !HIRE[w] || W.staff[w].hired), [null, '收到「' + it.name + '」' + (it.cat === 'wall' ? '，已经挂好了。' : onCounter(id) ? '，摆在前台了。' : '。')]] });
+  STORY_Q.push({ key: 'gift', ci, lines: [[null, '一位' + kind + '熟客走到收银台。'], ...(GIFT_THANKS[kind] || [['cust', '常来光顾，你们招呼得很好。这个送给你！']]).filter(([w]) => !HIRE[w] || W.staff[w].hired), [null, '收到「' + it.name + '」' + (it.cat === 'wall' ? '，已经挂好了。' : onGiftShelf(id) ? '，摆在墙上的木架了。' : onCounter(id) ? '，摆在前台了。' : '。')]] });
   NOTICES.push('熟客送礼：' + it.name); SFX.ding();
 }
 function gripe(k) { W.today.gripes[k] = (W.today.gripes[k] || 0) + 1; LAST_GRIPE = { k, t: 0 }; }

@@ -12,6 +12,7 @@ function canPlace(g) {
     for (const h of HARD) if (near(o, h, 4)) return '碰到柜台了';
     for (const og of MOV) if (og !== g) for (const b of og.objs) if (near(o, b, WALK_GAP)) return '太挤，人过不去';
     for (const L_ of KEEP_CLEAR) if (near(o, L_, 2)) return L_.why;
+    if (doorsOpen() >= 1 && near(o, { x0: 118, x1: 148, y0: 290, y1: 320 }, 2)) return '挡住出口门';
   }
   if (!routesOpen()) return '会把路堵死';
   return '';

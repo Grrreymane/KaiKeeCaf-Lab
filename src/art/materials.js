@@ -22,6 +22,7 @@ function matInit() {   // palette colours can change (wallpaper / themes): rebui
   matSet('steel', [C.steel, C.steelS, C.steelD, '#c0c6c9', '#a3aaae', '#8e959a', '#eef1f3', '#d3d8db', '#b6bcc0']);
   matSet('brick', [C.brickL, C.brick, C.brickD]);
   for (const k in BOOTH_STYLES) matSet('velvet', BOOTH_STYLES[k].leather);
+  for (const k in COUNTER_STYLES) if (k !== 'terrazzo' && k !== 'oak') { wood('vert', COUNTER_STYLES[k].cab.slice(0, 2), [COUNTER_STYLES[k].cab[2]]); if (k !== 'red') wood('oak', COUNTER_STYLES[k].top.slice(0, 2), []); }
 }
 const mhash = (x, y) => { let h = (x * 374761393 + y * 668265263) | 0; h = (h ^ (h >>> 13)) * 1274126177; return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
 function vnoise(x, y) {   // smooth value noise, 0..1

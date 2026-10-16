@@ -9,8 +9,37 @@ function applyFurniture() {   // saved placement offsets -> objects (relative to
   computeStops(); redoShadows();
 }
 function notice(text) { NOTICES.push(text); }
+// 目标: one milestone at a time, easy to hard — what to aim for next, with a reward when it comes true
+const bestDay = k => Math.max(0, ...(W.history || []).map(h => h[k] || 0), (W.today && W.today[k]) || 0);
+const researched = () => PIDS.filter(p => PRODUCTS[p].day > 1 && !PRODUCTS[p].lab && W.known[p]).length;
+const GOALS = [
+  ['开张大吉', '累计招呼 20 位客人', () => [W.total.served, 20], 100, 20],
+  ['第一款新品', '研发 1 款新品', () => [researched(), 1], 80, 20],
+  ['请个帮手', '请到雯姐', () => [W.staff.wen.hired ? 1 : 0, 1], 100, 20],
+  ['日入八百', '一天收入 $800', () => [bestDay('revenue'), 800], 150, 30],
+  ['小有名气', '名气到 3.5', () => [W.rep, 3.5], 150, 30],
+  ['熟客送礼', '一位熟客送你礼物', () => [Object.keys(W.gifted || {}).length, 1], 100, 30],
+  ['四款新品', '研发 4 款新品', () => [researched(), 4], 150, 30],
+  ['第一套搭配', '集齐一套摆设搭配', () => [DECOR_SETS.filter(setDone).length, 1], 200, 40],
+  ['一季完成', '捱完第一季（12 天）', () => [W.stats.days || 0, 12], 300, 50],
+  ['日入千五', '一天收入 $1500', () => [bestDay('revenue'), 1500], 300, 50],
+  ['打通隔壁', '扩建：打通隔壁', () => [expandLv(), 1], 300, 50],
+  ['名气四星', '名气到 4.0', () => [W.rep, 4], 300, 60],
+  ['老熟客', '一位客人好感满 14', () => [Object.keys(W.keepsakes || {}).length, 1], 300, 60],
+  ['更大的店', '扩建厨房或前台', () => [W.xk || W.xf ? 1 : 0, 1], 400, 60],
+  ['日赚八百', '一天净赚 $800', () => [bestDay('profit'), 800], 500, 80],
+  ['街知巷闻', '美观到「街知巷闻」', () => [beautyLv(), 3], 500, 80],
+  ['十款新品', '研发 10 款新品', () => [researched(), 10], 600, 100],
+  ['有口皆碑', '名气到 4.5', () => [W.rep, 4.5], 800, 120],
+];
+const goalNow = () => GOALS[W.goal || 0];
+function checkGoals() {
+  let G_; while ((G_ = goalNow()) && (() => { const [a, b] = G_[2](); return a >= b; })()) {
+    W.goal = (W.goal || 0) + 1; W.money += G_[3]; W.pts = (W.pts || 0) + G_[4]; SFX.ding(); notice('目标达成「' + G_[0] + '」：+' + money$(G_[3]) + ' +' + G_[4] + '分');
+  }
+}
 function checkAch() {   // award any achievement that has just come true (once each)
-  if (!W || !W.ach) return;
+  if (!W || !W.ach) return; checkGoals();
   for (const a of ACH) if (!W.ach[a.id] && a.test()) {
     W.ach[a.id] = W.day; W.pts = (W.pts || 0) + a.pts; if (a.money) W.money += a.money;
     NOTICES.unshift('成就「' + a.name + '」 +' + a.pts + '分' + (a.money ? ' +$' + a.money : '')); if (!NOTICE || PHASE !== 'open') NOTICE = { text: NOTICES.shift(), t: 0 }; SFX.ding();
@@ -57,7 +86,7 @@ function stepDay(dt) {
     if (clockOpen >= OPEN_LEN) { PHASE = 'closing'; SFX.close(); }
   } else if (PHASE === 'closing') {
     clockOpen += dt;
-    if ((!CUST.length && !DINERS.some(d => d.state !== 'out')) || clockOpen > OPEN_LEN + 45) endDay();
+    if ((!CUST.length && !DINERS.some(d => d.state !== 'out')) || clockOpen > OPEN_LEN + 45) { if (!W.today.eve) { W.today.eve = true; specialSlot(true); } if (!DIALOG && !STORY_Q.length) endDay(); }   // a second special story waits until after closing
   }
   if (!NOTICE && NOTICES.length) NOTICE = { text: NOTICES.shift(), t: 0 };
   if (NOTICE && (NOTICE.t += dt) > 3.2) NOTICE = null;
@@ -141,7 +170,7 @@ function buyUpgrade(k) {
 }
 function buyExtraShelf(id, fridge) {
   const st = W.shelves[id], cost = EXTRA_SHELF[id]; if (!st || !st.locked || W.money < cost || PHASE === 'open' || PHASE === 'closing' || expandLv() < (EXTRA_NEED[id] || 0)) { SFX.deny(); NOTICE = { text: expandLv() < (EXTRA_NEED[id] || 0) ? '先打通隔壁' : W.money < cost ? '钱不够' : '营业中不能加货架，收工或开门前再买', t: 0 }; return false; }
-  W.money -= cost; W.today.upCost += cost; st.locked = false; st.fridge = !!fridge; applyDecor(); computeStops(); redoShadows(); RINGS.clear(); SFX.ding(); saveGame(); return true;
+  W.money -= cost; W.today.upCost += cost; st.locked = false; st.fridge = !!fridge; applyDecor(); computeStops(); redoShadows(); RINGS.clear(); SFX.ding(); playScene('shelf'); saveGame(); return true;
 }
 function setShelfKind(id, fridge) {   // a display spot is a shelf (baked goods) or a glass fridge (drinks / desserts); switching clears what's on it
   const st = W.shelves[id]; if (!!st.fridge === fridge) return true;
@@ -168,7 +197,8 @@ function buyShelfTier(id) {
   W.money -= T.cost; W.today.upCost += T.cost; W.decor.tier[id] = t; applyDecor(); SFX.ding(); saveGame(); return true;
 }
 function buyDecor(kind, k) {   // wallpaper / booth style: buy once, then switch freely
-  const S = (kind === 'wall' ? WALLS : BOOTH_STYLES)[k], own = kind === 'wall' ? W.decor.walls : W.decor.booths;
+  if (kind === 'counter') W.decor.counters = W.decor.counters || { oak: true };
+  const S = (kind === 'wall' ? WALLS : kind === 'counter' ? COUNTER_STYLES : BOOTH_STYLES)[k], own = kind === 'wall' ? W.decor.walls : kind === 'counter' ? W.decor.counters : W.decor.booths;
   if (!own[k]) { if (W.money < S.cost) { SFX.deny(); return false; } W.money -= S.cost; W.today.upCost += S.cost; own[k] = true; }
   W.decor[kind] = k; applyDecor(); SFX.buy(); saveGame(); return true;
 }
@@ -179,7 +209,9 @@ function rotateGroup(g) {   // placement mode: turn a shelf / plant 90 degrees (
   EDIT.msg = g.name + '转好了'; SFX.buy(); saveFurniture();
 }
 function upgradeStaff(k) {   // spend points: faster at the job, wage up, affection up, and a little scene
-  const n = lvOf(k) + 1; if (n > LV_MAX || (W.pts || 0) < LV_COST[n]) { SFX.deny(); return false; }
+  const n = lvOf(k) + 1; if ((W.today.upg || {})[k]) { SFX.deny(); NOTICE = { text: '今天已经升过级了，明天再来', t: 0 }; return false; }   // one level (and one scene) per person a day
+  if (n > LV_MAX || (W.pts || 0) < LV_COST[n]) { SFX.deny(); return false; }
+  (W.today.upg = W.today.upg || {})[k] = true;
   W.pts -= LV_COST[n]; W.lv[k] = n; SFX.ding(); playScene('aff_' + k + '_' + (n - 1)); if (PERKS[k] && PERKS[k][n]) PANEL = { kind: 'perk', k, lv: n, bar: 3 }; saveGame(); return true;   // Lv3 / Lv5: pick a new ability
 }
 function setTemp() {   // this morning's part-timer: a student on contract keeps coming; in summer, students looking for holiday work

@@ -40,8 +40,9 @@ const LOYAL_TALK = {
   '严肃老师': [['cust', '我改作业累了就来这里坐一下。'], ['wen', '老师辛苦了，给你少甜哦。'], ['cust', '……嗯，那这杯批一百分。']],
   '西装金融男': [['cust', '市场每天都在变，这里的味道没变。'], ['hero', '我们会一直这样做下去的。'], ['cust', '这种稳定，很难得。']],
 };
-function loyalStory(kind, ci) {   // the scene + keepsake, once per kind
+function loyalStory(kind, ci, now) {   // the scene + keepsake, once per kind (earned during the day; it plays before or after work)
   W.keepsakes = W.keepsakes || {}; if (W.keepsakes[kind]) return;
+  if (!now) { W.loyalQ = W.loyalQ || []; if (!W.loyalQ.some(q => q[0] === kind)) W.loyalQ.push([kind, ci]); return; }
   W.keepsakes[kind] = W.day; const talk = (LOYAL_TALK[kind] || [['cust', '谢谢你们一直以来的照顾。']]).filter(([w]) => !HIRE[w] || W.staff[w].hired);
   STORY_Q.push({ key: 'loyal', ci, lines: [[null, '老熟客·' + kind]].concat(talk).concat([[null, '收到「' + (KEEPSAKE[kind] || '一份心意') + '」，摆在店里了（舒适 +1）']]) });
   setTimeout(() => applyDecor(), 0);   // it goes on the wall board or the glass case
@@ -269,19 +270,35 @@ const EP_ARCS = [
     ['cust', '（眼眶红了）谢谢师傅。'], [null, '几天后，金庭的横幅拆了。']] },
 ];
 let EP_BANNER = null;   // { ep, t } — the bar at the top inviting the player to watch
-function stepEpisodes(dt) {
-  if (!W || !isOpenPhase()) return; W.eps = W.eps || {};
-  if (EP_BANNER) { EP_BANNER.t += dt; if (EP_BANNER.t > 14) EP_BANNER = null; return; }   // ignored: it may come back another day
-  const T = W.today; if (T.epAt === undefined) T.epAt = rng() < .5 ? 40 + rng() * (OPEN_LEN * .6) : -1;   // about one day in two
-  if (T.epAt < 0 || clockOpen < T.epAt || T.epDone) return;
-  const arc = EP_ARCS.filter(e => !W.eps[e.id] && e.ok()), one = EPISODES.find(e => !W.eps[e.id] && e.ok());   // a story part when one is due (more often than not), otherwise a one-off
-  const ep = arc.length && (rng() < .65 || !one) ? arc[0] : one; T.epDone = true; if (!ep) return;
-  playEpisode(ep); SFX.ding();   // straight into the scene (the shop pauses while it plays)
+function stepEpisodes(dt) {   // only the old "come back later" banner still runs during the day
+  if (EP_BANNER) { EP_BANNER.t += dt; if (EP_BANNER.t > 14) EP_BANNER = null; }
 }
-function playEpisode(ep) {
-  EP_BANNER = null; W.eps[ep.id] = W.day;
+// Special stories (小剧场, a regular's own scene, a staff heart-to-heart, 坤伯's gift shelf): one a day, before opening.
+// When two are due the same day, the second plays after closing. 小剧场 come every other day, taking turns between the
+// story lines (the line not seen for longest goes next), with a one-off every third time.
+const epDue = () => W.day >= 3 && W.day - (W.epLast || -9) >= 2;
+function pickEpisode(eve) {
+  W.eps = W.eps || {}; W.arcLast = W.arcLast || {}; const fits = e => !eve || !['shao', 'crowd'].includes(e.fx);   // day-time effects only work in the morning
+  const arcs = EP_ARCS.filter(e => !W.eps[e.id] && e.ok() && fits(e)).sort((a, b) => (W.arcLast[a.arc] || 0) - (W.arcLast[b.arc] || 0));
+  const one = EPISODES.find(e => !W.eps[e.id] && e.ok() && fits(e));
+  if (!arcs.length) return one || null; if (!one) return arcs[0];
+  return (W.epN || 0) % 3 === 2 ? one : arcs[0];
+}
+function specialSlot(eve) {
+  const T = W.today; if (T[eve ? 'spEve' : 'spAm']) return false; T[eve ? 'spEve' : 'spAm'] = true;
+  W.storyNext = W.storyNext || []; W.loyalQ = W.loyalQ || [];
+  if (!eve && W.giftShelfDue && !W.giftShelf) { W.giftShelf = true; W.giftShelfDue = false; STORY_Q.push({ key: 'giftshelf', lines: tonedLines(GIFT_SHELF_TALK) }); applyDecor(); return true; }
+  if (!eve && W.storyNext.length) { playScene(W.storyNext.shift()); return true; }
+  if (W.loyalQ.length) { const [kind, ci] = W.loyalQ.shift(); loyalStory(kind, ci, true); return true; }
+  if (epDue()) { const ep = pickEpisode(eve); if (ep) { playEpisode(ep, eve); return true; } }
+  return false;
+}
+const GIFT_SHELF_TALK = [[null, '早上，坤伯拎住一块木板同一盒钉入嚟。'], ['lin', '坤伯，你做咩？'], ['kun', '……熟客送嘅嘢，前台摆唔落喇。'], ['kun', '钉个木架上墙，摆得多啲。'],
+  ['hero', '坤伯你仲识做木工？'], ['kun', '……以前间铺啲架都系我钉嘅。'], [null, '墙上多咗一排木架。以后熟客送嘅礼物，会先摆上去。']];
+function playEpisode(ep, eve) {
+  EP_BANNER = null; W.eps = W.eps || {}; W.eps[ep.id] = W.day; W.epLast = W.day; W.epN = (W.epN || 0) + 1; if (ep.arc) (W.arcLast = W.arcLast || {})[ep.arc] = W.day + (eve ? .5 : 0);
   const ci = ep.ci != null ? ep.ci : pick(guestPool());   // who's in it: the episode's own customer, or one of today's kinds
-  STORY_Q.push({ key: 'ep', ci, cname: ep.cname, bg: ep.bg, lines: [[null, ep.arc ? '小剧场 · ' + ep.arc + '（' + ep.part + '/' + EP_ARCS.filter(e => e.arc === ep.arc).length + '）' : '小剧场']].concat(ep.lines.filter(([w]) => !HIRE[w] || hired(w))) });
+  STORY_Q.push({ key: 'ep', ci, cname: ep.cname, bg: ep.bg || (eve ? 'night' : undefined), lines: [[null, ep.arc ? '小剧场 · ' + ep.arc + '（' + ep.part + '/' + EP_ARCS.filter(e => e.arc === ep.arc).length + '）' : '小剧场']].concat(ep.lines.filter(([w]) => !HIRE[w] || hired(w))) });
   if (ep.fx === 'shao') W.today.shaoSlowUntil = clockOpen + 45;
   if (ep.fx === 'crowd') { W.today.crowdUntil = clockOpen + 60; dirtAdd(12); notice('门口挤满了人：一阵子客多，店也脏得快'); }   // 粉丝风波
   if (ep.fx === 'fanend') { W.rep = Math.min(5, W.rep + .2); notice('阿少的事传开了：名气 +0.2'); }

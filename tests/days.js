@@ -3,7 +3,7 @@
 const strat = ARGS[0] || 'good', days = +(ARGS[1] || 12);
 startGame(true);
 const S = 1 / 30;
-function run(sec) { for (let i = 0; i < sec * 30; i++) { gtime += S; stepDay(S); simStep(S); } }
+function run(sec) { for (let i = 0; i < sec * 30; i++) { gtime += S; stepDay(S); simStep(S); STORY_Q.length = 0; DIALOG = null; } }   // the player taps through every scene
 const log = [];
 for (let d = 0; d < days; d++) {
   if (strat !== 'idle') {

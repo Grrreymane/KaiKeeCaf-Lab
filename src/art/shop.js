@@ -335,7 +335,8 @@ function drawBackground(c) {
 }
 
 // ============================================================ 店里和街上的东西
-const STATICS = [], STAFF = [], TABLES = {}, FURN = [], BOOTHS = [], STOOLS = [76, 100, 124, 148], NEXT_FRONT = [], NEXT_HIDE = [];
+C.ctopL = '#d99a5c'; C.ctop = '#b8743c'; C.ctopD = '#93582c';
+const STATICS = [], STAFF = [], TABLES = {}, FURN = [], BOOTHS = [], STOOLS = [76, 100, 124, 148], NEXT_FRONT = [], FRONT_A = {}, FRONT_B = {}, NEXT_HIDE = [];
 let WINBAR = null, TAKEAWAY = null, SHOWCASE = null;
 function drawShowcase(c) {   // lower shelf + upper shelf, up to 10 pieces of the day's signature item; a small 招牌 card when it's set
   if (!W || !W.showcase || !PRODUCTS[W.showcase] || !unlocked(W.showcase)) return;
@@ -353,6 +354,47 @@ function woodGrain(g, Q, xa, xb, z0, z1, yF, step) {
 }
 function woodTop(g, Q, xa, xb, ya, yb, z) {   // 台面顺着 x 方向的长木纹
   for (let y = ya + 2; y < yb - 1; y += 3) for (let x = xa + 2; x < xb - 2; x += .5) if (Math.sin(x * .35 + y * 1.3) > .55) { const [a, b] = Q(x, y + Math.sin(x * .2) * .6, z); g.set(R(a), R(b), '#c4844a'); }
+}
+function mkBake() {   // the bake counter beside the glass case (rebuilt when the counter style changes)
+  return makeObj(P, { x0: 206, x1: 300, y0: 30, y1: 46 }, 56, [
+    { g: (g, Q) => {
+      bx(g, Q, 206, 30, 0, 94, 16, 30, C.cabL, C.cab, C.cabD);   // front counter cabinets: vertical boards (materials.js)
+      bx(g, Q, 205, 29, 30, 96, 18, 4, C.ctopL, C.ctop, C.ctopD);   // 木面
+      for (const [x, y] of [[214, 36], [219, 40], [211, 42], [224, 37]]) { const [a, b] = Q(x, y, 34); g.rect(R(a) - 3, R(b) - 1, 7, 3, '#fbf6ea'); }
+      { const [a, b] = Q(218, 38, 34); g.ell(a, b - 3, 9, 5.5, (xx, yy) => (xx - a) + (yy - b + 3) * 1.4 < -5 ? '#fff6e0' : (xx - a) + (yy - b + 3) < 5 ? '#f2dfb8' : '#ddc394'); }
+      bx(g, Q, 210, 43, 34, 18, 2.4, 2.4, '#e9b07a', '#c98e58', '#a87040', 0);
+      bx(g, Q, 234, 32, 34, 22, 12, 1, '#c9cdd0', '#aab0b3', '#90969a', 1);
+      for (let i = 0; i < 4; i++) for (let j = 0; j < 2; j++) { const [a, b] = Q(238 + i * 5, 35 + j * 6, 35); g.ell(a, b, 3.8, 2.1, '#e9c48a'); g.ell(a, b - .4, 2.3, 1.1, j ? '#ffe27a' : '#f6e2b4'); }
+      bx(g, Q, 262, 33, 34, 14, 10, 1, '#c9cdd0', '#aab0b3', '#90969a', 1);
+      for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) { const [a, b] = Q(266 + i * 6, 36 + j * 5, 35); g.ell(a, b - 2, 4.5, 3.4, '#f2c96a'); g.ell(a - 1, b - 3, 2, 1.2, '#ffe9a0'); }   // 刚出炉的菠萝包
+      bx(g, Q, 284, 34, 34, 9, 8, 3, '#c94a3e', '#b23e33', '#93322a', 1.5); bx(g, Q, 290, 35, 37, 2.5, 4, 12, '#c94a3e', '#b23e33', '#93322a', 0); bx(g, Q, 282, 35, 47, 11, 6, 4, '#d9564a', '#b23e33', '#93322a', 1.5);
+      { const [a, b] = Q(287, 38, 37); g.ell(a, b - 2, 6, 3.4, '#d3d8d6'); g.ell(a, b - 4, 4.6, 2, '#f2dfb8'); }
+    } },
+  ]);
+}
+function mkTill() {   // the till + glass case: one long counter
+  return makeObj(P, { x0: 40, x1: 200, y0: 30, y1: 46 }, 52, [
+    { g: (g, Q) => {
+      bx(g, Q, 40, 30, 0, 56, 16, 30, C.cabL, C.cab, C.cabD);
+      bx(g, Q, 38, 29, 30, 60, 18, 4, C.ctopL, C.ctop, C.ctopD);
+      woodTop(g, Q, 40, 96, 30, 46, 34);
+      bx(g, Q, 42, 34, 34, 16, 10, 9, '#f2ead2', '#dccfab', '#c2b48c'); bx(g, Q, 43, 34, 43, 8, 3, 5, '#2f6a50', '#2f6a50', '#24533e');
+      bx(g, Q, 70, 35, 34, 14, 7, 8, '#a8754a', '#8a5a3a', '#6e4630', 1.5); g.quad(Q(72, 42, 36), Q(78, 42, 36), Q(78, 42, 40), Q(72, 42, 40), '#e9dcc0'); for (let x = 72.5; x < 78; x += 1.2) for (let z = 36.5; z < 40; z += 1.2) { const [a, b] = Q(x, 42, z); g.set(R(a), R(b), '#8a7a60'); }
+      { const [a, b] = Q(81, 42, 38); g.ell(a, b, 2.4, 2.4, '#e9c46a'); } g.seg(Q(82, 37, 42), Q(88, 37, 56), '#c9cdd0');   // 收音机
+      for (let t = 0; t < 3; t++) g.quad(Q(44 + t * 4, 44, 38), Q(46 + t * 4, 44, 38), Q(46 + t * 4, 44, 40), Q(44 + t * 4, 44, 40), '#a49671');
+      bx(g, Q, 96, 30, 0, 104, 16, 18, C.cabL, C.cab, C.cabD);
+      bx(g, Q, 96, 30, 18, 104, 16, 3, C.ctopL, C.ctop, C.ctopD);
+    } },
+    { g: (g, Q) => bx(g, Q, 96, 30, 34, 104, 16, 1, '#dff6f8', '#bfe6ea', '#a9dbe0'), plain: true, alpha: .75 },
+  ]);
+}
+let COUNTER_PARTS = {}, COUNTER_DONE = 'oak';
+function setCounterColors() { const S = COUNTER_STYLES[(W && W.decor && W.decor.counter) || 'oak'] || COUNTER_STYLES.oak; [C.cabL, C.cab, C.cabD] = S.cab; [C.ctopL, C.ctop, C.ctopD] = S.top; }
+function restyleCounter() {   // 装修 → 前台: build the counter again in the new colours (and its extensions)
+  setCounterColors(); matInit();
+  for (const [k, mk] of [['bake', mkBake], ['till', mkTill]]) { const o = COUNTER_PARTS[k], i = STATICS.indexOf(o), n = mk(); if (k === 'till') { n.after = drawShowcase; SHOWCASE = n; } COUNTER_PARTS[k] = n; if (i >= 0) STATICS[i] = n; }
+  if (ROOM_OBJ.xf) { const i = STATICS.indexOf(ROOM_OBJ.xf); if (i >= 0) STATICS.splice(i, 1); delete ROOM_OBJ.xf; }
+  COUNTER_KEY = '';
 }
 function buildStatics() {
   const add = o => (STATICS.push(o), o), Z = PLAT;
@@ -379,21 +421,7 @@ function buildStatics() {
     g.quad(Q(170, 10, Z + 52), Q(176, 10, Z + 52), Q(175, 10, Z + 38), Q(171, 10, Z + 38), '#7a4a2a');
   } }]));
   // ---- 烘焙台：接在玻璃柜右边，和前台一排（客人从店里看得到做点心）；后面平台上是层炉、墙上搁板
-  add(makeObj(P, { x0: 206, x1: 300, y0: 30, y1: 46 }, 56, [
-    { g: (g, Q) => {
-      bx(g, Q, 206, 30, 0, 94, 16, 30, C.cabL, C.cab, C.cabD);   // front counter cabinets: vertical boards (materials.js)
-      bx(g, Q, 205, 29, 30, 96, 18, 4, '#e2ad74', '#c08a54', '#9c6a3c');   // 木面
-      for (const [x, y] of [[214, 36], [219, 40], [211, 42], [224, 37]]) { const [a, b] = Q(x, y, 34); g.rect(R(a) - 3, R(b) - 1, 7, 3, '#fbf6ea'); }
-      { const [a, b] = Q(218, 38, 34); g.ell(a, b - 3, 9, 5.5, (xx, yy) => (xx - a) + (yy - b + 3) * 1.4 < -5 ? '#fff6e0' : (xx - a) + (yy - b + 3) < 5 ? '#f2dfb8' : '#ddc394'); }
-      bx(g, Q, 210, 43, 34, 18, 2.4, 2.4, '#e9b07a', '#c98e58', '#a87040', 0);
-      bx(g, Q, 234, 32, 34, 22, 12, 1, '#c9cdd0', '#aab0b3', '#90969a', 1);
-      for (let i = 0; i < 4; i++) for (let j = 0; j < 2; j++) { const [a, b] = Q(238 + i * 5, 35 + j * 6, 35); g.ell(a, b, 3.8, 2.1, '#e9c48a'); g.ell(a, b - .4, 2.3, 1.1, j ? '#ffe27a' : '#f6e2b4'); }
-      bx(g, Q, 262, 33, 34, 14, 10, 1, '#c9cdd0', '#aab0b3', '#90969a', 1);
-      for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) { const [a, b] = Q(266 + i * 6, 36 + j * 5, 35); g.ell(a, b - 2, 4.5, 3.4, '#f2c96a'); g.ell(a - 1, b - 3, 2, 1.2, '#ffe9a0'); }   // 刚出炉的菠萝包
-      bx(g, Q, 284, 34, 34, 9, 8, 3, '#c94a3e', '#b23e33', '#93322a', 1.5); bx(g, Q, 290, 35, 37, 2.5, 4, 12, '#c94a3e', '#b23e33', '#93322a', 0); bx(g, Q, 282, 35, 47, 11, 6, 4, '#d9564a', '#b23e33', '#93322a', 1.5);
-      { const [a, b] = Q(287, 38, 37); g.ell(a, b - 2, 6, 3.4, '#d3d8d6'); g.ell(a, b - 4, 4.6, 2, '#f2dfb8'); }
-    } },
-  ]));
+  setCounterColors(); COUNTER_PARTS.bake = add(mkBake());
   add(makeObj(P, { x0: 236, x1: 288, y0: 0, y1: 4 }, 110, [{ g: (g, Q) => {   // 墙上搁板：面粉罐、挞模
     for (const z of [70, 92]) { bx(g, Q, 236, 0, z, 52, 6, 2, C.woodL, C.wood, C.woodD, 0); for (const x of [238, 284]) g.seg(Q(x, 4, z), Q(x, 0, z - 6), '#5a3c2a'); }
     for (const [x, col] of [[240, '#f1e8d6'], [250, '#e9dcc0'], [260, '#f1e8d6']]) { bx(g, Q, x, 1, 72, 7, 4, 10, col, shade(col, -18), shade(col, -34), 2); bx(g, Q, x, 1, 82, 7, 4, 1.5, '#b8483c', '#a03c32', '#8a3028', 1.5); }
@@ -413,20 +441,7 @@ function buildStatics() {
   // v0.1 staff: Kun bakes behind the bake counter, Lin runs the till (and brews milk tea when nobody is paying)
   STAFF.push({ id: 'kun', ch: STAFF_HD.kun, x: 250, y: 22, face: 'SW' }, { id: 'lin', ch: STAFF_HD.lin, x: 52, y: 24, face: 'SW' });
   // 收银台 + 玻璃冷柜（一整条柜台；冷柜没有背板，看得见后面的人）
-  add(makeObj(P, { x0: 40, x1: 200, y0: 30, y1: 46 }, 52, [
-    { g: (g, Q) => {
-      bx(g, Q, 40, 30, 0, 56, 16, 30, C.cabL, C.cab, C.cabD);
-      bx(g, Q, 38, 29, 30, 60, 18, 4, '#d99a5c', '#b8743c', '#93582c');
-      woodTop(g, Q, 40, 96, 30, 46, 34);
-      bx(g, Q, 42, 34, 34, 16, 10, 9, '#f2ead2', '#dccfab', '#c2b48c'); bx(g, Q, 43, 34, 43, 8, 3, 5, '#2f6a50', '#2f6a50', '#24533e');
-      bx(g, Q, 70, 35, 34, 14, 7, 8, '#a8754a', '#8a5a3a', '#6e4630', 1.5); g.quad(Q(72, 42, 36), Q(78, 42, 36), Q(78, 42, 40), Q(72, 42, 40), '#e9dcc0'); for (let x = 72.5; x < 78; x += 1.2) for (let z = 36.5; z < 40; z += 1.2) { const [a, b] = Q(x, 42, z); g.set(R(a), R(b), '#8a7a60'); }
-      { const [a, b] = Q(81, 42, 38); g.ell(a, b, 2.4, 2.4, '#e9c46a'); } g.seg(Q(82, 37, 42), Q(88, 37, 56), '#c9cdd0');   // 收音机
-      for (let t = 0; t < 3; t++) g.quad(Q(44 + t * 4, 44, 38), Q(46 + t * 4, 44, 38), Q(46 + t * 4, 44, 40), Q(44 + t * 4, 44, 40), '#a49671');
-      bx(g, Q, 96, 30, 0, 104, 16, 18, C.cabL, C.cab, C.cabD);
-      bx(g, Q, 96, 30, 18, 104, 16, 3, '#d99a5c', '#b8743c', '#93582c');
-    } },
-    { g: (g, Q) => bx(g, Q, 96, 30, 34, 104, 16, 1, '#dff6f8', '#bfe6ea', '#a9dbe0'), plain: true, alpha: .75 },
-  ]));
+  setCounterColors(); COUNTER_PARTS.till = add(mkTill());
   SHOWCASE = STATICS[STATICS.length - 1]; SHOWCASE.after = drawShowcase;   // the case's two glass shelves: the day's signature item, from the kitchen
   add(makeObj(P, { x0: 96, x1: 200, y0: 30, y1: 46.5 }, 52, [
     { g: (g, Q) => { g.quad(Q(96, 46, 21), Q(200, 46, 21), Q(200, 46, 50), Q(96, 46, 50), '#c9f0f2'); g.quad(Q(200, 30, 21), Q(200, 46, 21), Q(200, 46, 50), Q(200, 30, 50), '#a9dde3'); g.quad(Q(96, 30, 50), Q(200, 30, 50), Q(200, 46, 50), Q(96, 46, 50), '#e2fafb'); }, plain: true, alpha: .28 },
@@ -504,7 +519,8 @@ function buildStatics() {
     { g: (g, Q) => { for (let t = xa + 6; t < xb - 10; t += 34) { g.quad(Q(t, 318, 13), Q(t + 7, 318, 13), Q(t + 17, 318, 60), Q(t + 10, 318, 60), '#ffffff'); g.quad(Q(t + 10, 318, 13), Q(t + 12, 318, 13), Q(t + 22, 318, 60), Q(t + 20, 318, 60), '#ffffff'); } }, plain: true, alpha: .2 },
     { g: (g, Q) => { for (const x of posts) bx(g, Q, x, 316.5, 11, 1.6, 3, 51, ...FR, 0); bx(g, Q, xa, 316.5, 60, xb - xa, 3, 3, ...FR, 0); } },
   ]));
-  pane(0, 162, [0, 36, 72, 108, 144, 160.4]); pane(222, 252, [222, 250.4]);   // the takeaway window between them is 60 wide pane(304, 320, [304, 318.4]);
+  FRONT_A.main = add(pane(0, 162, [0, 36, 72, 108, 144, 160.4], true)); pane(222, 252, [222, 250.4]);
+  FRONT_B.main = [pane(0, 108, [0, 36, 72, 106.4], true), pane(158, 162, [158, 160.4], true)].concat(doorObjs(108, 158));   // 加开门口 1: an exit door at the front left   // the takeaway window between them is 60 wide pane(304, 320, [304, 318.4]);
   add(makeObj(P, { x0: 162, x1: 222, y0: 316, y1: 320 }, 66, [{ g: (g, Q) => bx(g, Q, 162, 316.5, 60, 60, 3, 3, ...FR, 0) }]));   // 外卖窗上沿（窗开着）
   add(makeObj(P, { x0: 252, x1: 253.6, y0: 316, y1: 320 }, 70, [{ g: (g, Q) => bx(g, Q, 252, 316.5, 0, 1.6, 3, 66, ...FR, 0) }]));   // 门框：左右门柱、门楣分开排序
   add(makeObj(P, { x0: 302.4, x1: 304, y0: 316, y1: 320 }, 70, [{ g: (g, Q) => bx(g, Q, 302.4, 316.5, 0, 1.6, 3, 66, ...FR, 0) }]));
@@ -516,6 +532,8 @@ function buildStatics() {
   ])), xd < 280 ? { x0: 252, x1: 253.9 } : {});   // the left leaf folds flat against the post, so people walking in pass in front of it
   // next door, once opened: a low wall with windows instead of the shutter (swapped in by applyExpand)
   NEXT_FRONT.push(makeObj(P, { x0: 320, x1: 640, y0: 316, y1: 320 }, 12, [{ g: (g, Q) => { bx(g, Q, 320, 316, 0, 320, 4, 8, C.brickL, C.brick, C.brickD); bx(g, Q, 320, 316, 8, 320, 4, 3, '#c8eefc', '#9fdcf4', '#9fdcf4'); } }]), pane(320, 640, [320, 400, 480, 560, 638.4], true));
+  { const wall = (xa, xb) => makeObj(P, { x0: xa, x1: xb, y0: 316, y1: 320 }, 12, [{ g: (g, Q) => { bx(g, Q, xa, 316, 0, xb - xa, 4, 8, C.brickL, C.brick, C.brickD); bx(g, Q, xa, 316, 8, xb - xa, 4, 3, '#c8eefc', '#9fdcf4', '#9fdcf4'); } }]);
+    FRONT_B.next = [wall(320, 440), wall(490, 640), pane(320, 440, [320, 400, 438.4], true), pane(490, 640, [490, 560, 638.4], true)].concat(doorObjs(440, 490)); }   // 加开门口 2: a door into next door
   // 隔壁空铺：未解锁，只留门口卷闸「旺铺招租」
   add(makeObj(P, { x0: 324, x1: 640, y0: 316, y1: 320 }, 20, [{ g: (g, Q) => {
     bx(g, Q, 324, 316, 0, 316, 4, 16, '#c0c6c9', '#a3aaae', '#8e959a');
@@ -591,27 +609,43 @@ function addBooth(X, y0, id) {   // a booth bought for the room next door: drawn
   const B = { X, y0, objs, table: objs[1], id }; BOOTHS.push(B); group(id, '卡座', objs); return B;
 }
 // floor decor (plants, festive pieces): one object each, placed where the player left it (W.itemPos + placement offsets)
-function decorObj(id, x, y) {
+const GIFT_TABLETOP = ['luckycat', 'fishtank', 'aroma', 'basketball', 'plane', 'record', 'globe', 'vase', 'bunny', 'radio', 'bonsai'];   // small things: on the floor they get a side table
+function decorObj(id, x, y, bare) {
   const it = DECOR_ITEMS[id], big = id === 'xmas' || id === 'lantern';
-  return makeObj(P, { x0: x - 7, x1: x + 7, y0: y - 7, y1: y + 7 }, big ? 84 : 56, [{ g: (g, Q) => { const [a, b] = Q(x, y);
+  return makeObj(P, { x0: x - 7, x1: x + 7, y0: y - 7, y1: y + 7 }, big ? 84 : 56, [{ g: (g, Q) => { let [a, b] = Q(x, y);
     if (it.plant) return drawPlant(g, a, b, it.plant, it.pot);
-    if (id === 'luckycat') { g.rect(R(a) - 7, R(b) - 4, 14, 4, '#c8342c'); for (let t = 0; t < 14; t++) g.ell(a, b - 4 - t, 6 - Math.abs(t - 6) * .15, 3.4, t < 13 ? '#fbf6ea' : '#ffffff'); g.ell(a, b - 22, 6, 5, '#fbf6ea'); g.tri(a - 6, b - 25, a - 3, b - 26, a - 5, b - 30, '#fbf6ea'); g.tri(a + 6, b - 25, a + 3, b - 26, a + 5, b - 30, '#fbf6ea'); g.rect(R(a) + 5, R(b) - 34, 2, 10, '#fbf6ea'); g.set(R(a) - 2, R(b) - 23, '#2f2a30'); g.set(R(a) + 2, R(b) - 23, '#2f2a30'); g.rect(R(a) - 3, R(b) - 16, 6, 3, '#f0b43a'); g.set(R(a), R(b) - 20, '#e05050'); return; }
+    if (!bare && GIFT_TABLETOP.includes(id)) {   // a round side table, then the piece on top
+      g.ell(a, b - 1, 5, 2, '#4a3020'); g.rect(R(a) - 1, R(b) - 15, 2, 14, '#5a3c2a'); g.rect(R(a), R(b) - 15, 1, 14, '#7a5236');
+      g.ell(a, b - 16, 10, 4.2, '#6b4a35'); g.ell(a, b - 17, 10, 4, '#a8703e'); g.ell(a - 2, b - 18, 5, 1.6, '#c08a54'); b -= 17; }
+    if (id === 'bonsai') { g.rect(R(a) - 8, R(b) - 4, 16, 4, '#3f6e8a'); g.rect(R(a) - 9, R(b) - 5, 18, 2, '#5a8aa8'); g.rect(R(a) - 7, R(b) - 1, 2, 1, '#2f5068'); g.rect(R(a) + 5, R(b) - 1, 2, 1, '#2f5068');
+      for (const [dx, dy] of [[0, -6], [-1, -8], [-2, -10], [-1, -12], [0, -14], [1, -16], [2, -17]]) g.rect(R(a + dx) - 1, R(b + dy), 3, 2, '#6b4a35');
+      g.rect(R(a) - 5, R(b) - 11, 4, 1, '#6b4a35'); g.rect(R(a) + 2, R(b) - 15, 4, 1, '#6b4a35');
+      for (const [dx, dy, w, h] of [[-6, -12, 5, 2.4], [5, -16, 5.5, 2.6], [1, -20, 6, 2.8]]) { g.ell(a + dx, b + dy, w, h, '#2f7a3a'); g.ell(a + dx - 1, b + dy - 1, w - 2, h - 1, '#4fa04a'); }
+      return; }
+    if (id === 'luckycat') { g.rect(R(a) - 5, R(b) - 3, 10, 3, '#c8342c'); g.rect(R(a) - 5, R(b) - 3, 10, 1, '#e05a4a'); for (let t = 0; t < 9; t++) g.ell(a, b - 3 - t, 4.4 - Math.abs(t - 4) * .12, 2.4, '#fbf6ea'); g.ell(a, b - 14, 4.4, 3.6, '#fbf6ea');
+      g.tri(a - 4.4, b - 16, a - 2, b - 17, a - 4, b - 20, '#fbf6ea'); g.tri(a + 4.4, b - 16, a + 2, b - 17, a + 4, b - 20, '#fbf6ea'); g.set(R(a) - 4, R(b) - 18, '#f5b8c8'); g.set(R(a) + 3, R(b) - 18, '#f5b8c8');
+      g.rect(R(a) + 4, R(b) - 21, 2, 7, '#fbf6ea'); g.set(R(a) - 2, R(b) - 15, '#2f2a30'); g.set(R(a) + 2, R(b) - 15, '#2f2a30'); g.set(R(a), R(b) - 13, '#e05050'); g.rect(R(a) - 2, R(b) - 9, 4, 2, '#f0b43a'); g.rect(R(a) - 3, R(b) - 11, 6, 1, '#c8342c'); return; }
     if (id === 'fishtank') { g.rect(R(a) - 10, R(b) - 4, 20, 4, '#6b4a35'); g.rect(R(a) - 10, R(b) - 20, 20, 16, '#3a3a40'); g.rect(R(a) - 9, R(b) - 19, 18, 14, '#9ad8e8'); g.rect(R(a) - 9, R(b) - 19, 18, 2, '#c8f0f8'); g.rect(R(a) - 4, R(b) - 13, 4, 2, '#f08a24'); g.rect(R(a) + 3, R(b) - 10, 3, 2, '#e5604f'); g.rect(R(a) - 6, R(b) - 7, 12, 2, '#4f9a3a'); return; }
     if (id === 'aroma') { g.ell(a, b - 1, 6, 2.5, '#c99428'); g.rect(R(a) - 3, R(b) - 12, 6, 11, '#f4ead6'); g.rect(R(a) - 3, R(b) - 12, 6, 1, '#ffffff'); g.ell(a, b - 15, 1.6, 2.6, '#ffb52e'); g.set(R(a), R(b) - 15, '#fff4c0'); return; }
-    if (id === 'easel') { g.seg([R(a) - 7, R(b)], [R(a) - 3, R(b) - 26], '#6b4a35'); g.seg([R(a) + 7, R(b)], [R(a) + 3, R(b) - 26], '#6b4a35'); g.rect(R(a) - 9, R(b) - 28, 18, 18, '#ffffff'); g.rect(R(a) - 7, R(b) - 26, 7, 6, '#f590b0'); g.rect(R(a) + 1, R(b) - 22, 6, 8, '#5ab0e0'); g.rect(R(a) - 6, R(b) - 17, 10, 2, '#ffd23f'); return; }
+    if (id === 'easel') { g.seg([R(a), R(b) - 2], [R(a), R(b) - 36], '#4a3020'); g.seg([R(a) - 11, R(b)], [R(a) - 4, R(b) - 42], '#6b4a35'); g.seg([R(a) + 11, R(b)], [R(a) + 4, R(b) - 42], '#6b4a35'); g.seg([R(a) - 10, R(b) - 1], [R(a) - 3, R(b) - 41], '#8a6440');
+      g.rect(R(a) - 10, R(b) - 16, 20, 2, '#6b4a35'); g.rect(R(a) - 13, R(b) - 44, 26, 27, '#8a6440'); g.rect(R(a) - 12, R(b) - 43, 24, 25, '#ffffff');
+      g.rect(R(a) - 10, R(b) - 41, 10, 9, '#f590b0'); g.rect(R(a) + 2, R(b) - 37, 8, 12, '#5ab0e0'); g.rect(R(a) - 9, R(b) - 29, 10, 2, '#ffd23f'); g.rect(R(a) - 9, R(b) - 25, 7, 1, '#8a7a6a'); g.rect(R(a) - 9, R(b) - 22, 9, 1, '#8a7a6a'); return; }
     if (id === 'basketball') { g.ell(a, b - 6, 6, 6, '#e5772a'); g.seg([R(a) - 6, R(b) - 6], [R(a) + 6, R(b) - 6], '#5a2a10'); g.seg([R(a), R(b) - 12], [R(a), R(b)], '#5a2a10'); g.set(R(a) - 2, R(b) - 9, '#f8a868'); return; }
     if (id === 'plane') { g.rect(R(a) - 1, R(b) - 16, 2, 16, '#6b4a35'); g.ell(a, b, 5, 2, '#5a3c2a'); g.tri(a - 10, b - 18, a + 8, b - 22, a - 2, b - 15, '#ffffff'); g.tri(a - 2, b - 15, a + 8, b - 22, a + 2, b - 13, '#d8dde2'); return; }
     if (id === 'pinwheel') { g.rect(R(a), R(b) - 24, 1, 24, '#8a6a4a'); const cy = b - 24; g.tri(a, cy, a - 7, cy - 6, a - 1, cy - 8, '#e5604f'); g.tri(a, cy, a + 7, cy - 5, a + 6, cy + 1, '#ffd23f'); g.tri(a, cy, a + 6, cy + 6, a, cy + 8, '#3f86d6'); g.tri(a, cy, a - 6, cy + 5, a - 8, cy - 1, '#4f9a3a'); g.set(R(a), R(cy), '#ffffff'); return; }
     if (id === 'record') { g.rect(R(a) - 10, R(b) - 9, 20, 9, '#6b4a35'); g.rect(R(a) - 10, R(b) - 9, 20, 2, '#8a6440'); g.ell(a - 2, b - 10, 7, 2.5, '#1a1a1a'); g.ell(a - 2, b - 10, 2, 1, '#d0453a'); g.tri(a + 5, b - 10, a + 12, b - 22, a + 4, b - 20, '#e0b84a'); g.ell(a + 9, b - 21, 4, 3, '#f0d070'); return; }
-    if (id === 'mirror') { g.seg([R(a) - 5, R(b)], [R(a) - 2, R(b) - 14], '#6b4a35'); g.seg([R(a) + 5, R(b)], [R(a) + 2, R(b) - 14], '#6b4a35'); g.ell(a, b - 22, 6, 10, '#c99428'); g.ell(a, b - 22, 4.5, 8.5, '#cfe8f0'); g.rect(R(a) - 2, R(b) - 28, 1, 8, '#ffffff'); return; }
+    if (id === 'mirror') { g.seg([R(a) - 8, R(b)], [R(a) - 3, R(b) - 22], '#6b4a35'); g.seg([R(a) + 8, R(b)], [R(a) + 3, R(b) - 22], '#6b4a35'); g.seg([R(a), R(b) - 2], [R(a), R(b) - 20], '#4a3020');
+      g.ell(a, b - 34, 9, 15, '#a8781e'); g.ell(a, b - 34, 8, 14, '#c99428'); g.ell(a, b - 34, 6.5, 12.5, '#cfe8f0'); g.ell(a + 2, b - 30, 3, 6, '#b8d8e4'); g.rect(R(a) - 3, R(b) - 43, 1, 12, '#ffffff'); g.rect(R(a) - 1, R(b) - 45, 1, 5, '#ffffff'); g.rect(R(a) - 1, R(b) - 50, 2, 2, '#ffd23f'); return; }
     if (id === 'globe') { g.ell(a, b - 1, 5, 2, '#6b4a35'); g.rect(R(a) - 1, R(b) - 6, 2, 5, '#8a6a4a'); g.ell(a, b - 13, 7, 7, '#3f86d6'); g.ell(a - 2, b - 15, 3, 2, '#4f9a3a'); g.ell(a + 3, b - 10, 2, 2, '#4f9a3a'); g.seg([R(a) + 6, R(b) - 20], [R(a) + 6, R(b) - 6], '#c99428'); return; }
     if (id === 'suitcase') { g.rect(R(a) - 10, R(b) - 13, 20, 13, '#8a4a2a'); g.rect(R(a) - 10, R(b) - 13, 20, 2, '#a85a32'); for (const x of [-5, 4]) g.rect(R(a) + x, R(b) - 13, 2, 13, '#5a2e18'); g.rect(R(a) - 3, R(b) - 16, 6, 3, '#3a2418'); g.rect(R(a) - 8, R(b) - 9, 4, 3, '#f0d070'); g.rect(R(a) + 7, R(b) - 6, 3, 3, '#5ab0e0'); return; }
     if (id === 'chili') { drawPot(g, a, b, POTS.terracotta, 10); g.ell(a, b - 16, 9, 7, '#3f8a3a'); g.ell(a - 2, b - 18, 5, 4, '#4fa04a'); for (const [dx, dy] of [[-5, -16], [3, -19], [6, -13], [-1, -12], [-6, -21]]) { g.rect(R(a + dx), R(b + dy), 2, 4, '#e0302a'); g.set(R(a + dx), R(b + dy), '#ff6a5a'); } return; }
     if (id === 'vase') { g.ell(a, b - 7, 5, 7, '#3f86d6'); g.ell(a - 1, b - 9, 1.5, 3, '#8ac0e8'); g.rect(R(a) - 2, R(b) - 16, 4, 3, '#3f86d6'); for (const [dx, dy, col] of [[-5, -22, '#e8402a'], [0, -25, '#ffd23f'], [5, -21, '#f590b0'], [-2, -19, '#ffffff'], [3, -17, '#e8402a']]) { g.ell(a + dx, b + dy, 2.2, 2.2, col); } g.seg([R(a), R(b) - 16], [R(a) - 4, R(b) - 21], '#3f8a3a'); g.seg([R(a), R(b) - 16], [R(a) + 4, R(b) - 20], '#3f8a3a'); return; }
     if (id === 'bunny') { g.ell(a, b - 6, 6, 6, '#fbf6ea'); g.ell(a, b - 14, 5, 4.5, '#fbf6ea'); g.rect(R(a) - 4, R(b) - 25, 3, 8, '#fbf6ea'); g.rect(R(a) + 1, R(b) - 25, 3, 8, '#fbf6ea'); g.rect(R(a) - 3, R(b) - 23, 1, 5, '#f5b8c8'); g.rect(R(a) + 2, R(b) - 23, 1, 5, '#f5b8c8'); g.set(R(a) - 2, R(b) - 15, '#2a2024'); g.set(R(a) + 2, R(b) - 15, '#2a2024'); g.set(R(a) - 3, R(b) - 13, '#f590b0'); g.set(R(a) + 3, R(b) - 13, '#f590b0'); g.rect(R(a) - 2, R(b) - 9, 5, 2, '#e5604f'); return; }
-    if (id === 'chime') { for (const x of [-7, 7]) g.rect(R(a) + x, R(b) - 26, 1, 26, '#6b4a35'); g.rect(R(a) - 8, R(b) - 27, 17, 2, '#8a5a3a'); for (const [x, h] of [[-4, 8], [0, 11], [4, 7]]) { g.rect(R(a) + x, R(b) - 25, 1, h - 3, '#c9cdd0'); g.rect(R(a) + x - 1, R(b) - 25 + h - 3, 3, 3, '#5ab0e0'); } g.rect(R(a) + 1, R(b) - 12, 3, 5, '#f4ead6'); return; }
+    if (id === 'chime') { for (const x of [-10, 10]) { g.rect(R(a) + x, R(b) - 40, 2, 40, '#6b4a35'); g.rect(R(a) + x - 2, R(b) - 1, 6, 1, '#4a3020'); } g.rect(R(a) - 12, R(b) - 42, 26, 3, '#8a5a3a'); g.rect(R(a) - 12, R(b) - 42, 26, 1, '#a87048');
+      for (const [x, h] of [[-6, 12], [-2, 16], [2, 13], [6, 10]]) { g.rect(R(a) + x, R(b) - 39, 1, h - 4, '#c9cdd0'); g.rect(R(a) + x - 1, R(b) - 39 + h - 4, 3, 4, '#5ab0e0'); g.set(R(a) + x - 1, R(b) - 39 + h - 4, '#a8dcf4'); } g.rect(R(a) - 1, R(b) - 20, 4, 6, '#f4ead6'); g.rect(R(a), R(b) - 22, 1, 2, '#c9cdd0'); return; }
     if (id === 'skate') { g.ell(a, b - 3, 11, 3, '#2a2a32'); g.ell(a, b - 4, 10, 2.2, '#3a3a44'); g.rect(R(a) - 6, R(b) - 5, 4, 2, '#e07ab0'); g.rect(R(a) + 1, R(b) - 5, 5, 2, '#ffd23f'); for (const x of [-7, 6]) g.rect(R(a) + x, R(b) - 1, 2, 2, '#f0f0f0'); return; }
-    if (id === 'screen') { for (let k = 0; k < 3; k++) { const x = R(a) - 13 + k * 9; g.rect(x, R(b) - 26 + k, 9, 26 - k, '#c8a040'); g.rect(x + 1, R(b) - 25 + k, 7, 24 - k, '#c8342c'); for (let z = 0; z < 3; z++) g.rect(x + 3, R(b) - 22 + k + z * 7, 3, 4, '#2a2024'); } return; }
+    if (id === 'screen') { for (let k = 0; k < 3; k++) { const x = R(a) - 18 + k * 12; g.rect(x, R(b) - 40 + k, 12, 40 - k, '#a8781e'); g.rect(x + 1, R(b) - 39 + k, 10, 38 - k, '#c8342c'); g.rect(x + 1, R(b) - 39 + k, 10, 2, '#e05a4a');
+      for (let z = 0; z < 4; z++) { g.rect(x + 4, R(b) - 35 + k + z * 8, 4, 5, '#2a2024'); g.set(x + 3, R(b) - 33 + k + z * 8, '#2a2024'); } } return; }
     if (id === 'radio') { g.rect(R(a) - 9, R(b) - 14, 18, 14, '#8a5a3a'); g.rect(R(a) - 9, R(b) - 14, 18, 2, '#a87048'); g.rect(R(a) - 7, R(b) - 11, 9, 9, '#d8c4a0'); for (let y = -10; y < -2; y += 2) g.rect(R(a) - 7, R(b) + y, 9, 1, '#a8946a'); g.ell(a + 5, b - 9, 2, 2, '#e0b84a'); g.ell(a + 5, b - 4, 1.5, 1.5, '#e0b84a'); return; }
     if (id === 'bin') { for (let t = 0; t < 16; t++) g.ell(a, b - t, 6 - t * .05, 3, t < 15 ? (t % 5 === 0 ? '#2a6e50' : '#3f8f6e') : '#2f2a30'); g.ell(a, b - 16, 6.4, 3, '#4fa07e'); g.rect(R(a) - 1, R(b) - 20, 3, 3, '#2a6e50'); return; }
     if (id === 'doormat') { g.quad(Q(x - 9, y - 6), Q(x + 9, y - 6), Q(x + 9, y + 6), Q(x - 9, y + 6), '#8a5a3a'); g.quad(Q(x - 8, y - 5), Q(x + 8, y - 5), Q(x + 8, y + 5), Q(x - 8, y + 5), '#b0703a'); for (let t = -7; t <= 7; t += 2) g.seg(Q(x + t, y - 5), Q(x + t, y + 5), '#9a6030'); return; }
@@ -641,7 +675,7 @@ const ITEM_THUMB = {};
 function itemThumb(id) {   // a small picture of a decor piece for the 摆设 cards
   if (ITEM_THUMB[id]) return ITEM_THUMB[id]; const it = DECOR_ITEMS[id];
   if (it.cat !== 'wall') {   // the piece's own art, trimmed to its pixels
-    const src = decorObj(id, 60, 60).cv, w = src.width, h = src.height, d = src.getContext('2d').getImageData(0, 0, w, h).data; let x0 = w, y0 = h, x1 = 0, y1 = 0;
+    const src = decorObj(id, 60, 60, true).cv, w = src.width, h = src.height, d = src.getContext('2d').getImageData(0, 0, w, h).data; let x0 = w, y0 = h, x1 = 0, y1 = 0;
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (d[(y * w + x) * 4 + 3] > 20) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
     const cv = mk(Math.max(1, x1 - x0 + 1), Math.max(1, y1 - y0 + 1)); cv.getContext('2d').drawImage(src, -x0, -y0); return (ITEM_THUMB[id] = cv); }
   const cv = mk(40, 48), c = cv.getContext('2d'), r = (x, y, w, h, col) => { c.fillStyle = col; c.fillRect(x, y, w, h); };
@@ -674,9 +708,10 @@ function applyKeepsakes() {   // the regulars' small keepsakes stand in a row on
   STATICS.push(KEEP_OBJ);
 }
 // small gifts can stand on the front counter instead of the floor: two spots on the glass case, one on the till counter, one on the extended counter
-const COUNTER_SLOTS = [[164, 38, 50], [186, 38, 50], [91, 40, 34], [372, 40, 34], [158, 34, 60], [172, 34, 60], [186, 34, 60], [20, 40, 34], [32, 40, 34]],   // 4-6: the display step on the glass case (前台 Lv1), 7-8: the counter extended toward the window (Lv2)
-  COUNTER_UP = [['前台展示架', 600, '玻璃柜上加两层木架：多 3 个礼物位'], ['加长前台', 1200, '柜台往窗边接长：再多 2 个位'],], COUNTER_OK = ['luckycat', 'aroma', 'plane', 'bunny', 'globe', 'radio', 'vase', 'record', 'fishtank', 'basketball', 'chili', 'bonsai'];
-const counterSpots = () => [0, 1, 2].concat(W.xf && expandLv() ? [3] : [], (W.counterLv || 0) >= 1 ? [4, 5, 6] : [], (W.counterLv || 0) >= 2 ? [7, 8] : []);
+const COUNTER_SLOTS = [[164, 38, 50], [186, 38, 50], [91, 40, 34], [372, 40, 34], [158, 34, 60], [172, 34, 60], [186, 34, 60], [20, 40, 34], [32, 40, 34], [4, 192, 165, 1], [4, 212, 165, 1], [4, 232, 165, 1], [4, 252, 165, 1], [4, 272, 165, 1], [4, 292, 165, 1]],   // 9-14: the wooden gift shelf on the left wall   // 4-6: the display step on the glass case (前台 Lv1), 7-8: the counter extended toward the window (Lv2)
+  COUNTER_UP = [['前台展示架', 600, '玻璃柜上加两层木架：多 3 个礼物位'], ['加长前台', 1200, '柜台往窗边接长：再多 2 个位'],], COUNTER_OK = Object.keys(DECOR_ITEMS).filter(k => DECOR_ITEMS[k].cat === 'gift');
+const SHELF_SPOTS = [9, 10, 11, 12, 13, 14], onGiftShelf = id => SHELF_SPOTS.some(i => (W.counter || {})[i] === id);
+const counterSpots = () => (W.giftShelf ? SHELF_SPOTS : []).concat([0, 1, 2], W.xf && expandLv() ? [3] : [], (W.counterLv || 0) >= 1 ? [4, 5, 6] : [], (W.counterLv || 0) >= 2 ? [7, 8] : []);
 const counterFree = () => counterSpots().filter(i => !(W.counter || {})[i]);
 function buyCounterUp() { const lv = W.counterLv || 0, U = COUNTER_UP[lv]; if (!U || W.money < U[1]) { SFX.deny(); return false; } W.money -= U[1]; W.today.upCost += U[1]; W.counterLv = lv + 1; COUNTER_KEY = ''; applyDecor(); SFX.ding(); notice(U[0] + '装好了！'); saveGame(); return true; }
 const onCounter = id => Object.values((W && W.counter) || {}).includes(id);
@@ -688,13 +723,17 @@ function toggleCounter(id) {   // onto the counter (first free spot) or back ont
 }
 let COUNTER_OBJS = [], COUNTER_KEY = '';
 function applyCounterGifts() {
-  const key = JSON.stringify((W && W.counter) || {}) + (W && W.xf ? 'x' : '') + (W && W.counterLv || 0); if (key === COUNTER_KEY) return; COUNTER_KEY = key;
+  const key = JSON.stringify((W && W.counter) || {}) + (W && W.xf ? 'x' : '') + (W && W.counterLv || 0) + (W && W.giftShelf ? 's' : ''); if (key === COUNTER_KEY) return; COUNTER_KEY = key;
   for (const o of COUNTER_OBJS) { const k = STATICS.indexOf(o); if (k >= 0) STATICS.splice(k, 1); } COUNTER_OBJS = [];
   const lv = (W && W.counterLv) || 0;
   if (lv >= 1) { const o = makeObj(P, { x0: 150, x1: 198, y0: 30, y1: 37 }, 70, [{ g: (g, Q) => { bx(g, Q, 150, 30, 50, 48, 7, 10, C.woodL, C.wood, C.woodD, 1); bx(g, Q, 150, 30, 60, 48, 4, 2, '#e2ad74', '#c08a54', '#9c6a3c', 0); } }]); STATICS.push(o); COUNTER_OBJS.push(o); }   // the display step on the glass case
-  if (lv >= 2) { const o = makeObj(P, { x0: 14, x1: 38, y0: 30, y1: 46 }, 40, [{ g: (g, Q) => { bx(g, Q, 14, 30, 0, 24, 16, 30, C.cabL, C.cab, C.cabD); bx(g, Q, 13, 29, 30, 26, 18, 4, '#d99a5c', '#b8743c', '#93582c'); } }]); STATICS.push(o); COUNTER_OBJS.push(o); }   // the counter, longer toward the window
+  if (lv >= 2) { const o = makeObj(P, { x0: 14, x1: 38, y0: 30, y1: 46 }, 40, [{ g: (g, Q) => { bx(g, Q, 14, 30, 0, 24, 16, 30, C.cabL, C.cab, C.cabD); bx(g, Q, 13, 29, 30, 26, 18, 4, C.ctopL, C.ctop, C.ctopD); } }]); STATICS.push(o); COUNTER_OBJS.push(o); }   // the counter, longer toward the window
+  if (W && W.giftShelf) { const o = makeObj(P, { x0: 0, x1: 9, y0: 182, y1: 302 }, 170, [{ g: (g, Q) => {   // 坤伯's wooden shelf: a long ledge on brackets
+    for (const y of [188, 242, 296]) { bx(g, Q, 0, y - 1, 152, 7, 2, 11, '#6b4a35', '#5a3c2a', '#4a3020', 0); g.seg(Q(1, y, 152), Q(7, y, 162), '#4a3020'); }
+    bx(g, Q, 0, 182, 162, 9, 120, 3, '#c08a54', '#a8703e', '#86562e', 0); bx(g, Q, 8, 182, 162, 1, 120, 3, '#d9a066', '#b07a4a', '#86562e', 0); } }]); STATICS.push(o); COUNTER_OBJS.push(o); }
   for (const i in (W.counter || {})) { const id = W.counter[i], S = COUNTER_SLOTS[i]; if (!S || !hasItem(id)) continue; const [x, y, z] = S;
-    const o = makeObj(P, { x0: x - 6, x1: x + 6, y0: 30, y1: 46.7 }, z + 36, [{ d: (c, Q) => { const im = itemThumb(id), k = Math.min(1, 40 / im.width, 46 / im.height), [a, b] = Q(x, y, z); c.drawImage(im, R(a - im.width * k / 2), R(b - im.height * k + 2), R(im.width * k), R(im.height * k)); } }]);
+    if (S[3]) { if (!W.giftShelf) continue; const o = makeObj(P, { x0: 0, x1: 9, y0: y - 8, y1: y + 8 }, z + 30, [{ d: (c, Q) => { const im = itemThumb(id), k = Math.min(1, 18 / im.width, 24 / im.height), [a, b] = Q(x, y, z); c.drawImage(im, R(a - im.width * k / 2), R(b - im.height * k + 1), R(im.width * k), R(im.height * k)); } }]); STATICS.push(o); COUNTER_OBJS.push(o); continue; }
+    const o = makeObj(P, { x0: x - 6, x1: x + 6, y0: 30, y1: 46.7 }, z + 36, [{ d: (c, Q) => { const im = itemThumb(id), k = Math.min(1, 26 / im.width, 28 / im.height), [a, b] = Q(x, y, z); c.drawImage(im, R(a - im.width * k / 2), R(b - im.height * k + 2), R(im.width * k), R(im.height * k)); } }]);
     STATICS.push(o); COUNTER_OBJS.push(o); }
 }
 function applyItems() {   // create the floor pieces the player owns (once), at their saved spot
@@ -717,13 +756,34 @@ function applyExtraShelves() {   // extra spots not bought yet: no object in the
     if (g) { if (hide && gi >= 0) MOV.splice(gi, 1); else if (!hide && gi < 0) MOV.push(g); } }
 }
 const ROOM_OBJ = {};
+// a glass double door like the main one, between posts at xa and xb on the front wall (both leaves folded in)
+function doorObjs(xa, xb) {
+  const FR = ['#6b4a35', '#5a3c2a', '#4a3020'], L = [];
+  L.push(makeObj(P, { x0: xa, x1: xa + 1.6, y0: 316, y1: 320 }, 70, [{ g: (g, Q) => bx(g, Q, xa, 316.5, 0, 1.6, 3, 66, ...FR, 0) }]));
+  L.push(makeObj(P, { x0: xb - 1.6, x1: xb, y0: 316, y1: 320 }, 70, [{ g: (g, Q) => bx(g, Q, xb - 1.6, 316.5, 0, 1.6, 3, 66, ...FR, 0) }]));
+  L.push(Object.assign(makeObj(P, { x0: xa, x1: xb, y0: 316, y1: 320 }, 70, [{ g: (g, Q) => { bx(g, Q, xa, 316.5, 64, xb - xa, 3, 4, ...FR, 0); const [a, b] = Q((xa + xb) / 2, 318, 70); g.rect(R(a) - 6, R(b) - 2, 12, 6, '#2f6e56'); g.rect(R(a) - 4, R(b), 8, 2, '#c8f0d8'); } }]), { x0: -9999, x1: 9999, y0: 318, y1: 318 }));   // lintel + a little green 出口 sign
+  for (const xd of [xa + 2, xb - 4]) L.push(Object.assign(makeObj(P, { x0: xd, x1: xd + 2, y0: 292, y1: 316 }, 66, [
+    { g: (g, Q) => g.quad(Q(xd + 1, 293, 2), Q(xd + 1, 315, 2), Q(xd + 1, 315, 62), Q(xd + 1, 293, 62), '#cdeff0'), plain: true, alpha: .2 },
+    { g: (g, Q) => { for (const y of [292.5, 314]) bx(g, Q, xd, y, 0, 2, 1.5, 64, ...FR, 0); bx(g, Q, xd, 292.5, 0, 2, 23, 3, ...FR, 0); bx(g, Q, xd, 292.5, 61, 2, 23, 3, ...FR, 0); bx(g, Q, xd + 2, 296, 30, 1, 1, 10, C.brass, C.brass, C.brassD, 0); } }])));
+  return L;
+}
+const DOOR_UP = [['加开出口门', 900, '前面左边开一道门，买完的客人从这里走：客流 +6%'], ['隔壁开门', 1200, '隔壁临街开一道门（要先打通隔壁）：客流再 +6%']];
+const doorsOpen = () => Math.min((W && W.doors) || 0, expandLv() ? 2 : 1);
+function applyDoors() {   // swap the plain front for the one with the extra door(s)
+  const swap = (A, B, on) => { for (const o of [].concat(on ? A : B)) { const k = STATICS.indexOf(o); if (k >= 0) STATICS.splice(k, 1); } for (const o of [].concat(on ? B : A)) if (STATICS.indexOf(o) < 0) STATICS.push(o); };
+  const d = doorsOpen(); swap(FRONT_A.main, FRONT_B.main, d >= 1);
+  if (expandLv()) { const k0 = d >= 2; for (const o of k0 ? NEXT_FRONT : FRONT_B.next) { const k = STATICS.indexOf(o); if (k >= 0) STATICS.splice(k, 1); } for (const o of k0 ? FRONT_B.next : NEXT_FRONT) if (STATICS.indexOf(o) < 0) STATICS.push(o); }
+  else for (const o of FRONT_B.next) { const k = STATICS.indexOf(o); if (k >= 0) STATICS.splice(k, 1); }
+}
+function buyDoor() { const n = (W.doors || 0), U = DOOR_UP[n]; if (!U || W.money < U[1] || (n === 1 && !expandLv()) || PHASE === 'open' || PHASE === 'closing') { SFX.deny(); NOTICE = { text: n === 1 && !expandLv() ? '先打通隔壁' : W.money < (U || [0, 0])[1] ? '钱不够' : '收工或开门前再装', t: 0 }; return false; }
+  W.money -= U[1]; W.today.upCost += U[1]; W.doors = n + 1; applyDecor(); computeStops(); SFX.ding(); notice(U[0] + '：完成！'); saveGame(); return true; }
 function applyRooms() {   // the bigger kitchen (oven + prep table) and the longer front counter (second till), next door
   if (!ROOM_OBJ.xk) ROOM_OBJ.xk = makeObj(P, { x0: 328, x1: 392, y0: 4, y1: 26 }, 64, [{ g: (g, Q) => {
     bx(g, Q, 328, 4, 0, 64, 22, 30, C.steel, C.steelS, C.steelD); bx(g, Q, 332, 6, 30, 26, 18, 28, C.steel, C.steelS, C.steelD, 2);
     g.quad(Q(334, 24, 36), Q(356, 24, 36), Q(356, 24, 52), Q(334, 24, 52), C.dark); g.quad(Q(336, 24, 39), Q(354, 24, 39), Q(354, 24, 44), Q(336, 24, 44), '#ff9a3c');
     bx(g, Q, 364, 8, 30, 24, 14, 2, '#efcf98', '#ddb27a', '#c99a5e'); for (let i = 0; i < 3; i++) { const [a, b] = Q(368 + i * 7, 14, 32); g.ell(a, b - 2, 4, 2.6, '#f2c96a'); } } }]);
   if (!ROOM_OBJ.xf) ROOM_OBJ.xf = makeObj(P, { x0: 324, x1: 388, y0: 30, y1: 46 }, 52, [{ g: (g, Q) => {
-    bx(g, Q, 324, 30, 0, 64, 16, 30, C.cabL, C.cab, C.cabD); bx(g, Q, 322, 29, 30, 68, 18, 4, '#d99a5c', '#b8743c', '#93582c');
+    bx(g, Q, 324, 30, 0, 64, 16, 30, C.cabL, C.cab, C.cabD); bx(g, Q, 322, 29, 30, 68, 18, 4, C.ctopL, C.ctop, C.ctopD);
     bx(g, Q, 330, 34, 34, 16, 10, 9, '#f2ead2', '#dccfab', '#c2b48c'); bx(g, Q, 331, 34, 43, 8, 3, 5, '#2f6a50', '#2f6a50', '#24533e');
     bx(g, Q, 356, 35, 34, 22, 8, 6, '#c9cdd0', '#aab0b3', '#90969a', 1); } }]);
   for (const f of ['xk', 'xf']) { const o = ROOM_OBJ[f], on = !!(W && W[f] && expandLv()), i = STATICS.indexOf(o); if (on && i < 0) STATICS.push(o); else if (!on && i >= 0) STATICS.splice(i, 1); }

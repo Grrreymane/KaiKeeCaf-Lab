@@ -129,8 +129,10 @@ ok(HIRE.temp.name && STAFF_HD.temp, "today's part-timer: " + HIRE.temp.name); { 
   ok(labLike(GUEST_DEF.findIndex(g => g.name === '潮人（女）'), 'lab1') > 2 && labLike(GUEST_DEF.findIndex(g => g.name === '婆婆'), 'lab1') < 1, 'young customers love Lab food, grannies less'); PHASE = ph; }
 // customer list, loyal regulars, 小剧场, 荣叔, 9:00 auto-open
 { const d0 = W.day; W.day = 1; ok(guestPool().filter(ci => GUEST_UNLOCK.find(u => u[0] === ci)[1] <= 1).length === 5 && guestPool().length <= 7, 'day 1: five kinds of customer'); W.day = 12; ok(guestPool().length > 15, 'more kinds by day 12'); W.day = d0;
-  const k = guestKind(0), cf = comfort(); W.keepsakes = {}; W.fans[k] = LOYAL_STORY - 1; STORY_Q.length = 0; fanOf(0, 5);
-  ok(W.keepsakes[k] && STORY_Q.some(q => q.key === 'loyal') && comfort() >= cf, 'loyalty 14: a story and a keepsake'); STORY_Q.length = 0; DIALOG = null;
+  const k = guestKind(0), cf = comfort(); W.keepsakes = {}; W.fans[k] = LOYAL_STORY - 1; STORY_Q.length = 0; fanOf(0, 5); ok(!STORY_Q.some(q => q.key === 'loyal') && W.loyalQ.length, 'loyalty 14: waits for a story slot'); W.today.spEve = false; specialSlot(true);
+  ok(W.keepsakes[k] && STORY_Q.some(q => q.key === 'loyal') && comfort() >= cf, 'loyalty 14: a story and a keepsake (after closing)'); W.today.spEve = false;
+  { STORY_Q.length = 0; W.today.spAm = false; W.storyNext = ['aff_kun_1']; W.epLast = W.day - 3; W.eps = {}; W.today.spEve = false; specialSlot(false); const am = STORY_Q.length; specialSlot(false); ok(am === 1 && STORY_Q.length === 1, 'one special story before opening');
+    specialSlot(true); ok(STORY_Q.length === 2 && STORY_Q[1].key === 'ep', '...the second one after closing'); W.today.spAm = W.today.spEve = false; W.storyNext = []; } STORY_Q.length = 0; DIALOG = null;
   const e = EPISODES[0]; W.eps = {}; playEpisode(e); ok(W.eps[e.id] && STORY_Q.some(q => q.key === 'ep'), 'an episode plays and is remembered'); STORY_Q.length = 0; DIALOG = null;
   const b0 = bagCost('flour'); W.today.rongSale = false; const full = bagCost('flour'); rongVisit(); ok(W.today.rongSale && bagCost('flour') < full && STORY_Q.some(q => q.key === 'rong'), '荣叔: sale today'); STORY_Q.length = 0; DIALOG = null; W.today.rongSale = false;
   const ph = PHASE, tu = W.tut; PHASE = 'prep'; W.tut = 9; W.tourOff = true; prepT = 0; MODE = 'play'; stepPrep(PREP_LEN + 1); ok(PHASE === 'open', 'the shop opens by itself at 9:00'); PHASE = ph; W.tut = tu; }

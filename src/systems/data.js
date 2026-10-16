@@ -214,6 +214,13 @@ const BOOTH_STYLES = {
   brown: { name: '啡皮卡座', cost: 300, leather: ['#b07a4e', '#94643e', '#764c2e'], beauty: 2 },
   deluxe: { name: '高级卡座', cost: 900, leather: ['#8a3e62', '#743252', '#5a2440'], beauty: 5, deluxe: true, tip: 2 },
 };
+const COUNTER_STYLES = {   // 装修 → 前台: the counter cabinets (and the top)
+  oak: { name: '原木柜台', cost: 0, cab: ['#e2a668', '#c27c40', '#8c532c'], top: ['#d99a5c', '#b8743c', '#93582c'], beauty: 0 },
+  teak: { name: '柚木深色', cost: 350, cab: ['#b07444', '#8a5630', '#6a3e20'], top: ['#7a4a2e', '#5a3820', '#40281a'], beauty: 2 },
+  mint: { name: '薄荷漆柜', cost: 450, cab: ['#a6dcc6', '#7fc0a6', '#5a9a80'], top: ['#f2ead2', '#dccfab', '#c2b48c'], beauty: 3 },
+  red: { name: '红漆金边', cost: 600, cab: ['#d0574a', '#b0443a', '#86322c'], top: ['#e8c060', '#c99a38', '#a07a28'], beauty: 4 },
+  terrazzo: { name: '水磨石柜', cost: 900, cab: ['#e6dccb', '#cdbfa8', '#a89a82'], top: ['#3f6b5a', '#2f5a4a', '#24463a'], beauty: 6 },
+};
 // beauty milestones: each one is a real perk (and an achievement)
 const BEAUTY_STEPS = [
   { at: 6, name: '有啲样', perk: '客人肯等多两成' },
@@ -253,7 +260,7 @@ const DECOR_ITEMS = {
   bunny: { name: '兔子公仔', cat: 'gift', cost: 0, comfort: 3, beauty: 2 }, chime: { name: '风铃架', cat: 'gift', cost: 0, comfort: 3, beauty: 2 },
   skate: { name: '涂鸦滑板', cat: 'gift', cost: 0, comfort: 2, beauty: 2 }, screen: { name: '书法屏风', cat: 'gift', cost: 0, comfort: 2, beauty: 4 },
   radio: { name: '古董收音机', cat: 'gift', cost: 0, comfort: 3, beauty: 3 },
-  bonsai: { name: '小盆景', cat: 'gift', plant: 'money', pot: 'terracotta', cost: 0, comfort: 3, beauty: 2, note: '熟客送嘅' },
+  bonsai: { name: '小盆景', cat: 'gift', cost: 0, comfort: 3, beauty: 2, note: '熟客送嘅' },
   banner: { name: '锦旗「街坊至爱」', cat: 'wall', gift: true, cost: 0, comfort: 1, beauty: 4, note: '熟客送嘅' },
   card: { name: '手写感谢卡', cat: 'wall', gift: true, cost: 0, comfort: 2, beauty: 1, note: '熟客送嘅' },
 };
@@ -299,7 +306,7 @@ const ACH = [
   { id: 'aircon', name: '叹冷气', desc: '风扇换成冷气机', test: () => upLv('ac') >= 1, pts: 15 },
 ];
 function beauty() {
-  const d = (W && W.decor) || {}; let b = ((WALLS[d.wall] || WALLS.mint).beauty) + ((BOOTH_STYLES[d.booth] || BOOTH_STYLES.green).beauty) + 2 * upLv('music') + (hasPerk('qing_menu') ? 3 : 0);
+  const d = (W && W.decor) || {}; let b = ((WALLS[d.wall] || WALLS.mint).beauty) + ((BOOTH_STYLES[d.booth] || BOOTH_STYLES.green).beauty) + ((COUNTER_STYLES[d.counter] || COUNTER_STYLES.oak).beauty) + 2 * upLv('music') + (hasPerk('qing_menu') ? 3 : 0);
   for (const id of SHELF_IDS) if (W.shelves[id] && !W.shelves[id].locked) b += SHELF_TIERS[(d.tier || {})[id] || 0].beauty;
   for (const id in DECOR_ITEMS) if (hasItem(id)) b += DECOR_ITEMS[id].beauty;
   if (W && W.showcase && W.stock && W.stock[W.showcase] > 0) b += 2;   // a full showcase looks good

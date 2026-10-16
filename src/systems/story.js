@@ -30,7 +30,16 @@ const SCENES = {
   up_till: [[['hero', '新收银机！按两下就找钱。'], ['lin', '我哋以前都冇咁先进。'], ['lin', '……不过我以前份报表做得靓过佢。']]],
   up_oven: [[['kun', '双层烤盘……几好。'], ['kun', '以前间饼房都系咁嘅炉。'], ['lin', '坤伯偷偷笑咗喎！'], ['kun', '……冇。']]],
   up_sign: [[['shao', '霓虹灯……好似一场戏开咗幕。'], ['lin', '你讲嘢点解成日好似写诗咁？'], ['shao', '……幕始终会落。']]],
-  shelf: [[['lin', '多一张货架，可以摆多啲款。'], ['kun', '货架多咗，我要焗快啲喇。'], ['hero', '账我计好咗，摆满就回本。']]],
+  shelf: [[['lin', '多一张货架，可以摆多啲款。'], ['kun', '货架多咗，我要焗快啲喇。'], ['hero', '账我计好咗，摆满就回本。']],
+    [["lin", "新货架到！我嚟抹干净先。"], ["kun", "……摆蛋挞嗰层要向住门口。"], ["hero", "收到，坤伯话事。"]],
+    [["lin", "老板，又加货架？好似开紧百货公司咁。"], ["hero", "多啲款，客人先唔会睇厌嘛。"], ["lin", "讲得啱！我负责摆靓佢。"]],
+    [["kun", "货架多一张，焗炉就要早半个钟开。"], ["hero", "辛苦晒，坤伯。"], ["kun", "……唔辛苦。卖得出就得。"]],
+    [["bar", "呢个位放货架，客人行过都会望一眼。"], ["hero", "希望望完就买啦。"], ["bar", "交俾我，我摆个最靓嘅角度。"]],
+    [["lin", "装嘢嗰阵我谂起，开铺第一日得一张货架咋。"], ["hero", "依家都多咗几张喇。"], ["lin", "系呀，慢慢嚟，越嚟越似样。"]],
+    [["hero", "呢张货架二手嘅，不过好结实。"], ["kun", "（敲两下）……木系好木。"], ["lin", "坤伯识货！"]],
+    [["lin", "多张货架，即系我要多记一排价钱……"], ["hero", "我帮你写张价钱牌。"], ["lin", "老板最好！"]],
+    [["kun", "……隔篱街阿陈都系咁，一张架变三张。"], ["lin", "后来呢？"], ["kun", "后来佢开咗分店。"], ["hero", "（握拳）我哋都得！"]],
+  ],
   rd_coco: [[['kun', '椰丝要炒香先落，咁先有层次。'], ['kun', '以前间铺……算啦，你试下。'], ['hero', '椰挞，成功！']]],
   rd_wife: [[['kun', '老婆饼皮要薄，馅要煮够火。'], ['lin', '以前我阿妈最钟意食。'], ['lin', '我兴趣班第一样学嘅都系佢。']]],
   rd_pudding: [[['bar', '红豆要煲到起沙，布丁先够香。'], ['hero', '冻冻地，啱晒夏天。']]],
@@ -153,7 +162,9 @@ function toned(who, text) {
 const tonedLines = lines => lines.map(([w, x]) => [w, toned(w, x)]);
 function playScene(key) {
   const pool = SCENES[key]; if (!pool) return;
-  const lines = pick(pool).map(([who, text]) => [who === 'bar' ? (W.staff.wen.hired ? 'wen' : 'lin') : who, text]);
+  const SEQ = ['shelf'];   // these take turns instead of a random pick, so the same one doesn't come twice in a row
+  let sc; if (SEQ.includes(key)) { W.sceneN = W.sceneN || {}; const n = W.sceneN[key] || 0; sc = pool[n % pool.length]; W.sceneN[key] = n + 1; } else sc = pick(pool);
+  const lines = sc.map(([who, text]) => [who === 'bar' ? (W.staff.wen.hired ? 'wen' : 'lin') : who, text]);
   STORY_Q.push({ key, lines: tonedLines(lines) });
 }
 let GIFT_PLACE = null;   // a floor gift from a regular: once its scene is over, ask whether to place it now (like buying)
@@ -168,8 +179,8 @@ function gainAffection() {
 const affLevel = k => lvOf(k) - 1;   // affection grows only when the person levels up (0..4)
 function morningStory() {   // one scene per morning at most: affection first, otherwise sometimes a bit of small talk
   W.storyNext = W.storyNext || [];
-  if (W.storyNext.length) playScene(W.storyNext.shift());
-  else if (W.day >= 3 && rng() < .28) rongVisit();   // 荣叔 drops by: today's ingredients are cheaper (guests.js)
+  if (specialSlot(false)) return;   // a special story (guests.js); otherwise a bit of everyday life
+  if (W.day >= 3 && rng() < .28) rongVisit();   // 荣叔 drops by: today's ingredients are cheaper (guests.js)
   else if (W.day > 1 && rng() < .8) { const ok = SCENES.chat.filter(sc => sc.every(([w]) => !w || w === 'hero' || cast().includes(w))); if (ok.length) STORY_Q.push({ key: 'chat', lines: tonedLines(pick(ok)) }); }
 }
 
