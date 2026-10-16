@@ -1,10 +1,43 @@
 // ==== sim: customers (shop / window bar / booths), staff jobs, waiter, takeaway window, trays, bubbles
 // Shop route (world units): street -> door -> up the right aisle -> along y 262 -> up the middle column (every table and
 // the fridge touches it: this is where they pick things up) -> pay at the till -> down the left aisle (window stools) -> out.
-const PATH = [[-140, 338], [259, 338], [259, 262], [172, 262], [172, 58], [64, 58], [64, 286], [292, 286], [292, 338], [640, 338]];
-const PAY = 5, SPEED = 30, GAP = 24;
-const DIST = [0]; for (let i = 1; i < PATH.length; i++) DIST.push(DIST[i - 1] + Math.hypot(PATH[i][0] - PATH[i - 1][0], PATH[i][1] - PATH[i - 1][1]));
-const LEN = DIST[DIST.length - 1];
+// The route is planned (rebuildPath) whenever the furniture changes: from the door it threads past every open shelf by
+// pathfinding, then always ends the same way — the queue along the counter to the till, down the window aisle, out.
+let PATH = [[-140, 338], [259, 338], [259, 262], [172, 262], [172, 58], [64, 58], [64, 286], [292, 286], [292, 338], [640, 338]];
+let PAY = 5; const SPEED = 30, GAP = 24;
+let DIST = [0], LEN = 0;
+function setPath(pts) { PATH = pts; DIST = [0]; for (let i = 1; i < PATH.length; i++) DIST.push(DIST[i - 1] + Math.hypot(PATH[i][0] - PATH[i - 1][0], PATH[i][1] - PATH[i - 1][1])); LEN = DIST[DIST.length - 1]; }
+setPath(PATH);
+const DOOR = [259, 338], QUEUE_IN = [172, 58], TILL_AT = [64, 58], AISLE_END = [64, 286], STREET_OUT = [292, 338];
+const navFree = (x, y) => { const g = navGrid(), cx = Math.floor((x - NAV_X0) / NAV_C), cy = Math.floor(y / NAV_C); return cx >= 0 && cy >= 0 && cx < NAV_W && cy < NAV_H && !g[cy * NAV_W + cx]; };
+function aisleSpot(id, from) {   // the free spot beside a shelf nearest to where we are (one step off each side's middle)
+  const o = SHELF[id].obj, cx = (o.x0 + o.x1) / 2, cy = (o.y0 + o.y1) / 2, gap = 9;
+  const c = [[cx, o.y0 - gap], [cx, o.y1 + gap], [o.x0 - gap, cy], [o.x1 + gap, cy]].filter(([x, y]) => navFree(x, y));
+  return c.sort((a, b) => Math.hypot(a[0] - from[0], a[1] - from[1]) - Math.hypot(b[0] - from[0], b[1] - from[1]))[0] || null;
+}
+function rebuildPath() {   // door → every open shelf (nearest next) → the queue lane → till → window aisle → street
+  const pts = [[-140, 338], DOOR.slice()], add = r => { if (r) for (const p of r.slice(1)) { const L_ = pts[pts.length - 1]; if (Math.abs(L_[0] - p[0]) > .5 || Math.abs(L_[1] - p[1]) > .5) pts.push(p); } return !!r; };
+  let cur = DOOR; const left = SHELF_IDS.filter(id => SHELF[id] && !W.shelves[id].locked);
+  while (left.length) {
+    let bi = 0, bd = 1e9; left.forEach((id, i) => { const o = SHELF[id].obj, d = Math.hypot((o.x0 + o.x1) / 2 - cur[0], (o.y0 + o.y1) / 2 - cur[1]); if (d < bd) { bd = d; bi = i; } });
+    const id = left.splice(bi, 1)[0], sp = aisleSpot(id, cur); if (!sp) continue;
+    if (add(navRoute(cur, sp))) cur = sp;
+  }
+  if (!add(navRoute(cur, QUEUE_IN))) pts.push(QUEUE_IN.slice());
+  pts.push(TILL_AT.slice()); const pay = pts.length - 1; pts.push(AISLE_END.slice());
+  if (!add(navRoute(AISLE_END, STREET_OUT))) pts.push([292, 286], STREET_OUT.slice()); pts.push([640, 338]);
+  for (let i = pts.length - 2; i > 0; i--) { const a = pts[i - 1], b = pts[i], c = pts[i + 1]; if (i !== pay && i !== pay + 1 && ((a[0] === b[0] && b[0] === c[0]) || (a[1] === b[1] && b[1] === c[1]))) pts.splice(i, 1); }   // drop points in the middle of straight runs
+  PAY = pts.findIndex(p => p[0] === TILL_AT[0] && p[1] === TILL_AT[1]); setPath(pts);
+}
+// can everyone still get where they need to go? (shelves from the door, the till, the way out, the booths for waiters and diners)
+function routesOpen() {
+  NAV = null; let ok = true; const from = DOOR;
+  for (const id of SHELF_IDS) if (SHELF[id] && !W.shelves[id].locked) { const sp = aisleSpot(id, from); if (!sp || !navRoute(from, sp)) { ok = false; break; } }
+  if (ok && !navRoute(from, QUEUE_IN)) ok = false;
+  if (ok && !navRoute(AISLE_END, STREET_OUT)) ok = false;
+  if (ok) for (const st of SEATS) { const p = seatPos(st); if (!navRoute([-140, 338], [p.X - 7, p.y]) || !navRoute(HOME, [p.X - 7, p.y])) { ok = false; break; } }
+  NAV = null; return ok;
+}
 function posOn(pts, d) {   // point at distance d along a polyline (+ which way it faces)
   let acc = 0;
   for (let i = 1; i < pts.length; i++) {
@@ -94,6 +127,7 @@ function moveGroup(g, dx, dy) {
 let STOPS = [];
 function computeStops() {   // where along the route a customer can reach each shelf (nearest point before the till, within reach)
   STOPS = []; NAV = null;   // furniture changed: the walking grid is rebuilt on the next route
+  if (W) rebuildPath();   // and the customers' route through the shop is planned again
   for (const id of SHELF_IDS) {
     const sh = SHELF[id], o = sh.obj; if (sh.st.locked) continue;
     let best = null;

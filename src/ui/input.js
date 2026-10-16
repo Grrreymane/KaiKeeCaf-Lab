@@ -1,18 +1,19 @@
 // ==== input: tap buttons, tap shelves, drag to pan, placement mode (drag furniture, snapped, red when it blocks)
-const WALK_GAP = 12, EDIT = { pick: null, msg: '', bad: false, sel: null };
+const WALK_GAP = 8, EDIT = { pick: null, msg: '', bad: false, sel: null };
 // fixed floor furniture the movable pieces must keep clear of (window bar, stools, counter + bake counter, takeaway)
 const HARD = [{ x0: 246, x1: 256, y0: 267, y1: 281 }, { x0: 205, x1: 301, y0: 29, y1: 47 }, { x0: 0, x1: 16, y0: 56, y1: 160 }, { x0: 22, x1: 32, y0: 71, y1: 153 }, { x0: 38, x1: 200, y0: 29, y1: 47 }, { x0: 162, x1: 222, y0: 300, y1: 314 }];
+const KEEP_CLEAR = [{ x0: 56, x1: 180, y0: 50, y1: 66, why: '挡住排队买单' }, { x0: 56, x1: 72, y0: 50, y1: 292, why: '挡住窗边通道' }, { x0: 248, x1: 272, y0: 296, y1: 320, why: '挡住门口' }];   // the till queue, the window aisle, the door
 const near = (a, b, gap) => a.x0 < b.x1 + gap && b.x0 < a.x1 + gap && a.y0 < b.y1 + gap && b.y0 < a.y1 + gap;
 function segHit(a, p, q, m) { const x0 = Math.min(p[0], q[0]) - m, x1 = Math.max(p[0], q[0]) + m, y0 = Math.min(p[1], q[1]) - m, y1 = Math.max(p[1], q[1]) + m; return a.x0 < x1 && x0 < a.x1 && a.y0 < y1 && y0 < a.y1; }
 function canPlace(g) {
   for (const o of g.objs) {
     const nd = expandLv() && o.x0 > 322;   // the room next door, once opened
     if (o.x0 < 2 || o.x1 > (expandLv() ? 636 : 314) || o.y0 < (nd ? 8 : 50) || o.y1 > 312 || (expandLv() && o.x0 < 324 && o.x1 > 314)) return '靠墙太近';
-    for (const [p, q] of WAITER_WAYS()) if (segHit(o, p, q, 6)) return '挡住招待的路';
     for (const h of HARD) if (near(o, h, 4)) return '碰到柜台了';
     for (const og of MOV) if (og !== g) for (const b of og.objs) if (near(o, b, WALK_GAP)) return '太挤，人过不去';
-    for (let i = 1; i < PATH.length; i++) if (segHit(o, PATH[i - 1], PATH[i], 5)) return '挡住客人的路';
+    for (const L_ of KEEP_CLEAR) if (near(o, L_, 2)) return L_.why;
   }
+  if (!routesOpen()) return '会把路堵死';
   return '';
 }
 const WAITER_WAYS = () => [[[261, 56], [261, 252]]].concat(expandLv() ? [[[259, AISLE_Y], [640, AISLE_Y]]].concat(BOOTHS.filter(B => B.id).map(B => [[B.X - 7 + B.table.grp.dx, AISLE_Y], [B.X - 7 + B.table.grp.dx, B.y0 + B.table.grp.dy]])) : []);
