@@ -109,7 +109,7 @@ function applyDecor() {   // after loading / buying: wallpaper, booth style, she
   const d = W.decor;
   const bgKey = d.wall + ':' + (d.floor || '') + ':' + expandLv() + ':' + upLv('ac') + ':' + Object.keys(DECOR_ITEMS).filter(id => DECOR_ITEMS[id].cat === 'wall' && hasItem(id)).join() + ':' + keepList('w').join() + ':' + JSON.stringify(W.wallSlot || {}) + ':' + PIDS.filter(p => unlocked(p)).map(p => p + priceOf(p)).join();
   if (BG && BG_WALL !== bgKey) { drawBackground(BG.getContext('2d')); BG_WALL = bgKey; }
-  applyExpand(); applyDoors(); applyRooms(); applyExtraShelves(); applyItems(); applyCounterGifts(); applyKeepsakes();
+  settleSmallGifts(); applyExpand(); applyDoors(); applyRooms(); applyExtraShelves(); applyItems(); applyCounterGifts(); applyKeepsakes();
   W.sets = W.sets || {}; for (const S of DECOR_SETS) if (setDone(S) && !W.sets[S[0]]) { W.sets[S[0]] = W.day; if (PHASE !== 'title') notice('搭配完成「' + S[0] + '」舒适 +' + S[2]); }
   if (BOOTH_DONE !== d.booth) { restyleBooths(); BOOTH_DONE = d.booth; }
   if (COUNTER_DONE !== (d.counter || 'oak')) { restyleCounter(); COUNTER_DONE = d.counter || 'oak'; applyRooms(); applyCounterGifts(); }
@@ -281,7 +281,8 @@ function fanOf(ci, st) {   // happy visits by this kind of customer add up; at G
   W.gifted[kind] = true;
   const id = GIFT_ITEM[kind], it = id && !hasItem(id) && DECOR_ITEMS[id]; if (!it) return;   // their own piece, once
   W.giftN = (W.giftN || 0) + 1; if (W.giftN >= 3 && !W.giftShelf) W.giftShelfDue = true;   // the third present: 坤伯 puts a shelf up on the wall (next morning)
-  if (COUNTER_OK.includes(id) && counterFree().length) { (W.items = W.items || {})[id] = true; (W.counter = W.counter || {})[counterFree()[0]] = id; applyDecor(); }   // small gifts go straight onto the front counter
+  if (W.giftShelf && isSmallGift(id) && shelfFree().length) { (W.items = W.items || {})[id] = true; (W.counter = W.counter || {})[shelfFree()[0]] = id; applyDecor(); }   // after 坤伯's shelf: small ones only go up there
+  else if (COUNTER_OK.includes(id) && counterFree().length) { (W.items = W.items || {})[id] = true; (W.counter = W.counter || {})[counterFree()[0]] = id; applyDecor(); }   // small gifts go straight onto the front counter
   else if (it) { let pos = null; if (it.cat !== 'wall') pos = findItemSpot(); if (it.cat === 'wall' || pos) { (W.items = W.items || {})[id] = true; if (pos) { (W.itemPos = W.itemPos || {})[id] = pos; GIFT_PLACE = id; } applyDecor(); } }
   else { (W.items = W.items || {})[id] = true; }   // no room on the floor right now: it waits for 摆放
   STORY_Q.push({ key: 'gift', ci, lines: [[null, '一位' + kind + '熟客走到收银台。'], ...(GIFT_THANKS[kind] || [['cust', '常来光顾，你们招呼得很好。这个送给你！']]).filter(([w]) => !HIRE[w] || W.staff[w].hired), [null, '收到「' + it.name + '」' + (it.cat === 'wall' ? '，已经挂好了。' : onGiftShelf(id) ? '，摆在墙上的木架了。' : onCounter(id) ? '，摆在前台了。' : '。')]] });

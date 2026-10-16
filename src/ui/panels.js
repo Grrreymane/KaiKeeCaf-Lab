@@ -385,7 +385,7 @@ function drawPlaceAsk(c, P_) {   // just bought a floor piece: place it now, or 
   const it = DECOR_ITEMS[P_.id]; c.save(); c.globalAlpha = .5; px(c, 0, 0, 360, 640, '#1c141c'); c.restore(); button(0, 0, 360, 640, () => {});
   card(c, 50, 230, 260, 150, PAPER); TS(c, it.name + (P_.gift ? ' 收到' : ' 买咗'), 180, 244, 18, INK, 'center');
   T(c, '已经摆喺默认位置（靠墙、唔挡路）', 180, 276, SUB, 'center', null); T(c, '舒适 ' + comfort() + ' · 美观 ' + beauty(), 180, 294, '#2f6e56', 'center', null);
-  const small = P_.gift && COUNTER_OK.includes(P_.id);   // a small gift can go on the front counter
+  const small = P_.gift && COUNTER_OK.includes(P_.id) && !(W.giftShelf && isSmallGift(P_.id));   // a small gift can go on the front counter
   btn(c, 58, 322, small ? 80 : 110, 36, '现在摆放', () => { SFX.tap(); placeNow(P_.id); }, 'gold');
   if (small) btn(c, 142, 322, 76, 36, '摆前台', () => { if (toggleCounter(P_.id)) PANEL = P_.back || null; }, 'gold');
   btn(c, small ? 222 : 176, 322, small ? 80 : 126, 36, small ? '放默认' : '就放默认位置', () => { SFX.tap(); PANEL = P_.back || null; }, 'cream');

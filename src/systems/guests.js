@@ -85,7 +85,7 @@ const EP_ARCS = [
     ['shao', '……（看着她跑出门，直到看不见）']] },
   { id: 'shao2', arc: '阿少的心事', part: 2, ok: () => hired('shao') && epSeen('shao1')(), lines: [
     [null, '收银台旁边放着一本旧杂志，封面是一个拿着麦克风的年轻歌手。'], ['lin', '（举起杂志）阿少！这个人……这个人跟你一模一样啊！'],
-    ['shao', '……是吗。'], ['lin', '「林少恒，十年前退出乐坛，至今下落不明」……少恒？阿少？'], ['shao', '（把杂志轻轻合上）莲姨，那个人已经不唱了。'],
+    ['shao', '……是吗。'], ['lin', '「林少恒，一年前退出乐坛，至今下落不明」……少恒？阿少？'], ['shao', '（把杂志轻轻合上）莲姨，那个人已经不唱了。'],
     ['lin', '……（惊）那、那就是说——'], ['shao', '今天的蛋挞出炉了。我去摆。'], ['lin', '（小声）我什么都没看见，什么都没看见……']] },
   { id: 'shao3', arc: '阿少的心事', part: 3, ok: () => hired('shao') && epSeen('shao2')() && epSeen('ex2', 1)() && !!wxOf().rain, ci: 24, cname: '阿千', bg: 'rain', lines: [
     [null, '下雨了。阿千站在门口，没有带伞。'], ['shao', '（把伞塞到她手里）……拿去。'], ['cust', '那你呢？'], ['shao', '我等雨停。'],
@@ -251,7 +251,7 @@ const EP_ARCS = [
     ['qing', '（举起一块纸牌）「本店只卖蛋挞，不卖八卦！」'], ['lin', '（挡在阿少前面）都是我不好……今天谁都别想拍他！'],
     ['shao', '……莲姨。'], ['shao', '（轻声）谢谢大家。不过，让我自己来吧。']] },
   { id: 'fan3', arc: '粉丝风波', part: 3, ok: () => hired('shao') && epSeen('fan2', 1)(), fx: 'fanend', lines: [
-    ['shao', '（走到门口，对着镜头）林少恒十年前就不唱了。'], ['shao', '现在在这里的，是街记冰室的招待阿少。'], ['shao', '想听歌的话，抱歉。想喝奶茶的话，欢迎。'],
+    ['shao', '（走到门口，对着镜头）林少恒一年前就不唱了。'], ['shao', '现在在这里的，是街记冰室的招待阿少。'], ['shao', '想听歌的话，抱歉。想喝奶茶的话，欢迎。'],
     [null, '记者们面面相觑，有几个人真的坐下来点了奶茶。'], ['lin', '（眼眶红了）阿少，对不起，都是我多嘴……'], ['shao', '莲姨，你挡在我前面的时候……我很开心。'],
     ['lin', '（哭）呜……我以后一定管好这张嘴！'], ['kun', '……难。']] },
   // 对面的金庭 — the restaurant that closed 坤伯's old bakery wants him, then starts a price war
@@ -294,7 +294,7 @@ function specialSlot(eve) {
   return false;
 }
 const GIFT_SHELF_TALK = [[null, '早上，坤伯拎住一块木板同一盒钉入嚟。'], ['lin', '坤伯，你做咩？'], ['kun', '……熟客送嘅嘢，前台摆唔落喇。'], ['kun', '钉个木架上墙，摆得多啲。'],
-  ['hero', '坤伯你仲识做木工？'], ['kun', '……以前间铺啲架都系我钉嘅。'], [null, '墙上多咗一排木架。以后熟客送嘅礼物，会先摆上去。']];
+  ['hero', '坤伯你仲识做木工？'], ['kun', '……以前间铺啲架都系我钉嘅。'], [null, '墙上多咗两层木架。以后熟客送嘅小礼物，都摆喺上面。']];
 function playEpisode(ep, eve) {
   EP_BANNER = null; W.eps = W.eps || {}; W.eps[ep.id] = W.day; W.epLast = W.day; W.epN = (W.epN || 0) + 1; if (ep.arc) (W.arcLast = W.arcLast || {})[ep.arc] = W.day + (eve ? .5 : 0);
   const ci = ep.ci != null ? ep.ci : pick(guestPool());   // who's in it: the episode's own customer, or one of today's kinds
